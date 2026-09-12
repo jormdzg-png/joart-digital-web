@@ -246,7 +246,18 @@
     background:var(--navy); color:var(--cream); padding:14px 16px; margin-bottom:16px;
     font-size:12.5px; line-height:1.6;
   }
-  .checkout-summary strong{ color:var(--sand); }
+  .checkout-summary strong{ color:var(--sand); display:block; margin-bottom:6px; }
+  .checkout-summary em{ color:rgba(244,241,222,.6); font-style:normal; }
+  .summary-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 0; gap:10px;
+  }
+  .summary-item-remove{
+    background:none; border:none; color:rgba(244,241,222,.55); font-size:11px;
+    cursor:pointer; font-family:'Inter',sans-serif; font-weight:600; padding:0;
+    white-space:nowrap; text-decoration:underline;
+  }
+  .summary-item-remove:hover{ color:var(--sand); }
 
   /* ---------- SUCCESS ---------- */
   .success-state{ text-align:center; padding:40px 22px; }
@@ -349,7 +360,7 @@
     <div class="checkout-panel" style="overflow-y:auto; flex:1;">
       <button class="back-link" id="backToCartBtn" type="button">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        Volver a mi pedido
+        Agregar otro modelo
       </button>
 
       <div class="checkout-summary" id="checkoutSummary"></div>
@@ -471,7 +482,7 @@
               <input type="number" class="qty-input" data-id="${m.id}" value="1" min="1">
               <button type="button" class="qty-plus" data-id="${m.id}">+</button>
             </div>
-            <button type="button" class="add-btn" data-id="${m.id}">Agregar</button>
+            <button type="button" class="add-btn" data-id="${m.id}">Pedir este</button>
           </div>
         </div>
       </div>
@@ -510,10 +521,12 @@
       const id = btn.dataset.id;
       const qty = Math.max(1, parseInt(getQtyInput(id).value || "1", 10));
       addToCart(id, qty);
-      btn.textContent = "Agregado ✓";
-      btn.classList.add("added");
-      setTimeout(() => { btn.textContent = "Agregar"; btn.classList.remove("added"); }, 1200);
       document.querySelector(`.model-card[data-id="${id}"]`).classList.add("in-cart");
+      // Va directo al checkout: para el caso más común (un solo modelo) esto
+      // ahorra el paso extra de "abrir el carrito" y "continuar" por separado.
+      renderCheckoutSummary();
+      showStep(stepCheckout);
+      openCart();
     });
   });
 
@@ -524,6 +537,8 @@
       const customId = "personalizado-" + customCounter;
       cart[customId] = { qty: 1, custom: true, nombre: "Diseño personalizado" };
       renderCart();
+      renderCheckoutSummary();
+      showStep(stepCheckout);
       openCart();
     });
   });
@@ -623,7 +638,17 @@
     overlay.classList.remove("open");
     drawer.classList.remove("open");
   }
-  document.getElementById("openCartBtn").addEventListener("click", openCart);
+  document.getElementById("openCartBtn").addEventListener("click", () => {
+    if(Object.keys(cart).length > 0){
+      // Ya trae algo en el pedido: lo lleva directo a revisarlo/completarlo.
+      renderCheckoutSummary();
+      showStep(stepCheckout);
+    }else{
+      // Aún no ha agregado nada: muestra el estado vacío explicativo.
+      showStep(stepList);
+    }
+    openCart();
+  });
   document.getElementById("closeCartBtn").addEventListener("click", closeCart);
   document.getElementById("closeCheckoutBtn").addEventListener("click", closeCart);
   document.getElementById("closeSuccessBtn").addEventListener("click", closeCart);
@@ -640,17 +665,41 @@
     renderCheckoutSummary();
     showStep(stepCheckout);
   });
-  document.getElementById("backToCartBtn").addEventListener("click", () => showStep(stepList));
+  document.getElementById("backToCartBtn").addEventListener("click", () => {
+    closeCart();
+  });
 
   function renderCheckoutSummary(){
     const items = Object.entries(cart);
-    const lineas = items.map(([id, item]) => {
+    const container = document.getElementById("checkoutSummary");
+
+    if(items.length === 0){
+      container.innerHTML = `<em>Tu pedido está vacío.</em>`;
+      return;
+    }
+
+    container.innerHTML = `<strong>Tu pedido:</strong>` + items.map(([id, item]) => {
       const model = item.custom ? null : findModel(id);
       const nombre = model ? model.nombre : item.nombre;
-      return `${item.qty}x ${nombre}`;
+      return `
+        <div class="summary-item">
+          <span>${item.qty}x ${nombre}</span>
+          <button type="button" class="summary-item-remove" data-id="${id}">Quitar</button>
+        </div>
+      `;
+    }).join("");
+
+    container.querySelectorAll(".summary-item-remove").forEach(btn => {
+      btn.addEventListener("click", () => {
+        removeFromCart(btn.dataset.id);
+        renderCheckoutSummary();
+        // Si ya no queda nada en el pedido, regresa al catálogo — no tiene
+        // sentido dejar al cliente viendo un formulario para un pedido vacío.
+        if(Object.keys(cart).length === 0){
+          closeCart();
+        }
+      });
     });
-    document.getElementById("checkoutSummary").innerHTML =
-      `<strong>Tu pedido:</strong><br>` + lineas.join("<br>");
   }
 
   // ---------- WhatsApp helpers ----------
