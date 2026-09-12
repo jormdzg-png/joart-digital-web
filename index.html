@@ -377,9 +377,9 @@
       </div>
 
       <div class="field">
-        <label for="fLogo">Tu logo o diseño (opcional)</label>
-        <input type="file" id="fLogo" accept="image/*,.pdf,.ai,.eps,.svg">
-        <div class="field-hint">Puedes subirlo aquí o mandarlo después por WhatsApp — como prefieras.</div>
+        <label for="fLogo">Tu logo o diseño (opcional, hasta 5 archivos)</label>
+        <input type="file" id="fLogo" accept="image/*,.pdf,.ai,.eps,.svg" multiple>
+        <div class="field-hint" id="logoFileHint">Puedes subirlo aquí o mandarlo después por WhatsApp — como prefieras.</div>
       </div>
     </div>
     <div class="cart-footer">
@@ -724,13 +724,13 @@
     });
   }
 
-  async function sendToBackend(order, logoData){
+  async function sendToBackend(order, logosData){
     if(!BACKEND_URL) return;
     try{
       const response = await fetch(BACKEND_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ order, logo: logoData }),
+        body: JSON.stringify({ order, logos: logosData }),
       });
       const result = await response.json();
       console.log("Respuesta completa del backend:", result);
@@ -743,10 +743,26 @@
     }
   }
 
+  document.getElementById("fLogo").addEventListener("change", (e) => {
+    const hint = document.getElementById("logoFileHint");
+    const n = e.target.files.length;
+    if(n > 5){
+      hint.textContent = "Solo se permiten hasta 5 archivos — selecciona de nuevo.";
+      hint.style.color = "var(--terracota-dark)";
+      e.target.value = "";
+    }else if(n > 0){
+      hint.textContent = `${n} archivo${n > 1 ? "s" : ""} seleccionado${n > 1 ? "s" : ""}.`;
+      hint.style.color = "";
+    }else{
+      hint.textContent = "Puedes subirlo aquí o mandarlo después por WhatsApp — como prefieras.";
+      hint.style.color = "";
+    }
+  });
+
   document.getElementById("submitBtn").addEventListener("click", async () => {
     const nombre = document.getElementById("fNombre").value.trim();
     const notas = document.getElementById("fNotas").value.trim();
-    const logoFile = document.getElementById("fLogo").files[0] || null;
+    const logoFiles = Array.from(document.getElementById("fLogo").files || []).slice(0, 5);
 
     document.getElementById("errNombre").textContent = "";
     if(!nombre){
@@ -763,12 +779,14 @@
     submitBtn.disabled = true;
     submitBtn.textContent = "Enviando...";
 
-    let logoData = null;
-    if(logoFile){
+    let logosData = [];
+    if(logoFiles.length > 0){
       try{
-        logoData = { nombre: logoFile.name, tipo: logoFile.type, contenido: await fileToBase64(logoFile) };
+        logosData = await Promise.all(logoFiles.map(async f => ({
+          nombre: f.name, tipo: f.type, contenido: await fileToBase64(f),
+        })));
       }catch(e){
-        console.error("No se pudo leer el logo", e);
+        console.error("No se pudo leer alguno de los archivos", e);
       }
     }
 
@@ -805,11 +823,11 @@
       grosor: grosorResumen,
       notas: notas || "sin notas",
       detalle: detalleWA,
-      tieneLogoAdjunto: !!logoData,
+      tieneLogoAdjunto: logosData.length > 0,
       fecha: new Date().toISOString(),
     };
 
-    await sendToBackend(order, logoData);
+    await sendToBackend(order, logosData);
 
     const resumen = [
       `Hola, quiero pedir:`,
@@ -817,7 +835,7 @@
       ``,
       `Negocio: ${order.cliente}`,
       order.notas !== "sin notas" ? `Notas: ${order.notas}` : null,
-      logoData ? null : `Aquí te comparto mi logo.`,
+      logosData.length > 0 ? null : `Aquí te comparto mi logo.`,
     ].filter(Boolean).join("\n");
 
     document.getElementById("waContinueLink").href = waLink(resumen);

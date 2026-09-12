@@ -172,7 +172,7 @@
       </div>
       <div class="field full">
         <label for="fLogo">Logo del cliente (si ya te lo mandó)</label>
-        <input type="file" id="fLogo" accept="image/*,.pdf,.ai,.eps,.svg">
+        <input type="file" id="fLogo" accept="image/*,.pdf,.ai,.eps,.svg" multiple>
       </div>
     </div>
   </div>
@@ -242,7 +242,7 @@
     const cantidad = document.getElementById("fCantidad").value.trim();
     const grosor = document.getElementById("fGrosor").value;
     const notas = document.getElementById("fNotas").value.trim();
-    const logoFile = document.getElementById("fLogo").files[0] || null;
+    const logoFiles = Array.from(document.getElementById("fLogo").files || []).slice(0, 5);
 
     document.getElementById("errCliente").textContent = "";
     document.getElementById("errCantidad").textContent = "";
@@ -277,10 +277,12 @@
     btn.disabled = true;
     btn.textContent = "Registrando...";
 
-    let logoData = null;
-    if(logoFile){
+    let logosData = [];
+    if(logoFiles.length > 0){
       try{
-        logoData = { nombre: logoFile.name, tipo: logoFile.type, contenido: await fileToBase64(logoFile) };
+        logosData = await Promise.all(logoFiles.map(async f => ({
+          nombre: f.name, tipo: f.type, contenido: await fileToBase64(f),
+        })));
       }catch(e){ console.error(e); }
     }
 
@@ -298,7 +300,7 @@
       const response = await fetch(BACKEND_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ order, logo: logoData }),
+        body: JSON.stringify({ order, logos: logosData }),
       });
       const result = await response.json();
 
