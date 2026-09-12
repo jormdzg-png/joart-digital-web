@@ -92,6 +92,20 @@
     margin-top:12px; background:none; border:1px solid rgba(244,241,222,.3); color:var(--cream);
     padding:10px 16px; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif;
   }
+
+  .cobro-box{ margin-top:16px; padding-top:16px; border-top:1px solid rgba(244,241,222,.2); }
+  .cobro-total{ font-family:'Archivo Expanded',sans-serif; font-size:22px; font-weight:800; color:var(--sand); margin-bottom:2px; }
+  .cobro-sub{ font-size:12px; color:rgba(244,241,222,.65); margin-bottom:14px; }
+  .cobro-split{ display:flex; gap:10px; margin-bottom:14px; }
+  .cobro-split-item{ flex:1; background:rgba(244,241,222,.08); padding:10px 12px; }
+  .cobro-split-item span{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:rgba(244,241,222,.55); margin-bottom:3px; }
+  .cobro-split-item strong{ font-family:'Archivo Expanded',sans-serif; font-size:16px; font-weight:800; }
+  .copy-btn{
+    width:100%; background:var(--sage); color:#1B3B30; border:none; padding:12px;
+    font-size:13.5px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:8px;
+  }
+  .copy-btn:hover{ background:#6FA089; }
+  .copy-btn.copied{ background:var(--sand); }
 </style>
 </head>
 <body>
@@ -177,12 +191,33 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="card-label">Cobro</div>
+    <div class="row">
+      <div class="field">
+        <label for="fFactura">¿Requiere factura?</label>
+        <select id="fFactura">
+          <option value="no">No — cuenta personal</option>
+          <option value="si">Sí — cuenta fiscal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fPrecioUnitario">Precio unitario (MXN)</label>
+        <input type="number" id="fPrecioUnitario" placeholder="Se calcula solo">
+      </div>
+    </div>
+    <div class="field-hint" id="precioHint" style="font-size:11.5px;color:var(--muted);margin-bottom:10px;"></div>
+  </div>
+
   <button type="button" class="submit-btn" id="submitBtn">Registrar pedido</button>
 
   <div class="result-box" id="resultBox">
     <div class="ok">✓ Pedido registrado</div>
     <div class="result-code" id="resultCode">—</div>
     <div class="result-hint">Comparte este código con el cliente por WhatsApp para que pueda seguir su pedido.</div>
+
+    <div class="cobro-box" id="cobroBox"></div>
+
     <button type="button" class="again-btn" id="againBtn">Registrar otro pedido</button>
   </div>
 </div>
@@ -190,23 +225,109 @@
 <script>
   const BACKEND_URL = "https://script.google.com/macros/s/AKfycbw2wvTODLwGZ07v7XcyWJ9Eyf5L8xZMwiFjed0qN3iAXWGVJ27KWb48ju5oWsGyXJwXbA/exec";
 
+  // ============ DATOS BANCARIOS — llénalos tú mismo aquí ============
+  // Estos datos NUNCA se mandan a ningún servidor: solo se usan en tu propio
+  // navegador para armar el texto del mensaje de cobro que tú copias y pegas.
+  const DATOS_BANCARIOS = {
+    personal: {
+      titular: "PON_AQUI_EL_NOMBRE_DEL_TITULAR",
+      banco: "PON_AQUI_EL_BANCO",
+      clabe: "PON_AQUI_LA_CLABE_O_CUENTA",
+    },
+    fiscal: {
+      titular: "PON_AQUI_LA_RAZON_SOCIAL",
+      banco: "PON_AQUI_EL_BANCO_FISCAL",
+      clabe: "PON_AQUI_LA_CLABE_O_CUENTA_FISCAL",
+    },
+  };
+  const WHATSAPP_NUMBER_COBRO = "5215624733000"; // para el botón de enviar por WhatsApp
+
   const MODELOS = [
-    { nombre: "Counter display compacto con organizador", medidas: "22 x 21 x 16 cm" },
-    { nombre: "Display con separadores", medidas: "28.5 x 34.5 x 19 cm" },
-    { nombre: "Pegboard display con ganchos", medidas: "50 x 35 x 18.5 cm" },
-    { nombre: "Display escalonado — 2 escalones", medidas: "50 x 42 x 31.5 cm" },
-    { nombre: "Display escalonado — 3 escalones", medidas: "50.5 x 31 x 31 cm" },
-    { nombre: "Display box — 1 nivel", medidas: "50 x 42 x 31.5 cm" },
-    { nombre: "POP display — 2 niveles", medidas: "60 x 42 x 36.5 cm" },
-    { nombre: "POP display chico — 2 niveles", medidas: "72 x 42 x 29.5 cm" },
-    { nombre: "POP display — 3 niveles", medidas: "90 x 41.5 x 36.5 cm" },
-    { nombre: "Display con repisas", medidas: "52.5 x 63 x 31.5 cm" },
-    { nombre: "Floor stand — 3 niveles", medidas: "140 x 50 x 36.5 cm" },
-    { nombre: "Floor stand — 4 niveles", medidas: "140 x 50 x 35.5 cm" },
-    { nombre: "Floor stand — 5 niveles", medidas: "160 x 51.5 x 41.5 cm" },
-    { nombre: "Floor stand chico — 3 niveles", medidas: "120 x 50 x 26.5 cm" },
-    { nombre: "Floor stand con ganchos", medidas: "140 x 52 x 42.5 cm" },
+    { nombre: "Counter display compacto con organizador", medidas: "22 x 21 x 16 cm", tabla: "counter", soloTiene4mm: true },
+    { nombre: "Display con separadores", medidas: "28.5 x 34.5 x 19 cm", tabla: "separadores", soloTiene4mm: true },
+    { nombre: "Pegboard display con ganchos", medidas: "50 x 35 x 18.5 cm", tabla: "pegboard" },
+    { nombre: "Display escalonado — 2 escalones", medidas: "50 x 42 x 31.5 cm", tabla: "escalonado2" },
+    { nombre: "Display escalonado — 3 escalones", medidas: "50.5 x 31 x 31 cm", tabla: "escalonado3" },
+    { nombre: "Display box — 1 nivel", medidas: "50 x 42 x 31.5 cm", tabla: "displaybox" },
+    { nombre: "POP display — 2 niveles", medidas: "60 x 42 x 36.5 cm", tabla: "pop2" },
+    { nombre: "POP display chico — 2 niveles", medidas: "72 x 42 x 29.5 cm", tabla: "pop2" },
+    { nombre: "POP display — 3 niveles", medidas: "90 x 41.5 x 36.5 cm", tabla: "pop3repisas" },
+    { nombre: "Display con repisas", medidas: "52.5 x 63 x 31.5 cm", tabla: "pop3repisas" },
+    { nombre: "Floor stand — 3 niveles", medidas: "140 x 50 x 36.5 cm", tabla: "floor3" },
+    { nombre: "Floor stand — 4 niveles", medidas: "140 x 50 x 35.5 cm", tabla: "floor4" },
+    { nombre: "Floor stand — 5 niveles", medidas: "160 x 51.5 x 41.5 cm", tabla: "floor5" },
+    { nombre: "Floor stand chico — 3 niveles", medidas: "120 x 50 x 26.5 cm", tabla: "floor3" },
+    { nombre: "Floor stand con ganchos", medidas: "140 x 52 x 42.5 cm", tabla: "floor3" },
   ];
+
+  // Tabla de precios netos MXN por modelo, grosor y "quiebre" de cantidad.
+  // Los quiebres son: 1, 3, 5, 10, 15, 20, 25, 30, 50, 75, 100 piezas.
+  // Para cantidades intermedias se usa el precio del quiebre inferior más
+  // cercano (ej. 12 piezas usa el precio de "10").
+  const QUIEBRES = [1, 3, 5, 10, 15, 20, 25, 30, 50, 75, 100];
+
+  const PRECIOS = {
+    counter: { "4 mm": [250,215,180,160,150,145,140,130,120,110,100] },
+    displaybox: {
+      "4 mm": [500,450,420,380,350,330,310,300,280,260,250],
+      "5 mm": [650,600,570,530,500,480,460,450,430,410,400],
+      "6 mm": [900,850,820,780,750,730,710,700,680,660,650],
+    },
+    pop2: {
+      "4 mm": [800,720,680,610,560,530,500,480,450,420,400],
+      "5 mm": [950,870,830,760,710,680,650,630,600,570,550],
+      "6 mm": [1200,1120,1080,1010,960,930,900,880,850,820,800],
+    },
+    pop3repisas: {
+      "4 mm": [1050,975,930,870,830,800,760,730,715,690,670],
+      "5 mm": [1200,1125,1080,1020,980,950,910,880,865,840,820],
+      "6 mm": [1450,1375,1330,1270,1230,1200,1160,1130,1115,1090,1070],
+    },
+    floor3: {
+      "4 mm": [1300,1200,1150,1050,1000,950,920,890,850,825,800],
+      "5 mm": [1450,1350,1300,1200,1150,1100,1070,1040,1000,975,950],
+      "6 mm": [1700,1600,1550,1450,1400,1350,1320,1290,1250,1225,1200],
+    },
+    floor4: {
+      "4 mm": [1700,1580,1500,1400,1350,1285,1230,1200,1150,1110,1070],
+      "5 mm": [1850,1730,1650,1550,1500,1435,1380,1350,1300,1260,1220],
+      "6 mm": [2100,1980,1900,1800,1750,1685,1630,1600,1550,1510,1470],
+    },
+    floor5: {
+      "4 mm": [2600,2500,2400,2300,2200,2100,2000,1900,1800,1700,1600],
+      "5 mm": [2750,2650,2550,2450,2350,2250,2150,2050,1950,1850,1750],
+      "6 mm": [3000,2900,2800,2700,2600,2500,2400,2300,2200,2100,2000],
+    },
+    separadores: { "4 mm": [250,240,228,220,205,195,185,170,160,150,140] },
+    pegboard: {
+      "4 mm": [400,380,360,340,320,300,280,260,240,220,200],
+      "5 mm": [550,530,510,490,470,450,430,410,390,370,350],
+      "6 mm": [800,780,760,740,720,700,680,660,640,620,600],
+    },
+    escalonado2: {
+      "4 mm": [665,630,595,560,525,490,455,420,385,350,315],
+      "5 mm": [815,780,745,710,675,640,605,570,535,500,465],
+      "6 mm": [1065,1030,995,960,925,890,855,820,785,750,715],
+    },
+    escalonado3: {
+      "4 mm": [570,545,515,485,455,430,400,370,345,315,285],
+      "5 mm": [720,695,665,635,605,580,550,520,495,465,435],
+      "6 mm": [970,945,915,885,855,830,800,770,745,715,685],
+    },
+  };
+
+  function precioUnitario(tablaKey, grosor, cantidad){
+    const tabla = PRECIOS[tablaKey];
+    if(!tabla) return null;
+    const precios = tabla[grosor] || tabla["4 mm"]; // respaldo si el grosor no aplica al modelo
+    if(!precios) return null;
+    // Encuentra el quiebre correcto: el mayor quiebre que sea <= la cantidad.
+    let idx = 0;
+    for(let i = 0; i < QUIEBRES.length; i++){
+      if(cantidad >= QUIEBRES[i]) idx = i;
+    }
+    return precios[idx];
+  }
 
   const selectEl = document.getElementById("fModelo");
   selectEl.innerHTML = MODELOS.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("");
@@ -219,6 +340,7 @@
     document.getElementById("tipoPersonalizado").classList.remove("active");
     document.getElementById("modelSelectWrap").classList.add("show");
     document.getElementById("customFields").classList.remove("show");
+    actualizarPrecioSugerido();
   });
   document.getElementById("tipoPersonalizado").addEventListener("click", () => {
     esPersonalizado = true;
@@ -226,6 +348,7 @@
     document.getElementById("tipoCatalogo").classList.remove("active");
     document.getElementById("customFields").classList.add("show");
     document.getElementById("modelSelectWrap").classList.remove("show");
+    actualizarPrecioSugerido();
   });
 
   function fileToBase64(file){
@@ -236,6 +359,36 @@
       reader.readAsDataURL(file);
     });
   }
+
+  // ---------- Cálculo automático de precio ----------
+  function actualizarPrecioSugerido(){
+    const hint = document.getElementById("precioHint");
+    const precioInput = document.getElementById("fPrecioUnitario");
+
+    if(esPersonalizado){
+      hint.textContent = "Personalizado: escribe aquí el precio unitario que ya calculó el Agente.";
+      return;
+    }
+
+    const modeloSel = MODELOS.find(m => m.nombre === selectEl.value);
+    const grosor = document.getElementById("fGrosor").value;
+    const cantidad = parseInt(document.getElementById("fCantidad").value || "1", 10);
+
+    const precio = precioUnitario(modeloSel.tabla, grosor, cantidad);
+    if(precio){
+      precioInput.value = precio;
+      hint.textContent = `Precio de tabla para ${cantidad} pza(s) a ${grosor}: $${precio} c/u. Puedes ajustarlo si acordaste otro precio.`;
+    }else{
+      hint.textContent = "No hay precio de tabla para esta combinación — escríbelo manualmente.";
+    }
+  }
+
+  ["fGrosor", "fCantidad"].forEach(id => {
+    document.getElementById(id).addEventListener("input", actualizarPrecioSugerido);
+    document.getElementById(id).addEventListener("change", actualizarPrecioSugerido);
+  });
+  selectEl.addEventListener("change", actualizarPrecioSugerido);
+  actualizarPrecioSugerido();
 
   document.getElementById("submitBtn").addEventListener("click", async () => {
     const cliente = document.getElementById("fCliente").value.trim();
@@ -293,6 +446,8 @@
       cantidad,
       grosor,
       notas: notas || "sin notas",
+      precioUnitario: document.getElementById("fPrecioUnitario").value || "0",
+      requiereFactura: document.getElementById("fFactura").value === "si",
       fecha: new Date().toISOString(),
     };
 
@@ -307,6 +462,7 @@
       if(result.ok){
         document.getElementById("resultCode").textContent = result.codigoSeguimiento || "—";
         document.getElementById("resultBox").classList.add("show");
+        mostrarBloqueCobro(order, result.codigoSeguimiento);
       }else{
         alert("Hubo un problema: " + (result.error || "desconocido"));
       }
@@ -328,9 +484,112 @@
     document.getElementById("fAlto").value = "";
     document.getElementById("fAncho").value = "";
     document.getElementById("fProfundo").value = "";
+    document.getElementById("fPrecioUnitario").value = "";
     document.getElementById("resultBox").classList.remove("show");
+    actualizarPrecioSugerido();
     window.scrollTo(0, 0);
   });
+
+  function mostrarBloqueCobro(order, codigo){
+    const cantidad = parseInt(order.cantidad, 10) || 1;
+    const precioUnit = parseFloat(document.getElementById("fPrecioUnitario").value) || 0;
+    const total = precioUnit * cantidad;
+    const anticipo = Math.round(total * 0.5);
+    const saldo = total - anticipo;
+    const requiereFactura = document.getElementById("fFactura").value === "si";
+    const datos = requiereFactura ? DATOS_BANCARIOS.fiscal : DATOS_BANCARIOS.personal;
+    const envioGratis = total > 1000;
+
+    const box = document.getElementById("cobroBox");
+
+    if(total <= 0){
+      box.innerHTML = `<div class="cobro-sub">No se registró un precio unitario — omitiendo el mensaje de cobro.</div>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="cobro-total">$${total.toLocaleString('es-MX')} MXN</div>
+      <div class="cobro-sub">${cantidad} pza(s) × $${precioUnit.toLocaleString('es-MX')} ${envioGratis ? '· Envío gratis' : '· Envío no incluido (menor a $1,000)'}</div>
+      <div class="cobro-split">
+        <div class="cobro-split-item"><span>Anticipo (50%)</span><strong>$${anticipo.toLocaleString('es-MX')}</strong></div>
+        <div class="cobro-split-item"><span>Saldo (50%)</span><strong>$${saldo.toLocaleString('es-MX')}</strong></div>
+      </div>
+      <button type="button" class="copy-btn" id="copyAnticipoBtn">📋 Copiar mensaje de anticipo</button>
+      <button type="button" class="copy-btn" id="markAnticipoBtn">✓ Marcar anticipo recibido</button>
+      <button type="button" class="copy-btn" id="copySaldoBtn">📋 Copiar mensaje de saldo/entrega</button>
+      <button type="button" class="copy-btn" id="markSaldoBtn">✓ Marcar saldo recibido (100%)</button>
+    `;
+
+    const mensajeAnticipo = [
+      `¡Hola! 👋 Tu pedido de *${order.modelo}* (${cantidad} pza${cantidad>1?'s':''}) quedó registrado.`,
+      `Código de seguimiento: *${codigo}*`,
+      ``,
+      `💰 Total: $${total.toLocaleString('es-MX')} MXN`,
+      `Para iniciar producción, el anticipo es de *$${anticipo.toLocaleString('es-MX')} MXN* (50%).`,
+      ``,
+      `Puedes transferir a:`,
+      `${datos.banco} — ${datos.titular}`,
+      `Cuenta/CLABE: ${datos.clabe}`,
+      ``,
+      envioGratis ? `🚚 Tu envío es gratis por ser una compra mayor a $1,000.` : null,
+      `En cuanto veamos tu comprobante, arrancamos tu render 🎨`,
+    ].filter(Boolean).join("\n");
+
+    const mensajeSaldo = [
+      `¡Hola! 👋 Tu exhibidor *${order.modelo}* ya está listo.`,
+      `Código de seguimiento: *${codigo}*`,
+      ``,
+      `Para liberar tu pedido, el saldo restante es de *$${saldo.toLocaleString('es-MX')} MXN* (50%).`,
+      ``,
+      `Puedes transferir a:`,
+      `${datos.banco} — ${datos.titular}`,
+      `Cuenta/CLABE: ${datos.clabe}`,
+      ``,
+      `En cuanto confirmemos tu pago, coordinamos ${envioGratis ? 'tu envío' : 'tu entrega o envío'} 📦`,
+    ].filter(Boolean).join("\n");
+
+    function copiar(texto, btn){
+      navigator.clipboard.writeText(texto).then(() => {
+        const original = btn.textContent;
+        btn.textContent = "✓ Copiado";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 1500);
+      });
+    }
+
+    document.getElementById("copyAnticipoBtn").addEventListener("click", (e) => copiar(mensajeAnticipo, e.target));
+    document.getElementById("copySaldoBtn").addEventListener("click", (e) => copiar(mensajeSaldo, e.target));
+
+    async function marcarPago(porcentaje, btn){
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+      try{
+        const response = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ accion: "marcarPago", codigo, porcentaje }),
+        });
+        const result = await response.json();
+        if(result.ok){
+          btn.textContent = "✓ Marcado en Sheets";
+          btn.classList.add("copied");
+        }else{
+          alert("No se pudo marcar: " + (result.error || "error desconocido"));
+          btn.textContent = original;
+        }
+      }catch(err){
+        console.error(err);
+        alert("No se pudo conectar. Intenta de nuevo.");
+        btn.textContent = original;
+      }finally{
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("markAnticipoBtn").addEventListener("click", (e) => marcarPago(50, e.target));
+    document.getElementById("markSaldoBtn").addEventListener("click", (e) => marcarPago(100, e.target));
+  }
 </script>
 
 </body>
