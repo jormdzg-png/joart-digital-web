@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joart Digital — Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --cream:#F4F1DE; --terracota:#E07A5F; --terracota-dark:#C4603F;
+    --navy:#3D405B; --sage:#81B29A; --sand:#F2CC8F;
+    --card:#FFFFFF; --line:#E3DFCB; --muted:#6E6C63;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--navy);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  h1{ font-family:'Archivo Expanded',sans-serif; font-weight:800; margin:0; }
+
+  header{
+    padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--cream); z-index:10;
+  }
+  .top{ display:flex; align-items:center; gap:10px; }
+  .top-mark{
+    width:32px;height:32px; background:var(--navy); color:var(--cream);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:14px;
+  }
+  .top-title{ font-size:15px; font-weight:700; }
+  .top-tag{ font-size:11.5px; color:var(--muted); }
+
+  .refresh-btn{
+    background:var(--navy); color:var(--cream); border:none; padding:9px 16px;
+    font-size:13px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .refresh-btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+  .board{
+    display:flex; gap:14px; padding:20px; overflow-x:auto;
+    align-items:flex-start;
+  }
+  .column{
+    background:var(--card); border:1px solid var(--line);
+    min-width:230px; max-width:230px; flex-shrink:0;
+  }
+  .column-head{
+    padding:12px 14px; border-bottom:1px solid var(--line);
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--navy); display:flex; justify-content:space-between; align-items:center;
+  }
+  .column-count{
+    background:var(--cream); color:var(--muted); font-size:11px; font-weight:700;
+    padding:1px 7px; border-radius:10px;
+  }
+  .column-body{ padding:10px; display:flex; flex-direction:column; gap:8px; min-height:60px; }
+  .empty-col{ font-size:11.5px; color:var(--muted); text-align:center; padding:14px 4px; }
+
+  .task-card{
+    background:var(--cream); border:1px solid var(--line); padding:10px 12px;
+    font-size:12.5px;
+  }
+  .task-name{ font-weight:700; color:var(--navy); margin-bottom:4px; line-height:1.3; }
+  .task-meta{ display:flex; justify-content:space-between; align-items:center; }
+  .task-code{ font-size:10.5px; color:var(--muted); }
+  .task-pago{
+    font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:8px;
+  }
+  .pago-0{ background:#F6DED6; color:var(--terracota-dark); }
+  .pago-50{ background:#FBE8C6; color:#946A1A; }
+  .pago-100{ background:#DCEEE4; color:#2E6B4F; }
+
+  .loading, .error-msg{ padding:40px; text-align:center; color:var(--muted); font-size:14px; }
+  .error-msg{ color:var(--terracota-dark); }
+
+  .updated-hint{ font-size:11px; color:var(--muted); padding:0 24px 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div class="top-mark">J</div>
+    <div>
+      <div class="top-title">Joart Digital</div>
+      <div class="top-tag">Dashboard de producción — uso interno</div>
+    </div>
+  </div>
+  <button type="button" class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
+</header>
+
+<div id="content">
+  <div class="loading" id="loadingMsg">Cargando pedidos desde ClickUp...</div>
+</div>
+<div class="updated-hint" id="updatedHint"></div>
+
+<script>
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbw2wvTODLwGZ07v7XcyWJ9Eyf5L8xZMwiFjed0qN3iAXWGVJ27KWb48ju5oWsGyXJwXbA/exec";
+
+  // Mismo orden que tus columnas reales de ClickUp.
+  const COLUMNAS = [
+    "1. Solicitudes / Brief",
+    "2. En renders",
+    "3. Revisión interna",
+    "4. En revisión cliente",
+    "5. Corrección requerida",
+    "6. Pre-prensa / Suajes",
+    "7. En producción",
+    "Entregado",
+  ];
+
+  function clasePago(pagado){
+    const n = parseInt(pagado, 10) || 0;
+    if(n >= 100) return "pago-100";
+    if(n >= 50) return "pago-50";
+    return "pago-0";
+  }
+
+  function renderBoard(tareas){
+    const content = document.getElementById("content");
+
+    // Agrupa las tareas por su estatus real (comparación insensible a mayúsculas).
+    const grupos = {};
+    COLUMNAS.forEach(c => grupos[c.toLowerCase()] = []);
+    const otros = [];
+
+    tareas.forEach(t => {
+      const key = (t.estatus || "").toLowerCase().trim();
+      if(grupos[key] !== undefined){
+        grupos[key].push(t);
+      }else{
+        otros.push(t);
+      }
+    });
+
+    const board = document.createElement("div");
+    board.className = "board";
+
+    COLUMNAS.forEach(col => {
+      const items = grupos[col.toLowerCase()] || [];
+      const columnEl = document.createElement("div");
+      columnEl.className = "column";
+      columnEl.innerHTML = `
+        <div class="column-head">
+          <span>${col.replace(/^\d+\.\s*/, "")}</span>
+          <span class="column-count">${items.length}</span>
+        </div>
+        <div class="column-body">
+          ${items.length === 0 ? '<div class="empty-col">Sin pedidos</div>' : items.map(t => `
+            <div class="task-card">
+              <div class="task-name">${t.nombre}</div>
+              <div class="task-meta">
+                <span class="task-code">${t.codigo || "sin código"}</span>
+                <span class="task-pago ${clasePago(t.pagado)}">${t.pagado}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      board.appendChild(columnEl);
+    });
+
+    content.innerHTML = "";
+    content.appendChild(board);
+
+    document.getElementById("updatedHint").textContent =
+      `Actualizado: ${new Date().toLocaleTimeString('es-MX')} — ${tareas.length} pedidos totales`;
+  }
+
+  async function cargarDashboard(){
+    const content = document.getElementById("content");
+    const btn = document.getElementById("refreshBtn");
+    btn.disabled = true;
+    btn.textContent = "Cargando...";
+
+    try{
+      const response = await fetch(`${BACKEND_URL}?dashboard=1`);
+      const data = await response.json();
+
+      if(!data.ok){
+        content.innerHTML = `<div class="error-msg">No se pudo cargar: ${data.error || "error desconocido"}</div>`;
+        return;
+      }
+
+      renderBoard(data.tareas || []);
+    }catch(e){
+      console.error(e);
+      content.innerHTML = `<div class="error-msg">No se pudo conectar. Intenta de nuevo.</div>`;
+    }finally{
+      btn.disabled = false;
+      btn.textContent = "↻ Actualizar";
+    }
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", cargarDashboard);
+  cargarDashboard();
+</script>
+
+</body>
+</html>
