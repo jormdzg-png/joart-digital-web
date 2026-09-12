@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joart Digital — Seguimiento de pedido</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --cream:#F4F1DE;
+    --terracota:#E07A5F;
+    --terracota-dark:#C4603F;
+    --navy:#3D405B;
+    --sage:#81B29A;
+    --sand:#F2CC8F;
+    --card:#FFFFFF;
+    --line:#E3DFCB;
+    --muted:#6E6C63;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--cream); color:var(--navy);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  h1,h2,h3{ font-family:'Archivo Expanded',sans-serif; font-weight:800; letter-spacing:-0.01em; margin:0; }
+
+  header{
+    width:100%; max-width:520px; padding:24px 20px 0;
+    display:flex; align-items:center; gap:12px;
+  }
+  .brand-mark{
+    width:36px;height:36px; background:var(--navy); color:var(--cream);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:15px; flex-shrink:0;
+  }
+  .brand-name{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:16px; }
+  .brand-tag{ font-size:11.5px; color:var(--muted); }
+
+  main{ width:100%; max-width:520px; padding:28px 20px 60px; flex:1; }
+
+  .intro h1{ font-size:26px; line-height:1.1; margin-bottom:8px; }
+  .intro p{ font-size:14.5px; color:var(--muted); line-height:1.5; margin:0 0 24px; }
+
+  .lookup-box{
+    background:var(--card); border:1px solid var(--line); padding:22px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .lookup-box label{ font-size:12.5px; font-weight:600; color:var(--muted); }
+  .lookup-row{ display:flex; gap:8px; }
+  .lookup-row input{
+    flex:1; border:1px solid var(--line); background:var(--cream);
+    padding:12px 14px; font-size:16px; font-weight:700; letter-spacing:.04em;
+    font-family:'Inter',sans-serif; color:var(--navy); text-transform:uppercase;
+  }
+  .lookup-row input:focus{ outline:none; border-color:var(--terracota); }
+  .lookup-btn{
+    background:var(--navy); color:var(--cream); border:none; padding:0 20px;
+    font-weight:700; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif;
+    white-space:nowrap;
+  }
+  .lookup-btn:hover{ background:#2E3049; }
+  .lookup-btn:disabled{ background:var(--line); color:var(--muted); cursor:not-allowed; }
+  .lookup-hint{ font-size:12px; color:var(--muted); }
+  .lookup-error{ font-size:13px; color:var(--terracota-dark); font-weight:600; min-height:16px; }
+
+  .result-card{
+    background:var(--navy); color:var(--cream); padding:28px 24px;
+    display:none; flex-direction:column; gap:16px; margin-top:20px;
+  }
+  .result-card.show{ display:flex; }
+  .result-label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--sand); font-weight:700; }
+  .result-client{ font-family:'Archivo Expanded',sans-serif; font-size:20px; font-weight:800; }
+  .result-status{
+    background:rgba(244,241,222,.08); border:1px solid rgba(244,241,222,.18);
+    padding:16px; font-size:17px; font-weight:700; text-align:center;
+  }
+  .result-eta{ display:flex; justify-content:space-between; align-items:center; font-size:13.5px; }
+  .result-eta strong{ color:var(--sand); font-family:'Archivo Expanded',sans-serif; font-size:15px; }
+
+  .wa-help{
+    margin-top:18px; text-align:center;
+  }
+  .wa-help a{
+    display:inline-flex; align-items:center; gap:8px; color:var(--navy);
+    text-decoration:none; font-size:13px; font-weight:600;
+    border:1px solid var(--line); padding:10px 16px; background:var(--card);
+  }
+
+  footer{ font-size:11.5px; color:var(--muted); padding:20px; text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-mark">J</div>
+  <div>
+    <div class="brand-name">Joart Digital</div>
+    <div class="brand-tag">Seguimiento de pedido</div>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <h1>¿Cómo va tu exhibidor?</h1>
+    <p>Escribe el código que te compartimos por WhatsApp para ver el estatus de tu pedido.</p>
+  </div>
+
+  <div class="lookup-box">
+    <label for="codigoInput">Código de seguimiento</label>
+    <div class="lookup-row">
+      <input type="text" id="codigoInput" placeholder="JD-XXXXX" maxlength="8">
+      <button class="lookup-btn" id="buscarBtn" type="button">Ver estatus</button>
+    </div>
+    <div class="lookup-hint">Ejemplo: JD-4X7K2 — tal como te lo mandamos por WhatsApp.</div>
+    <div class="lookup-error" id="errorMsg"></div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div>
+      <div class="result-label">Pedido de</div>
+      <div class="result-client" id="resultClient">—</div>
+    </div>
+    <div class="result-status" id="resultStatus">—</div>
+    <div class="result-eta" id="resultEtaRow" data-hidden>
+      <span>Fecha estimada</span>
+      <strong id="resultEta">—</strong>
+    </div>
+  </div>
+
+  <div class="wa-help">
+    <a href="#" id="waHelpLink" target="_blank" rel="noopener">¿Tienes dudas sobre tu pedido? Escríbenos</a>
+  </div>
+</main>
+
+<footer>Joart Digital — exhibidores e impresión</footer>
+
+<script>
+  const WHATSAPP_NUMBER = "5215624733000";
+  // La misma URL de tu Google Apps Script que usa el catálogo.
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbw2wvTODLwGZ07v7XcyWJ9Eyf5L8xZMwiFjed0qN3iAXWGVJ27KWb48ju5oWsGyXJwXbA/exec";
+
+  document.getElementById("waHelpLink").href =
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola, tengo una duda sobre mi pedido.")}`;
+
+  // Si el link trae ?codigo=JD-XXXXX, se autocompleta y se busca de una vez.
+  const params = new URLSearchParams(window.location.search);
+  const codigoDeLaUrl = params.get("codigo");
+  if(codigoDeLaUrl){
+    document.getElementById("codigoInput").value = codigoDeLaUrl.toUpperCase();
+  }
+
+  async function buscarPedido(){
+    const input = document.getElementById("codigoInput");
+    const codigo = input.value.trim().toUpperCase();
+    const errorMsg = document.getElementById("errorMsg");
+    const resultCard = document.getElementById("resultCard");
+    const btn = document.getElementById("buscarBtn");
+
+    errorMsg.textContent = "";
+    resultCard.classList.remove("show");
+
+    if(!codigo){
+      errorMsg.textContent = "Escribe tu código de seguimiento.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Buscando...";
+
+    try{
+      const response = await fetch(`${BACKEND_URL}?codigo=${encodeURIComponent(codigo)}`);
+      const data = await response.json();
+
+      if(!data.ok){
+        errorMsg.textContent = data.error || "No pudimos encontrar tu pedido.";
+        return;
+      }
+
+      document.getElementById("resultClient").textContent = data.cliente;
+      document.getElementById("resultStatus").textContent = data.estatus;
+
+      const etaRow = document.getElementById("resultEtaRow");
+      if(data.fechaEstimada){
+        document.getElementById("resultEta").textContent = data.fechaEstimada;
+        etaRow.removeAttribute("data-hidden");
+      }else{
+        etaRow.setAttribute("data-hidden", "");
+      }
+
+      resultCard.classList.add("show");
+    }catch(e){
+      console.error(e);
+      errorMsg.textContent = "No pudimos conectar en este momento. Intenta de nuevo en un momento.";
+    }finally{
+      btn.disabled = false;
+      btn.textContent = "Ver estatus";
+    }
+  }
+
+  document.getElementById("buscarBtn").addEventListener("click", buscarPedido);
+  document.getElementById("codigoInput").addEventListener("keydown", (e) => {
+    if(e.key === "Enter") buscarPedido();
+  });
+
+  // Si llegó con el código en la URL, buscar automáticamente.
+  if(codigoDeLaUrl){
+    buscarPedido();
+  }
+</script>
+
+</body>
+</html>
