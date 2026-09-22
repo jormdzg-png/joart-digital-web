@@ -180,6 +180,7 @@
   </div>
 
   <button type="button" class="generate-btn" id="generateBtn">Generar render</button>
+  <button type="button" style="width:100%;margin-top:8px;background:none;border:1px solid var(--line);color:var(--muted);padding:10px;font-size:12px;cursor:pointer;" id="diagBtn">🔍 Ver qué modelos de Gemini están disponibles (diagnóstico)</button>
 
   <div class="loading-box" id="loadingBox">
     <div class="spinner"></div>
@@ -200,7 +201,7 @@
 <script>
   // ============ TU API KEY DE GEMINI ============
   // Misma clave que ya usas en el Asistente de Datos (aistudio.google.com).
-  const GEMINI_API_KEY = "AQ.Ab8RN6Jbd7nyr2C8Wsh501zE5AOyj45zQ64VMz4Xq2yrZliLhw";
+  const GEMINI_API_KEY = "PEGA_AQUI_TU_GEMINI_API_KEY";
 
   // Contraseña de acceso a esta herramienta (misma que las demás internas).
   const ASISTENTE_PASSWORD = "J04rtD1g1t4lIA!";
@@ -218,6 +219,22 @@
   const PROMPT_1NIVEL = (marca) => `A este exhibidor hazle un diseño simple y minimalista para la marca de (${marca}) en copete, lateral y letrero frontal inferior. Usa la paleta de colores e información de la imagen del logo de (${marca}) para el color de fondo de copete, lateral y letrero frontal. Enfócate únicamente en poner los diseños sobre copete, lateral y letrero frontal inferior, no modifiques tamaños, dimensiones, forma, componentes, material, textura ni perspectiva del exhibidor. El interior déjalo en blanco.`;
 
   const PROMPT_MULTINIVEL = (marca) => `A este exhibidor hazle un diseño simple y minimalista para la marca de (${marca}) en copete, lateral, letreros frontales y panel frontal inferior. Usa la paleta de colores e información de la imagen del logo de (${marca}) para el color de fondo de copete, lateral, letreros frontales y panel frontal inferior. Enfócate únicamente en poner los diseños sobre copete, lateral y letrero frontal inferior, no modifiques tamaños, dimensiones, forma, componentes, material, textura ni perspectiva del exhibidor. El interior déjalo en blanco.`;
+
+  // ---------- Diagnóstico: listar modelos reales disponibles ----------
+  async function listarModelosDisponibles(){
+    try{
+      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const modelos = (data.models || [])
+        .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+        .map(m => m.name.replace("models/", ""));
+      alert("Modelos disponibles con tu clave:\n\n" + modelos.join("\n"));
+      console.log("Modelos completos:", data.models);
+    }catch(e){
+      alert("Error al listar modelos: " + e.message);
+    }
+  }
 
   // ---------- Lock screen ----------
   const lockScreen = document.getElementById("lockScreen");
@@ -276,6 +293,7 @@
 
   document.getElementById("generateBtn").addEventListener("click", generarRender);
   document.getElementById("regenerateBtn").addEventListener("click", generarRender);
+  document.getElementById("diagBtn").addEventListener("click", listarModelosDisponibles);
 
   async function generarRender(){
     document.getElementById("errModelo").textContent = "";
