@@ -274,6 +274,7 @@ form#composer{
   padding:20px;
   z-index:50;
 }
+.overlay[hidden]{display:none;}
 .modal{
   background:var(--white);
   border:2px solid var(--ink);
@@ -404,7 +405,7 @@ form#composer{
 </main>
 
 <!-- Setup modal -->
-<div class="overlay" id="overlay">
+<div class="overlay" id="overlay" hidden>
   <div class="modal">
     <h2>Conectar con el Sheet</h2>
     <p class="hint">Pega la URL del Web App de Apps Script (termina en <code>/exec</code>) y, si vas a hacer cambios (marcar entregas, etc.), tu clave de escritura.</p>
@@ -456,9 +457,11 @@ function openSetup(){
   urlInput.value = sheetUrl;
   keyInput.value = sheetKey;
   modalErr.style.display = 'none';
-  overlay.style.display = 'flex';
+  overlay.removeAttribute('hidden');
 }
-function closeSetup(){ overlay.style.display = 'none'; }
+function closeSetup(){
+  overlay.setAttribute('hidden', '');
+}
 
 document.getElementById('setupBtn').addEventListener('click', openSetup);
 document.getElementById('skipBtn').addEventListener('click', closeSetup);
