@@ -636,7 +636,7 @@ async function sendMessage(text){
     const data = await res.json();
 
     if (!data.ok) {
-      bubble.innerHTML = renderMarkdownish('Error: ' + (data.error || 'no se pudo obtener respuesta.'));
+      bubble.innerHTML = renderMarkdownish(data.error || 'No se pudo obtener respuesta. Intenta de nuevo.');
     } else {
       bubble.innerHTML = renderMarkdownish(data.respuesta);
       // Guardamos el historial que Apps Script ya arma en formato Gemini,
@@ -653,7 +653,7 @@ async function sendMessage(text){
       }
     }
   } catch (err) {
-    bubble.innerHTML = renderMarkdownish('Ocurrió un error de conexión: ' + String(err));
+    bubble.innerHTML = renderMarkdownish('No se pudo conectar en este momento. Revisa tu conexión a internet e intenta de nuevo.');
   }
 
   document.getElementById('sendBtn').disabled = false;
