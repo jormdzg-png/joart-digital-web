@@ -571,7 +571,10 @@ function addSystemNote(text){
 }
 
 function renderMarkdownish(text){
-  // Render ligero de markdown: tablas, negritas, código, saltos de línea.
+  // Render ligero: tablas, negritas, código, saltos de línea — y limpieza
+  // de encabezados "#"/"##"/"###" y viñetas con "*" por si Gemini los usa
+  // a pesar de la instrucción de no hacerlo (este chat no los renderiza,
+  // así que se verían como texto literal si no se limpian aquí).
   let html = text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -590,7 +593,21 @@ function renderMarkdownish(text){
     return out;
   });
 
+  // Encabezados "#", "##", "###..." al inicio de línea -> negrita simple,
+  // sin el símbolo (no queremos ni "###" literal ni un <h1> enorme aquí).
+  html = html.replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>');
+
+  // Viñetas "- texto" o "* texto" al inicio de línea -> viñeta real "•".
+  // (el negativo-lookahead evita confundir "**negrita**" con una viñeta).
+  html = html.replace(/^[ \t]*[-*](?!\*)\s+(.+)$/gm, '• $1');
+
+  // Negrita real "**texto**" -> <strong>.
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Cualquier asterisco suelto que sobreviva (énfasis simple "*texto*" u
+  // otro uso) se quita sin dejar el símbolo visible.
+  html = html.replace(/\*/g, '');
+
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
   html = html.replace(/\n(?!<)/g, '<br>');
   return html;
