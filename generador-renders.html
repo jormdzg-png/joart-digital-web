@@ -238,10 +238,14 @@
 
   // ---------- Lock screen ----------
   const lockScreen = document.getElementById("lockScreen");
+  function desbloquear(){
+    lockScreen.style.display = "none";
+  }
   document.getElementById("lockBtn").addEventListener("click", () => {
     const intento = document.getElementById("lockInput").value;
     if(intento === ASISTENTE_PASSWORD){
-      lockScreen.style.display = "none";
+      try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){}
+      desbloquear();
     }else{
       document.getElementById("lockError").textContent = "Contraseña incorrecta.";
     }
@@ -249,6 +253,7 @@
   document.getElementById("lockInput").addEventListener("keydown", (e) => {
     if(e.key === "Enter") document.getElementById("lockBtn").click();
   });
+  try{ if(localStorage.getItem("joart_sheet_key") === ASISTENTE_PASSWORD) desbloquear(); }catch(e){}
 
   // ---------- Selección de modelo ----------
   let modeloSeleccionado = null;

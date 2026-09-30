@@ -145,8 +145,9 @@
   const lockBtn = document.getElementById("lockBtn");
   const lockError = document.getElementById("lockError");
 
-  async function intentarAcceso(){
-    const intento = lockInput.value;
+  async function intentarAcceso(pw){
+    const auto = typeof pw === "string";
+    const intento = auto ? pw : lockInput.value;
     if(!intento){ lockError.textContent = "Escribe la contraseña."; return; }
     lockBtn.disabled = true;
     lockBtn.textContent = "Verificando...";
@@ -158,6 +159,7 @@
 
       if(result.ok){
         passwordActual = intento;
+        try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){}
         lockScreen.style.display = "none";
         renderBoard(result.tareas || []);
       }else{
@@ -169,11 +171,14 @@
     }finally{
       lockBtn.disabled = false;
       lockBtn.textContent = "Entrar";
+      lockScreen.style.visibility = "";
+      if(auto && lockError.textContent === "Contraseña incorrecta."){ try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} lockError.textContent = ""; }
     }
   }
 
   lockBtn.addEventListener("click", intentarAcceso);
   lockInput.addEventListener("keydown", (e) => { if(e.key === "Enter") intentarAcceso(); });
+  try{ const g = localStorage.getItem("joart_sheet_key"); if(g){ lockScreen.style.visibility = "hidden"; intentarAcceso(g); } }catch(e){}
 
   // Mismo orden que tus columnas reales de ClickUp.
   const COLUMNAS = [
