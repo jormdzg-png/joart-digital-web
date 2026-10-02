@@ -101,6 +101,15 @@
   }
   .lock-btn:hover{ background:var(--terracota-dark); }
   .lock-error{ font-size:12.5px; color:#F6B99A; min-height:16px; }
+  .met-wrap{ padding:18px 24px 0; }
+  .met-grid{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+  .met-card{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px; }
+  .met-num{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:24px; color:var(--navy); }
+  .met-lab{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .met-box{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px; margin-top:12px; }
+  .met-box h3{ margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--terracota-dark); }
+  .met-row{ display:flex; justify-content:space-between; gap:12px; font-size:14px; padding:6px 0; border-top:1px solid var(--line); }
+  .met-row:first-of-type{ border-top:0; }
 </style>
 </head>
 <body>
@@ -131,6 +140,7 @@
   <button type="button" class="refresh-btn" id="refreshBtn">↻ Actualizar</button>
 </header>
 
+<div id="metricas"></div>
 <div id="content">
   <div class="loading" id="loadingMsg">Cargando pedidos desde ClickUp...</div>
 </div>
@@ -162,6 +172,7 @@
         try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){}
         lockScreen.style.display = "none";
         renderBoard(result.tareas || []);
+        cargarMetricas();
       }else{
         lockError.textContent = "Contraseña incorrecta.";
       }
@@ -257,6 +268,7 @@
     btn.textContent = "Cargando...";
 
     try{
+      cargarMetricas();
       const response = await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`);
       const data = await response.json();
 
@@ -276,6 +288,48 @@
   }
 
   document.getElementById("refreshBtn").addEventListener("click", cargarDashboard);
+
+  // ---- Métricas (render, ventas por modelo, pendientes de respuesta) ----
+  function dinero(n){ return "$" + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function celda(num, lab){
+    const c = document.createElement("div"); c.className = "met-card";
+    const n = document.createElement("div"); n.className = "met-num"; n.textContent = num;
+    const l = document.createElement("div"); l.className = "met-lab"; l.textContent = lab;
+    c.append(n, l); return c;
+  }
+  function caja(titulo, filas, vacio){
+    const b = document.createElement("div"); b.className = "met-box";
+    const h = document.createElement("h3"); h.textContent = titulo; b.appendChild(h);
+    if(!filas.length){ const v = document.createElement("div"); v.className = "met-lab"; v.textContent = vacio; b.appendChild(v); }
+    filas.forEach(f => {
+      const r = document.createElement("div"); r.className = "met-row";
+      const a = document.createElement("span"); a.textContent = f[0];
+      const z = document.createElement("strong"); z.textContent = f[1];
+      r.append(a, z); b.appendChild(r);
+    });
+    return b;
+  }
+  async function cargarMetricas(){
+    const cont = document.getElementById("metricas");
+    if(!passwordActual){ return; }
+    try{
+      const r = await fetch(`${BACKEND_URL}?metricas=1&password=${encodeURIComponent(passwordActual)}`);
+      const m = await r.json();
+      if(!m.ok){ cont.innerHTML = ""; return; }
+      const wrap = document.createElement("div"); wrap.className = "met-wrap";
+      const grid = document.createElement("div"); grid.className = "met-grid";
+      grid.append(
+        celda(String(m.pedidos), "Pedidos registrados"),
+        celda(dinero(m.ventaTotal), "Venta cotizada"),
+        celda(m.horasPromedioAprobacion === null ? "—" : m.horasPromedioAprobacion + " h", "Tiempo promedio de aprobación"),
+        celda(m.correccionesPromedio === null ? "—" : String(m.correccionesPromedio), "Correcciones por pedido")
+      );
+      wrap.appendChild(grid);
+      wrap.appendChild(caja("Esperando respuesta del cliente (render)", (m.sinResponder || []).map(x => [x.codigo + " · " + x.cliente, x.horas + " h"]), "Nada pendiente."));
+      wrap.appendChild(caja("Ventas por modelo", (m.modelos || []).slice(0, 8).map(x => [x.modelo + " (" + x.piezas + " pzs)", dinero(x.venta)]), "Sin datos todavía."));
+      cont.innerHTML = ""; cont.appendChild(wrap);
+    }catch(e){ console.error(e); }
+  }
 </script>
 
 </body>

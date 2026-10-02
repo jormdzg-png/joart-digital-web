@@ -81,6 +81,12 @@
   .result-eta{ display:flex; justify-content:space-between; align-items:center; font-size:13.5px; }
   .result-eta strong{ color:var(--sand); font-family:'Archivo Expanded',sans-serif; font-size:15px; }
 
+  .result-actions{ display:flex; flex-direction:column; gap:10px; }
+  .result-actions a{
+    display:block; text-align:center; text-decoration:none; font-weight:700; font-size:15px;
+    padding:14px 18px; border-radius:999px; background:var(--terracota); color:#fff;
+  }
+  .result-actions a.alt{ background:var(--sage); color:#1f2a24; }
   .wa-help{
     margin-top:18px; text-align:center;
   }
@@ -129,6 +135,7 @@
       <span>Fecha estimada</span>
       <strong id="resultEta">—</strong>
     </div>
+    <div class="result-actions" id="resultActions"></div>
   </div>
 
   <div class="wa-help">
@@ -189,6 +196,24 @@
         etaRow.removeAttribute("data-hidden");
       }else{
         etaRow.setAttribute("data-hidden", "");
+      }
+
+      // Acciones según la etapa: aprobar render, o volver a pedir una vez entregado.
+      const acciones = document.getElementById("resultActions");
+      acciones.innerHTML = "";
+      if(data.aprobarUrl){
+        const a = document.createElement("a");
+        a.href = data.aprobarUrl;
+        a.textContent = "👀 Ver y aprobar mi render";
+        acciones.appendChild(a);
+      }
+      if(data.recompra){
+        const a = document.createElement("a");
+        a.className = "alt";
+        a.target = "_blank"; a.rel = "noopener";
+        a.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola, quiero hacer un nuevo pedido como el " + codigo + ".")}`;
+        a.textContent = "🔁 Pedir de nuevo";
+        acciones.appendChild(a);
       }
 
       resultCard.classList.add("show");
