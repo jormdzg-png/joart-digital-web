@@ -133,6 +133,7 @@
       <div class="lbl">Pedido registrado ✅ (ya está en Sheets y ClickUp)</div>
       <div class="code" id="doneCode">—</div>
       <div class="msg-ok" id="doneWarn" style="color:#F6B99A"></div>
+      <div class="mini" id="doneHint" style="color:rgba(244,241,222,.75)"></div>
       <button type="button" class="a-btn a-terra" id="shareDone">📲 Enviar al cliente (PDF + enlace de seguimiento)</button>
       <a class="a-btn a-green" id="waDone" target="_blank" rel="noopener">💬 Solo mensaje por WhatsApp</a>
       <button type="button" class="a-btn a-line" id="pdfDone">📄 Descargar PDF</button>
@@ -167,6 +168,7 @@
           <div class="field"><label for="fCaras">Impresión</label>
             <select id="fCaras"><option value="una">Una cara (exterior)</option><option value="dos">Frente y vuelta (+30% / +40%)</option></select></div>
         </div>
+        <div class="field"><label for="fEnvio">Costo de envío (solo aplica si el pedido es de $1,000 o menos)</label><input id="fEnvio" type="number" min="0" step="any" placeholder="0"></div>
         <div class="field"><label for="fNotas">Notas (salen en el PDF y en el pedido)</label><textarea id="fNotas" rows="2" placeholder="Ej. Colores según pantone enviado."></textarea></div>
         <div class="field"><label for="fLogo">Logo / archivos del cliente (opcional, hasta 5)</label><input id="fLogo" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg"></div>
       </div>
@@ -425,7 +427,9 @@ function calcular(){
 
   const subtotal = lineas.reduce((s, l) => s + l.importe, 0);
   const recargoEntrega = Math.round(subtotal * pctEntrega);
-  const total = subtotal + recargoEntrega;
+  const envioAplica = (subtotal + recargoEntrega) <= 1000;
+  const envio = envioAplica ? (parseFloat($("fEnvio") ? $("fEnvio").value : "") || 0) : 0;
+  const total = subtotal + recargoEntrega + envio;
   const pctAnticipo = entrega === "urgente" ? 1 : 0.5;
   const anticipo = Math.round(total * pctAnticipo);
   const saldo = total - anticipo;
@@ -438,7 +442,7 @@ function calcular(){
     avisos.push("Exprés y urgente: pago acreditado antes de las 12:00 h y confirmación por escrito.");
   }
   if(lineas.some(l => l.unit == null)) errores.push("Falta completar algún producto (cantidad o medidas).");
-  return { lineas, piezas, dosCaras, pctCaras, entrega, pctEntrega, subtotal, recargoEntrega, total, pctAnticipo, anticipo, saldo, avisos, errores };
+  return { lineas, piezas, dosCaras, pctCaras, entrega, pctEntrega, subtotal, recargoEntrega, envio, envioAplica, total, pctAnticipo, anticipo, saldo, avisos, errores };
 }
 function pintarItems(){
   $("itemsBox").innerHTML = items.map((it, i) => {
@@ -486,15 +490,18 @@ function actualizar(){
     ${r.errores.map(e => `<div class="err-box">${esc(e)}</div>`).join("")}
     ${r.avisos.map(a => `<div class="warn-box">${esc(a)}</div>`).join("")}
     <div class="res-line"><span>${r.piezas} pieza${r.piezas === 1 ? "" : "s"} · ${nombreEntrega}</span><span>${fmt(r.subtotal)}</span></div>
+    ${r.envio ? `<div class="res-line"><span>Envío</span><span>${fmt(r.envio)}</span></div>` : ""}
     ${r.recargoEntrega ? `<div class="res-line"><span>Recargo ${r.entrega === "expres" ? "exprés" : "urgente"} (${Math.round(r.pctEntrega * 100)}%)</span><span>${fmt(r.recargoEntrega)}</span></div>` : ""}
     <div class="res-total">${fmt(r.total)} MXN</div>
-    <div class="res-sub">IVA incluido · vigencia ${CONFIG.vigenciaDias} días${r.total > 1000 ? " · envío nacional gratis" : ""}</div>
+    <div class="res-sub">IVA incluido · vigencia ${CONFIG.vigenciaDias} días${(r.total - r.envio) > 1000 ? " · envío nacional gratis" : ""}</div>
     <div class="cobro-split">
       <div class="cobro-split-item"><span>Anticipo (${Math.round(r.pctAnticipo * 100)}%)</span><strong>${fmt(r.anticipo)}</strong></div>
       <div class="cobro-split-item"><span>Saldo</span><strong>${fmt(r.saldo)}</strong></div>
     </div>
+    ${r.envioAplica && !r.envio && r.subtotal > 0 ? `<div class="warn-box">Pedido de $1,000 o menos: el envío no va incluido. Si lo vas a cobrar, escribe el costo en “Costo de envío”.</div>` : ""}
     ${$("fCliente").value.trim() === "" ? `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>` : ""}
-    <button type="button" class="go-btn" id="goBtn" ${listo ? "" : "disabled"}>✅ Registrar pedido y enviar al cliente</button>
+    <button type="button" class="go-btn" id="quickBtn" ${$("fCliente").value.trim() !== "" ? "" : "disabled"}>📝 Registrar ahora (sin cotizar) — para empezar el render</button>
+    <button type="button" class="ghost-btn" id="goBtn" ${listo ? "" : "disabled"}>✅ Registrar con cotización y enviar PDF</button>
     <button type="button" class="ghost-btn" id="pdfBtn" ${listo ? "" : "disabled"}>📄 Solo cotización en PDF (sin registrar)</button>
     <button type="button" class="ghost-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Solo cotización por WhatsApp (sin registrar)</button>`;
 }
@@ -513,7 +520,7 @@ $("itemsBox").addEventListener("click", (e) => {
   items = items.filter(x => x.id !== +id); pintarItems();
 });
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); });
-["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas"].forEach(id => $(id).addEventListener("input", actualizar));
+["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas","fEnvio"].forEach(id => $(id).addEventListener("input", actualizar));
 function folioNuevo(){ const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `COT-${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
 function cuentaActual(){ return $("fFactura").value === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal; }
 function datosPDF(){
@@ -527,7 +534,7 @@ function datosPDF(){
       medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${parseInt(l.it.niveles, 10) || 1} nivel${(parseInt(l.it.niveles, 10) || 1) === 1 ? "" : "es"}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
       cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it),
     })),
-    subtotal: r.subtotal, recargoEntrega: r.recargoEntrega, pctEntrega: r.pctEntrega, total: r.total, pctAnticipo: r.pctAnticipo, anticipo: r.anticipo, saldo: r.saldo,
+    subtotal: r.subtotal, envio: r.envio, recargoEntrega: r.recargoEntrega, pctEntrega: r.pctEntrega, total: r.total, pctAnticipo: r.pctAnticipo, anticipo: r.anticipo, saldo: r.saldo,
     cuenta: cuentaActual(),
   };
 }
@@ -600,10 +607,14 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   // --- Totales ---
   nuevaPagina(44);
   const xL = 122;
-  if(d.recargoEntrega){
+  if(d.recargoEntrega || d.envio){
     texto("Subtotal", xL, y, { size: 10 }); texto(money(d.subtotal), R, y, { size: 10, align: "right" }); y += 5.5;
-    texto("Recargo " + (d.entrega === "expres" ? "exprés" : "urgente") + " (" + Math.round(d.pctEntrega * 100) + "%)", xL, y, { size: 10 });
-    texto(money(d.recargoEntrega), R, y, { size: 10, align: "right" }); y += 7;
+    if(d.recargoEntrega){
+      texto("Recargo " + (d.entrega === "expres" ? "exprés" : "urgente") + " (" + Math.round(d.pctEntrega * 100) + "%)", xL, y, { size: 10 });
+      texto(money(d.recargoEntrega), R, y, { size: 10, align: "right" }); y += 5.5;
+    }
+    if(d.envio){ texto("Envío", xL, y, { size: 10 }); texto(money(d.envio), R, y, { size: 10, align: "right" }); y += 5.5; }
+    y += 1.5;
   }
   texto("Total", xL, y, { bold: true, size: 12 });
   texto(money(d.total), R, y, { bold: true, size: 13, align: "right", color: TERRA });
@@ -642,7 +653,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   }
 
   // --- Términos y condiciones ---
-  const envio = d.total > 1000 ? "Envío nacional gratis a todo el país, o recolección en sucursal (lunes a viernes, 10:00 a 19:00 h)." : "Envío gratis en compras mayores a $1,000 MXN; también puedes recolectar en sucursal (lunes a viernes, 10:00 a 19:00 h).";
+  const envio = (d.total - (d.envio || 0)) > 1000 ? "Envío nacional gratis a todo el país, o recolección en sucursal (lunes a viernes, 10:00 a 19:00 h)." : "Envío gratis en compras mayores a $1,000 MXN; también puedes recolectar en sucursal (lunes a viernes, 10:00 a 19:00 h).";
   const terminos = [
     ["Vigencia", "Esta cotización es válida por " + CONFIG.vigenciaDias + " días naturales (hasta el " + d.vigencia + ")."],
     ["Qué incluye", "Diseño estructural, " + (d.dosCaras ? "impresión por ambas caras (frente y vuelta)" : "impresión por una cara (exterior; el interior queda en blanco)") + ", corte, material e IVA. Todos los exhibidores se entregan desarmados."],
@@ -704,37 +715,40 @@ function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it
 function mensajePedido(d){
   const c = d.cuenta || {};
   const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
-  return `Hola ${d.cliente} 👋 Soy de Joart Digital. Tu pedido quedó registrado con el folio *${d.folio}*.\n\n${listaProductos(d)}\n\nTotal: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}${pago}\n\nTe mando tu render 3D sin costo para aprobación. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${d.folio}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+  return `Hola ${d.cliente} 👋 Soy de Joart Digital. Tu pedido quedó registrado con el folio *${d.folio}*.\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}${pago}\n\nTe mando tu render 3D sin costo para aprobación. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${d.folio}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
 }
 function mensajeCotizacion(d){
   const c = d.cuenta || {};
   const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
-  return `Hola ${d.cliente}, te comparto tu cotización ${d.folio} de Joart Digital:\n\n${listaProductos(d)}\n\nTotal: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\nVigencia: hasta el ${d.vigencia}${pago}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+  return `Hola ${d.cliente}, te comparto tu cotización ${d.folio} de Joart Digital:\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\nVigencia: hasta el ${d.vigencia}${pago}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
 }
 const fileToB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 
-async function registrar(btn){
-  const r = ultimo; if(!r || r.errores.length) return;
-  const sinPrecio = r.lineas.filter(l => !(l.unit > 0));
-  if(sinPrecio.length){ alert("Falta precio en algún producto."); return; }
-  const factor = r.subtotal > 0 ? r.total / r.subtotal : 1;   // recargo exprés/urgente repartido en el precio unitario
+async function registrar(btn, rapido){
+  const r = ultimo; if(!r) return;
+  if(!rapido){
+    if(r.errores.length) return;
+    if(r.lineas.some(l => !(l.unit > 0))){ alert("Falta precio en algún producto."); return; }
+  }
+  const factor = (!rapido && r.subtotal > 0) ? (r.subtotal + r.recargoEntrega) / r.subtotal : 1;   // recargo exprés/urgente repartido en el precio unitario
   const items2 = r.lineas.map(l => {
     const pers = esPers(l.it);
     const m = MODELOS.find(x => x.nombre === l.it.modelo);
     return {
       modelo: pers ? (l.it.desc.trim() || "Diseño personalizado") : l.it.modelo,
       medidas: pers ? ((parseFloat(l.it.alto) > 0) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm` : "a definir") : (m ? m.medidas : ""),
-      cantidad: l.q, grosor: l.it.grosor,
-      precioUnitario: Math.round(l.unit * factor * 100) / 100,
+      cantidad: l.q || 1, grosor: l.it.grosor,
+      precioUnitario: rapido ? 0 : Math.round(l.unit * factor * 100) / 100,
       personalizado: pers, hpPorPieza: pers ? hpDe(l.it) : null,
     };
   });
+  if(!rapido && r.envio) items2.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: r.envio, personalizado: false, hpPorPieza: null });
   const extras = [];
   if(r.pctEntrega) extras.push(`Entrega ${r.entrega === "expres" ? "exprés (4 días háb.)" : "urgente (2 días háb.; pago 100%)"}: +${Math.round(r.pctEntrega*100)}% ya incluido en precios`);
   if(r.dosCaras) extras.push("Impresión frente y vuelta");
+  if(rapido) extras.push("Cantidad y precio por confirmar");
   const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
-  const dias = { estandar: 7, expres: 4, urgente: 2 }[r.entrega];
-  const order = { cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: diasHabiles(dias), notas, items: items2 };
+  const order = { cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: items2 };
 
   const orig = btn.textContent; btn.disabled = true; btn.textContent = "Registrando…";
   try{
@@ -744,12 +758,15 @@ async function registrar(btn){
     const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ order, logos, password: passwordActual }) })).json();
     if(!res.ok){ alert("No se pudo registrar: " + (res.error || "error desconocido")); return; }
     folioActual = res.codigoSeguimiento;
-    registrado = { datos: datosPDF() };
+    registrado = { datos: rapido ? null : datosPDF(), rapido: !!rapido };
     $("doneCode").textContent = folioActual || "—";
     $("doneWarn").textContent = (res.clickup && res.clickup.ok === false) ? "⚠ Se guardó en Sheets, pero NO se creó la tarjeta de ClickUp: " + (res.clickup.motivo || "error") : "";
-    $("waDone").href = waUrl($("fContacto").value, mensajePedido(registrado.datos));
+    const msgReg = rapido ? `Hola ${$("fCliente").value.trim()} 👋 Recibimos tu logo y tu pedido quedó registrado con el código *${folioActual}*. Ya estamos preparando tu render 3D, sin costo. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${folioActual}` : mensajePedido(registrado.datos);
+    $("waDone").href = waUrl($("fContacto").value, msgReg);
+    $("shareDone").style.display = $("pdfDone").style.display = rapido ? "none" : "";
+    $("doneHint").textContent = rapido ? "Sigue: manda el render. Cuando confirmen piezas, entra a Pedidos → abre este código → “Cobrar”." : "";
     $("formNuevo").style.display = "none"; $("done").classList.add("show"); window.scrollTo(0, 0);
-    guardarCobroAuto(folioActual, order.requiereFactura);
+    if(!rapido) guardarCobroAuto(folioActual, order.requiereFactura);
     cargarLista();
   }catch(e){ console.error(e); alert("No se pudo conectar. Antes de reintentar revisa en Sheets que el pedido no se haya creado ya."); }
   finally{ btn.disabled = false; btn.textContent = orig; }
@@ -769,15 +786,16 @@ async function compartirPDF(d, texto, fallbackTel){
 
 $("resumen").addEventListener("click", (e) => {
   const id = e.target.id; if(!id) return;
-  if(!window.jspdf && id !== "goBtn"){ alert("No cargó la librería de PDF. Revisa tu conexión y recarga."); return; }
-  if(id === "goBtn") registrar(e.target);
+  if(!window.jspdf && id !== "goBtn" && id !== "quickBtn"){ alert("No cargó la librería de PDF. Revisa tu conexión y recarga."); return; }
+  if(id === "goBtn") registrar(e.target, false);
+  if(id === "quickBtn") registrar(e.target, true);
   if(id === "pdfBtn"){ const d = datosPDF(); construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); }
   if(id === "quoteWa"){ const d = datosPDF(); window.open(waUrl($("fContacto").value, mensajeCotizacion(d)), "_blank"); }
 });
 $("shareDone").addEventListener("click", () => { if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga."); return; } compartirPDF(registrado.datos, mensajePedido(registrado.datos), $("fContacto").value); });
 $("pdfDone").addEventListener("click", () => { const d = registrado.datos; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); });
 $("againBtn").addEventListener("click", () => {
-  ["fCliente","fContacto","fZona","fNotas"].forEach(id => $(id).value = "");
+  ["fCliente","fContacto","fZona","fNotas","fEnvio"].forEach(id => $(id).value = "");
   $("fLogo").value = ""; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
   folioActual = null; folioCot = null; registrado = null; items = [nuevoItem()]; pintarItems();
   $("done").classList.remove("show"); $("formNuevo").style.display = ""; window.scrollTo(0, 0);
@@ -817,7 +835,7 @@ async function abrirPedido(cod){
   try{
     const p = await post("buscarPedido", { codigo: cod });
     if(!p.ok){ err.textContent = p.error || "No se encontró el pedido."; err.style.display = "block"; $("pDetalle").style.display = "none"; return; }
-    ped = { codigo: cod, cliente: p.cliente, contacto: p.contacto, items: p.items || [], pagado: p.pagado };
+    ped = { codigo: cod, cliente: p.cliente, contacto: p.contacto, items: (p.items || []).filter(i => i.modelo !== "Envío"), pagado: p.pagado, factura: !!p.requiereFactura };
     pintarPedido();
   }catch(e){ console.error(e); err.textContent = "No se pudo conectar."; err.style.display = "block"; }
 }
@@ -830,7 +848,10 @@ function pintarPedido(){
       <div style="font:800 17px 'Archivo Expanded',sans-serif;margin-bottom:6px">${esc(ped.cliente || "")}</div>
       <div class="mini">${lista}</div>
       ${ped.pagado ? `<div class="msg-ok">Pagado: ${esc(String(ped.pagado))}</div>` : ""}
-      <div class="col-h">Pagos</div>
+      <div class="col-h">Cobro</div>
+      <button type="button" class="a-btn a-terra" data-ac="cobrar">💳 Cobrar: cotización final y datos de pago</button>
+      <div id="cbBox"></div>
+      <div class="col-h">Pagos recibidos</div>
       <button type="button" class="a-btn a-green" data-ac="pago50">💰 Anticipo recibido (50%)</button>
       <button type="button" class="a-btn a-green" data-ac="pago100">✅ Pago completo (100%)</button>
       <div class="col-h">Render</div>
@@ -853,6 +874,7 @@ $("pDetalle").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-ac]"); if(!b || !ped) return;
   const ac = b.dataset.ac, res = $("pRes"), orig = b.textContent; b.disabled = true;
   try{
+    if(ac === "cobrar"){ pintarCobro(); return; }
     if(ac === "pago50" || ac === "pago100"){
       const pct = ac === "pago50" ? 50 : 100, r = await post("marcarPago", { codigo: ped.codigo, porcentaje: pct });
       if(!r.ok){ toast(r.error || "No se pudo marcar."); return; }
@@ -910,6 +932,97 @@ $("pvLista").addEventListener("click", async (e) => {
     const m = pvLeer(); m[b.dataset.cod] = Object.assign(m[b.dataset.cod] || {}, { [b.dataset.pv]: Date.now() }); pvGuardar(m); cargarPosventa();
   }catch(err){ console.error(err); toast("No se pudo conectar."); }
   finally{ b.disabled = false; }
+});
+
+// ===================== COBRAR (cotización final de un pedido ya registrado) =====================
+const normM = (s) => String(s || "").replace(/[—–]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
+const catalogoDe = (modelo) => MODELOS.find(m => normM(m.nombre) === normM(modelo));
+let cb = null;
+function pintarCobro(){
+  cb = { lineas: ped.items.map(it => ({ it, q: parseInt(it.cantidad, 10) || 1, precio: Number(it.precioUnitario) || 0, manual: false })), entrega: "estandar", caras: "una", factura: ped.factura ? "si" : "no", envio: "" };
+  $("cbBox").innerHTML = `
+    <div class="card" style="margin:12px 0 0;background:#FDFCF7">
+      <div id="cbItems"></div>
+      <div class="row">
+        <div class="field"><label>Entrega</label><select id="cbEntrega"><option value="estandar">Estándar — 7 días háb.</option><option value="expres">Exprés (+15%)</option><option value="urgente">Urgente (+25%)</option></select></div>
+        <div class="field"><label>Impresión</label><select id="cbCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>¿Factura?</label><select id="cbFactura"><option value="no">No</option><option value="si"${ped.factura ? " selected" : ""}>Sí</option></select></div>
+        <div class="field"><label>Costo de envío (si ≤ $1,000)</label><input id="cbEnvio" type="number" min="0" step="any" placeholder="0"></div>
+      </div>
+      <div class="resumen" id="cbRes" style="margin:0"></div>
+    </div>`;
+  calcCobro(true);
+}
+function calcCobro(redibujar){
+  const piezas = cb.lineas.reduce((s, l) => s + l.q, 0);
+  const pctCaras = cb.caras === "dos" ? (piezas >= 30 ? 0.40 : 0.30) : 0;
+  const pctEntrega = cb.entrega === "expres" ? 0.15 : cb.entrega === "urgente" ? 0.25 : 0;
+  cb.lineas.forEach(l => {
+    const cat = catalogoDe(l.it.modelo);
+    const base = (cat && !l.manual && !l.it.personalizado) ? precioCatalogo(cat.nombre, l.it.grosor || "4 mm", l.q) : null;
+    l.unit = base != null ? (pctCaras ? up5(base * (1 + pctCaras)) : base) : l.precio;
+    if(base != null) l.precio = l.unit;
+  });
+  if(redibujar) $("cbItems").innerHTML = cb.lineas.map((l, i) => `<div class="item"><div class="item-head"><span>${esc(l.it.modelo)} · ${esc(l.it.grosor || "")}</span></div>
+    <div class="row"><div class="field"><label>Cantidad</label><input data-cbq="${i}" type="number" min="1" step="1" value="${l.q}"></div>
+    <div class="field"><label>Precio c/u</label><input data-cbp="${i}" type="number" min="0" step="any" value="${l.unit || ""}" placeholder="0"></div></div></div>`).join("");
+  const subtotal = cb.lineas.reduce((s, l) => s + (l.unit || 0) * l.q, 0), recargo = Math.round(subtotal * pctEntrega);
+  const envioAplica = (subtotal + recargo) <= 1000, envio = envioAplica ? (parseFloat(cb.envio) || 0) : 0, total = subtotal + recargo + envio;
+  const pctA = cb.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
+  const err = piezas > CONFIG.maxPiezas ? `Máximo ${CONFIG.maxPiezas} piezas.` : (cb.lineas.some(l => !(l.unit > 0)) ? "Falta el precio de algún producto." : "");
+  cb.calc = { piezas, pctCaras, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err };
+  $("cbRes").innerHTML = `${err ? `<div class="err-box">${esc(err)}</div>` : ""}
+    <div class="res-line"><span>${piezas} pieza${piezas === 1 ? "" : "s"}</span><span>${fmt(subtotal)}</span></div>
+    ${recargo ? `<div class="res-line"><span>Recargo ${cb.entrega === "expres" ? "exprés" : "urgente"}</span><span>${fmt(recargo)}</span></div>` : ""}
+    ${envio ? `<div class="res-line"><span>Envío</span><span>${fmt(envio)}</span></div>` : ""}
+    ${envioAplica && !envio && subtotal > 0 ? `<div class="warn-box">Pedido de $1,000 o menos: envío no incluido. Escribe el costo si lo vas a cobrar.</div>` : ""}
+    <div class="res-total">${fmt(total)} MXN</div>
+    <div class="cobro-split"><div class="cobro-split-item"><span>Anticipo (${Math.round(pctA * 100)}%)</span><strong>${fmt(anticipo)}</strong></div><div class="cobro-split-item"><span>Saldo</span><strong>${fmt(total - anticipo)}</strong></div></div>
+    <button type="button" class="go-btn" id="cbGo" ${err ? "disabled" : ""}>💳 Guardar cobro y enviar al cliente</button>
+    <button type="button" class="ghost-btn" id="cbPdf" ${err ? "disabled" : ""}>📄 Solo descargar PDF</button>`;
+}
+function datosCobro(){
+  const c = cb.calc, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000);
+  return {
+    folio: ped.codigo, cliente: ped.cliente || "", contacto: ped.contacto || "", fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
+    entrega: cb.entrega, dosCaras: cb.caras === "dos", requiereFactura: cb.factura === "si",
+    items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado })),
+    subtotal: c.subtotal, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, envio: c.envio, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
+    cuenta: cb.factura === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal,
+  };
+}
+function mensajeCobro(d){
+  const c = d.cuenta || {};
+  const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "\n\n(Te paso los datos de pago enseguida)";
+  return `Hola ${d.cliente} 👋 Aquí está la cotización final de tu pedido *${d.folio}*:\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}${pago}\n\nEn el PDF van las condiciones. Sigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+}
+$("pDetalle").addEventListener("input", (e) => {
+  if(!cb) return; const t = e.target;
+  if(t.dataset.cbq !== undefined){ cb.lineas[+t.dataset.cbq].q = Math.max(1, parseInt(t.value, 10) || 1); calcCobro(false); const l = cb.lineas[+t.dataset.cbq]; const pi = document.querySelector(`[data-cbp="${t.dataset.cbq}"]`); if(pi && !l.manual) pi.value = l.unit || ""; cb.lineas.forEach((x, i) => { const p = document.querySelector(`[data-cbp="${i}"]`); if(p && !x.manual && x.unit) p.value = x.unit; }); }
+  else if(t.dataset.cbp !== undefined){ const l = cb.lineas[+t.dataset.cbp]; l.manual = true; l.precio = parseFloat(t.value) || 0; calcCobro(false); }
+  else if(t.id === "cbEntrega"){ cb.entrega = t.value; calcCobro(false); }
+  else if(t.id === "cbCaras"){ cb.caras = t.value; calcCobro(false); cb.lineas.forEach((x, i) => { const p = document.querySelector(`[data-cbp="${i}"]`); if(p && !x.manual && x.unit) p.value = x.unit; }); }
+  else if(t.id === "cbFactura"){ cb.factura = t.value; }
+  else if(t.id === "cbEnvio"){ cb.envio = t.value; calcCobro(false); }
+});
+$("pDetalle").addEventListener("click", async (e) => {
+  const id = e.target.id; if(!cb || (id !== "cbGo" && id !== "cbPdf")) return;
+  if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga."); return; }
+  const d = datosCobro();
+  if(id === "cbPdf"){ construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); return; }
+  const b = e.target, orig = b.textContent; b.disabled = true; b.textContent = "Guardando…";
+  try{
+    const c = cb.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
+    const items = cb.lineas.map(l => Object.assign({}, l.it, { cantidad: l.q, precioUnitario: Math.round(l.unit * factor * 100) / 100 }));
+    if(c.envio) items.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
+    const r = await post("guardarCobro", { codigo: ped.codigo, items, requiereFactura: cb.factura === "si" });
+    if(!r.ok){ alert("No se pudo guardar el cobro: " + (r.error || "error")); return; }
+    toast("Cobro guardado en Sheets");
+    await compartirPDF(d, mensajeCobro(d), ped.contacto);
+  }catch(err){ console.error(err); alert("No se pudo conectar."); }
+  finally{ b.disabled = false; b.textContent = orig; }
 });
 
 // ===================== AVISOS =====================
