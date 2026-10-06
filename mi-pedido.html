@@ -167,10 +167,10 @@ function etapaDe(estatus){
   if(/entreg/.test(s)) return 6;
   if(/envi|guia|paqueter|en camino|despach/.test(s)) return 5;
   if(/list[oa]\b|liquid|saldo|pago completo|terminad/.test(s)) return 5;
-  if(/(anticipo|pago).*(recibid|pagad|acreditad)|imprim|produc|fabric|corte|armad|empaq/.test(s)) return 4;
+  if(/(anticipo|pago).*(recibid|pagad|acreditad)|imprim|produc|fabric|corte|armad|empaq|pre-?prensa|suaje/.test(s)) return 4;
   if(/aprob|revis|anticipo|esperando/.test(s)) return 3;
-  if(/render|diseno|correg|logo|boceto/.test(s)) return 2;
-  if(/recib|nuevo|cotiz|registrad|pendiente/.test(s)) return 1;
+  if(/render|diseno|correg|correcc|logo|boceto/.test(s)) return 2;
+  if(/recib|nuevo|cotiz|registrad|pendiente|solicitud|brief/.test(s)) return 1;
   return 0;
 }
 function mensajeDe(etapa, estatus, data){
