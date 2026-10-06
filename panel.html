@@ -591,7 +591,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   d.items.forEach((it, i) => {
     const lineas = doc.splitTextToSize(it.nombre, 88);
     const med = it.medidas ? "Medidas: " + it.medidas : "";
-    const mat = "Material: Coroplast (polipropileno corrugado)" + (it.grosor ? " de " + it.grosor : "");
+    const mat = "Material: Coroplast (polipropileno corrugado)" + matDet(it.grosor);
     const alto = lineas.length * 4.6 + (med ? 4.6 : 0) + 4.6 + 4;
     nuevaPagina(alto + 4);
     if(i % 2 === 1){ doc.setFillColor(251, 250, 243); doc.rect(M, y - 4.5, R - M, alto, "F"); }
@@ -713,7 +713,9 @@ function waUrl(tel, texto){
   if(n.length === 10) n = "52" + n; else if(n.length === 13 && n.startsWith("521")) n = "52" + n.slice(3);
   return "https://wa.me/" + (n.length >= 11 ? n : "") + "?text=" + encodeURIComponent(texto);
 }
-function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n") + "\nMaterial: Coroplast (polipropileno corrugado)" + (d.items[0] && d.items[0].grosor ? " de " + [...new Set(d.items.map(i => i.grosor).filter(Boolean))].join(" / ") : ""); }
+const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
+const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
+function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n") + "\nMaterial: Coroplast (polipropileno corrugado)" + (d.items[0] && d.items[0].grosor ? [...new Set(d.items.map(i => i.grosor).filter(Boolean))].map(matDet).join(" /") : ""); }
 function mensajePedido(d){
   const c = d.cuenta || {};
   const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
