@@ -122,6 +122,7 @@
   <div class="tabs">
     <button class="tab on" data-tab="nuevo">Nuevo pedido</button>
     <button class="tab" data-tab="pedidos">Pedidos</button>
+    <button class="tab" data-tab="posventa">Posventa</button>
     <button class="tab" data-tab="avisos">Avisos<span class="n" id="avN" hidden></span></button>
     <button class="tab" data-tab="mas">Más</button>
   </div>
@@ -189,6 +190,12 @@
     <div id="pLista" class="mini">Cargando…</div>
   </section>
 
+  <!-- ============ POSVENTA ============ -->
+  <section class="pane" id="pane-posventa">
+    <p class="mini" style="margin-top:0">Pedidos entregados. <b>Pedir opinión</b> manda una calificación del 1 al 5 y la reseña. <b>Recompra</b> invita a reponer. Cada botón abre WhatsApp con el mensaje listo y queda marcado ✓.</p>
+    <div id="pvLista" class="mini">Cargando…</div>
+  </section>
+
   <!-- ============ AVISOS ============ -->
   <section class="pane" id="pane-avisos">
     <p class="mini" style="margin-top:0">Mensajes listos para tus clientes. Toca el botón verde: abre WhatsApp con el texto ya escrito.</p>
@@ -221,6 +228,7 @@ const CONFIG = {
   vigenciaDias: 30,
   whatsapp: "56 2473 3000",
   web: "joartdigital.com.mx",
+  reviewURL: "",   // enlace de reseñas de Google (opcional)
   terminosURL: "https://www.joartdigital.com.mx/pages/condiciones-de-servicio",
   maxPiezas: 100, maxPiezasExpres: 30,
 };
@@ -779,7 +787,7 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
 function abrirTab(t){
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
   document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
-  if(t === "pedidos") cargarLista(); if(t === "avisos") cargarAvisos();
+  if(t === "pedidos") cargarLista(); if(t === "avisos") cargarAvisos(); if(t === "posventa") cargarPosventa();
   window.scrollTo(0, 0);
 }
 
@@ -867,6 +875,40 @@ $("pDetalle").addEventListener("click", async (e) => {
     }
   }catch(err){ console.error(err); toast("No se pudo conectar."); }
   finally{ b.disabled = false; b.textContent = orig; }
+});
+
+
+// ===================== POSVENTA =====================
+const pvKey = "joart_posventa";
+const pvLeer = () => { try{ return JSON.parse(localStorage.getItem(pvKey) || "{}"); }catch(e){ return {}; } };
+const pvGuardar = (o) => { try{ localStorage.setItem(pvKey, JSON.stringify(o)); }catch(e){} };
+const pvDia = (t) => t ? new Date(t).toLocaleDateString("es-MX", { day:"numeric", month:"short" }) : "";
+function mensajePosventa(tipo, cliente, codigo){
+  if(tipo === "op"){
+    return `Hola ${cliente} 👋 Gracias por confiar en Joart Digital con tu pedido ${codigo}. ¿Cómo estuvo tu experiencia? Respóndeme con un número del 1 al 5 (5 = excelente) y, si algo se puede mejorar, cuéntame.` + (CONFIG.reviewURL ? `\n\nSi quedaste contento, una reseña nos ayuda muchísimo: ${CONFIG.reviewURL}` : "");
+  }
+  return `Hola ${cliente} 👋 ¿Cómo les ha ido con sus exhibidores? Si quieres reponer o hacer un pedido nuevo, ya tengo tu diseño y logo: mándame modelo y cantidades y te cotizo hoy. Entre más piezas, mejor precio por pieza.`;
+}
+async function cargarPosventa(){
+  const box = $("pvLista");
+  try{
+    const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
+    if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return; }
+    const ent = (r.tareas || []).filter(t => (t.estatus || "").trim().toLowerCase() === "entregado" && t.codigo).slice(0, 40), marc = pvLeer();
+    box.innerHTML = ent.length ? ent.map(t => { const m = marc[t.codigo] || {}; return `<div class="aviso"><strong>${esc(t.nombre || "")}</strong> <span class="mini">· ${esc(t.codigo)}</span>
+      <button type="button" class="a-btn ${m.op ? "a-out" : "a-green"}" data-pv="op" data-cod="${esc(t.codigo)}" data-nom="${esc(t.nombre || "")}">${m.op ? "✓ Opinión enviada " + pvDia(m.op) + " (reenviar)" : "⭐ Pedir opinión y reseña"}</button>
+      <button type="button" class="a-btn ${m.re ? "a-out" : "a-dark"}" data-pv="re" data-cod="${esc(t.codigo)}" data-nom="${esc(t.nombre || "")}">${m.re ? "✓ Recompra enviada " + pvDia(m.re) + " (reenviar)" : "🔁 Invitar a recomprar"}</button></div>`; }).join("") : "Aún no hay pedidos entregados con código.";
+  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
+}
+$("pvLista").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-pv]"); if(!b) return; b.disabled = true;
+  try{
+    const p = await post("buscarPedido", { codigo: b.dataset.cod });
+    if(!p.ok){ toast(p.error || "No se encontró el pedido."); return; }
+    const w = window.open(waUrl(p.contacto, mensajePosventa(b.dataset.pv, p.cliente || b.dataset.nom, b.dataset.cod)), "_blank");
+    const m = pvLeer(); m[b.dataset.cod] = Object.assign(m[b.dataset.cod] || {}, { [b.dataset.pv]: Date.now() }); pvGuardar(m); cargarPosventa();
+  }catch(err){ console.error(err); toast("No se pudo conectar."); }
+  finally{ b.disabled = false; }
 });
 
 // ===================== AVISOS =====================
