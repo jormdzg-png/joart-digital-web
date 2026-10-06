@@ -532,7 +532,7 @@ function datosPDF(){
     items: r.lineas.map(l => ({
       nombre: esPers(l.it) ? (l.it.desc.trim() || "Exhibidor personalizado") + " (a medida)" : l.it.modelo,
       medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${parseInt(l.it.niveles, 10) || 1} nivel${(parseInt(l.it.niveles, 10) || 1) === 1 ? "" : "es"}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
-      cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it),
+      cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor,
     })),
     subtotal: r.subtotal, envio: r.envio, recargoEntrega: r.recargoEntrega, pctEntrega: r.pctEntrega, total: r.total, pctAnticipo: r.pctAnticipo, anticipo: r.anticipo, saldo: r.saldo,
     cuenta: cuentaActual(),
@@ -591,11 +591,13 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   d.items.forEach((it, i) => {
     const lineas = doc.splitTextToSize(it.nombre, 88);
     const med = it.medidas ? "Medidas: " + it.medidas : "";
-    const alto = lineas.length * 4.6 + (med ? 4.6 : 0) + 4;
+    const mat = "Material: Coroplast (polipropileno corrugado)" + (it.grosor ? " de " + it.grosor : "");
+    const alto = lineas.length * 4.6 + (med ? 4.6 : 0) + 4.6 + 4;
     nuevaPagina(alto + 4);
     if(i % 2 === 1){ doc.setFillColor(251, 250, 243); doc.rect(M, y - 4.5, R - M, alto, "F"); }
     doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...NAVY); doc.text(lineas, M + 3, y);
     if(med) texto(med, M + 3, y + lineas.length * 4.6, { size: 8.5, color: MUTED });
+    texto(mat, M + 3, y + lineas.length * 4.6 + (med ? 4.6 : 0), { size: 8.5, color: MUTED });
     texto(String(it.cantidad), cCant, y, { align: "right" });
     texto(moneyS(it.precioUnitario), cPU, y, { align: "right" });
     texto(moneyS(it.precioUnitario * it.cantidad), cImp - 3, y, { align: "right", bold: true });
@@ -711,7 +713,7 @@ function waUrl(tel, texto){
   if(n.length === 10) n = "52" + n; else if(n.length === 13 && n.startsWith("521")) n = "52" + n.slice(3);
   return "https://wa.me/" + (n.length >= 11 ? n : "") + "?text=" + encodeURIComponent(texto);
 }
-function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n"); }
+function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n") + "\nMaterial: Coroplast (polipropileno corrugado)" + (d.items[0] && d.items[0].grosor ? " de " + [...new Set(d.items.map(i => i.grosor).filter(Boolean))].join(" / ") : ""); }
 function mensajePedido(d){
   const c = d.cuenta || {};
   const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
@@ -988,7 +990,7 @@ function datosCobro(){
   return {
     folio: ped.codigo, cliente: ped.cliente || "", contacto: ped.contacto || "", fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
     entrega: cb.entrega, dosCaras: cb.caras === "dos", requiereFactura: cb.factura === "si",
-    items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado })),
+    items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado, grosor: l.it.grosor })),
     subtotal: c.subtotal, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, envio: c.envio, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
     cuenta: cb.factura === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal,
   };
