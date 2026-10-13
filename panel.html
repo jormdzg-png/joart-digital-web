@@ -606,6 +606,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.line(M, y - 2.5, R, y - 2.5);
   y += 4;
 
+  if(d.soloPrecios){ texto("Precios por pieza, IVA incluido. Cada renglón es una opción de volumen; no se suman entre sí.", M, y, { size: 9, color: MUTED }); y += 10; } else {
   // --- Totales ---
   nuevaPagina(44);
   const xL = 122;
@@ -629,6 +630,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   if(d.saldo > 0){ texto("Saldo (50%)", xL, y, { size: 10 }); texto(money(d.saldo), R, y, { size: 10, align: "right", bold: true }); y += 5.5; }
   y += 6;
 
+  }
   if(d.notas){
     const ln = doc.splitTextToSize(d.notas, R - M - 6);
     nuevaPagina(ln.length * 4.5 + 12);
@@ -637,6 +639,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
     y += ln.length * 4.5 + 6;
   }
 
+  if(!d.soloPrecios){
   // --- Datos de pago ---
   const c = d.cuenta || {};
   nuevaPagina(40);
@@ -654,6 +657,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
     y += 23;
   }
 
+  }
   // --- Términos y condiciones ---
   const envio = (d.total - (d.envio || 0)) > 1000 ? "Envío nacional gratis a todo el país, o recolección en sucursal (lunes a viernes, 10:00 a 19:00 h)." : "Envío gratis en compras mayores a $1,000 MXN; también puedes recolectar en sucursal (lunes a viernes, 10:00 a 19:00 h).";
   const terminos = [
