@@ -192,12 +192,13 @@
   function topModelos(proyectos) {
     const mapa = {};
     proyectos.forEach((p) => {
-      String(p.tipo || "").split(/\s\+\s/).forEach((linea) => {
-        if (/^env[ií]o/i.test(linea.trim())) return;
+      const nums = (String(p.cantidad).match(/\d+/g) || []).map((n) => parseInt(n, 10));
+      const lineas = String(p.tipo || "").split(/\s\+\s/).filter((l) => !/^env[ií]o/i.test(l.trim()));
+      lineas.forEach((linea, idx) => {
         const m = linea.match(/^(?:(\d+)\s*x\s+)?(.+?)(?:\s*\([^)]*\))?\s*$/i);
         if (!m) return;
         const nombre = m[2].trim();
-        const cant = m[1] ? parseInt(m[1], 10) : (String(p.cantidad).match(/\d+/) ? parseInt(String(p.cantidad).match(/\d+/)[0], 10) : 1);
+        const cant = m[1] ? parseInt(m[1], 10) : (lineas.length === 1 ? (nums[0] || 1) : (nums.length === lineas.length ? nums[idx] : 1));
         const o = mapa[nombre] || (mapa[nombre] = { piezas: 0, pedidos: 0 });
         o.piezas += cant; o.pedidos += 1;
       });

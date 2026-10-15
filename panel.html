@@ -361,7 +361,8 @@ const fechaTexto = (d) => `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFu
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const normNom = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const normM = (s) => String(s || "").replace(/[—–]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
-const catalogoDe = (modelo) => MODELOS.find(m => normM(m.nombre) === normM(modelo));
+const ALIAS_SHEET = { "display box": "display box - 1 nivel", "pegboard display": "pegboard display con ganchos" };   // como se escriben en la columna Tipo del Sheets
+const catalogoDe = (modelo) => { const k = normM(modelo); return MODELOS.find(m => normM(m.nombre) === k) || MODELOS.find(m => normM(m.nombre) === ALIAS_SHEET[k]); };
 const fileToB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 
 // ===================== ACCESO =====================
