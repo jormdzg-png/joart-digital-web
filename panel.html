@@ -45,6 +45,7 @@
   .err-box{ background:#F9D9D2; border:1px solid #E7A89B; color:#7A2A1B; padding:10px 12px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
 
   .resumen{ background:var(--navy); color:var(--cream); padding:18px; margin-bottom:16px; }
+  .res-line.envio-gratis{ color:#B7E4C7; font-weight:700; }
   .res-line{ display:flex; justify-content:space-between; font-size:13px; padding:3px 0; color:rgba(244,241,222,.8); }
   .res-total{ font-family:'Archivo Expanded',sans-serif; font-size:24px; font-weight:800; color:var(--sand); margin:6px 0 2px; }
   .res-sub{ font-size:12px; color:rgba(244,241,222,.6); margin-bottom:12px; }
@@ -168,6 +169,9 @@
           <div class="field"><label for="fCaras">Impresión</label>
             <select id="fCaras"><option value="una">Una cara (exterior)</option><option value="dos">Frente y vuelta (+30% / +40%)</option></select></div>
         </div>
+        <div class="field"><label for="fModo">¿Qué estás cotizando?</label>
+          <select id="fModo"><option value="pedido">Un pedido (las cantidades se suman)</option><option value="opciones">Comparar cantidades (solo precios, no se suman)</option></select>
+          <div class="field-hint">“Comparar cantidades”: agrega el mismo modelo con 50, 100, 150 pzs, etc. para que el cliente vea precios. No se puede registrar como pedido.</div></div>
         <div class="field"><label for="fEnvio">Costo de envío (solo aplica si el pedido es de $1,000 o menos)</label><input id="fEnvio" type="number" min="0" step="any" placeholder="0"></div>
         <div class="field"><label for="fNotas">Notas (salen en el PDF y en el pedido)</label><textarea id="fNotas" rows="2" placeholder="Ej. Colores según pantone enviado."></textarea></div>
         <div class="field"><label for="fLogo">Logo / archivos del cliente (opcional, hasta 5)</label><input id="fLogo" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg"></div>
@@ -397,6 +401,7 @@ function grosoresPermitidos(it){ return esPers(it) ? ["4 mm","5 mm","6 mm"] : gr
 // ===================== CÁLCULO =====================
 function calcular(){
   const piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
+  const comparar = $("fModo").value === "opciones";
   const dosCaras = $("fCaras").value === "dos";
   const pctCaras = dosCaras ? (piezas >= 30 ? 0.40 : 0.30) : 0;
   const entrega = $("fEntrega").value;
@@ -426,8 +431,9 @@ function calcular(){
   });
 
   const subtotal = lineas.reduce((s, l) => s + l.importe, 0);
-  const recargoEntrega = Math.round(subtotal * pctEntrega);
-  const envioAplica = (subtotal + recargoEntrega) <= 1000;
+  const recargoEntrega = comparar ? 0 : Math.round(subtotal * pctEntrega);
+  const envioAplica = !comparar && (subtotal + recargoEntrega) <= 1000;
+  const envioGratis = !comparar && (subtotal + recargoEntrega) > 1000;
   const envio = envioAplica ? (parseFloat($("fEnvio") ? $("fEnvio").value : "") || 0) : 0;
   const total = subtotal + recargoEntrega + envio;
   const pctAnticipo = entrega === "urgente" ? 1 : 0.5;
@@ -435,14 +441,21 @@ function calcular(){
   const saldo = total - anticipo;
 
   const avisos = [], errores = [];
-  if(piezas > CONFIG.maxPiezas) errores.push(`El pedido suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}. Pedidos mayores se evalúan manualmente (solo Jorge).`);
-  if(entrega !== "estandar"){
+  // El tope de 100 pzs solo bloquea REGISTRAR un pedido; cotizar y comparar precios siempre se puede.
+  let limite = "";
+  if(comparar){
+    if(lineas.some(l => l.q > CONFIG.maxPiezas)) avisos.push(`Hay opciones de más de ${CONFIG.maxPiezas} piezas: el precio es solo de referencia (se usa el escalón de ${CONFIG.maxPiezas} pzs). Un pedido así lo evalúas tú manualmente.`);
+  }else if(piezas > CONFIG.maxPiezas){
+    limite = `El pedido suma ${piezas} piezas: el máximo para registrar es ${CONFIG.maxPiezas}. Puedes cotizarlo en PDF/WhatsApp, pero no registrarlo (se evalúa manualmente). Si solo quieres ver precios de varias cantidades, cambia a “Comparar cantidades”.`;
+    avisos.push(limite);
+  }
+  if(entrega !== "estandar" && !comparar){
     if(piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas; este pedido tiene ${piezas}.`);
     if(items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos: confirma que el diseño sea simple.");
     avisos.push("Exprés y urgente: pago acreditado antes de las 12:00 h y confirmación por escrito.");
   }
   if(lineas.some(l => l.unit == null)) errores.push("Falta completar algún producto (cantidad o medidas).");
-  return { lineas, piezas, dosCaras, pctCaras, entrega, pctEntrega, subtotal, recargoEntrega, envio, envioAplica, total, pctAnticipo, anticipo, saldo, avisos, errores };
+  return { lineas, piezas, comparar, limite, dosCaras, pctCaras, entrega, pctEntrega, subtotal, recargoEntrega, envio, envioAplica, envioGratis, total, pctAnticipo, anticipo, saldo, avisos, errores };
 }
 function pintarItems(){
   $("itemsBox").innerHTML = items.map((it, i) => {
@@ -486,24 +499,33 @@ function actualizar(){
   });
   const listo = r.errores.length === 0 && $("fCliente").value.trim() !== "";
   const nombreEntrega = { estandar: "Estándar (7 días hábiles)", expres: "Exprés (4 días hábiles)", urgente: "Urgente (2 días hábiles)" }[r.entrega];
-  $("resumen").innerHTML = `
-    ${r.errores.map(e => `<div class="err-box">${esc(e)}</div>`).join("")}
-    ${r.avisos.map(a => `<div class="warn-box">${esc(a)}</div>`).join("")}
+  const hayNombre = $("fCliente").value.trim() !== "";
+  const cuerpo = r.comparar ? `
+    ${r.lineas.map(l => `<div class="res-line"><span>${l.q} pz${l.unit != null ? " · " + fmt(l.unit) + " c/u" : ""}<br><small>${esc(esPers(l.it) ? (l.it.desc.trim() || "Personalizado") : l.it.modelo)}</small></span><span>${l.unit != null ? fmt(l.importe) : "—"}</span></div>`).join("")}
+    <div class="res-sub">Cada renglón es una opción distinta: no se suman. IVA incluido · vigencia ${CONFIG.vigenciaDias} días.</div>
+    ${hayNombre ? "" : `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>`}
+    <button type="button" class="go-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Enviar comparativo por WhatsApp (con PDF)</button>
+    <button type="button" class="ghost-btn" id="pdfBtn" ${listo ? "" : "disabled"}>📄 Solo comparativo en PDF</button>` : `
     <div class="res-line"><span>${r.piezas} pieza${r.piezas === 1 ? "" : "s"} · ${nombreEntrega}</span><span>${fmt(r.subtotal)}</span></div>
-    ${r.envio ? `<div class="res-line"><span>Envío</span><span>${fmt(r.envio)}</span></div>` : ""}
     ${r.recargoEntrega ? `<div class="res-line"><span>Recargo ${r.entrega === "expres" ? "exprés" : "urgente"} (${Math.round(r.pctEntrega * 100)}%)</span><span>${fmt(r.recargoEntrega)}</span></div>` : ""}
+    ${r.envio ? `<div class="res-line"><span>Envío</span><span>${fmt(r.envio)}</span></div>` : ""}
+    ${r.envioGratis ? `<div class="res-line envio-gratis"><span>🚚 Envío nacional</span><span><b>GRATIS</b></span></div>` : ""}
     <div class="res-total">${fmt(r.total)} MXN</div>
-    <div class="res-sub">IVA incluido · vigencia ${CONFIG.vigenciaDias} días${(r.total - r.envio) > 1000 ? " · envío nacional gratis" : ""}</div>
+    <div class="res-sub">IVA incluido · vigencia ${CONFIG.vigenciaDias} días${r.envioGratis ? " · envío nacional gratis (pedido mayor a $1,000)" : ""}</div>
     <div class="cobro-split">
       <div class="cobro-split-item"><span>Anticipo (${Math.round(r.pctAnticipo * 100)}%)</span><strong>${fmt(r.anticipo)}</strong></div>
       <div class="cobro-split-item"><span>Saldo</span><strong>${fmt(r.saldo)}</strong></div>
     </div>
     ${r.envioAplica && !r.envio && r.subtotal > 0 ? `<div class="warn-box">Pedido de $1,000 o menos: el envío no va incluido. Si lo vas a cobrar, escribe el costo en “Costo de envío”.</div>` : ""}
-    ${$("fCliente").value.trim() === "" ? `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>` : ""}
-    <button type="button" class="go-btn" id="quickBtn" ${$("fCliente").value.trim() !== "" ? "" : "disabled"}>📝 Registrar ahora (sin cotizar) — para empezar el render</button>
-    <button type="button" class="ghost-btn" id="goBtn" ${listo ? "" : "disabled"}>✅ Registrar con cotización y enviar PDF</button>
+    ${hayNombre ? "" : `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>`}
+    <button type="button" class="go-btn" id="quickBtn" ${hayNombre && !r.limite ? "" : "disabled"}>📝 Registrar ahora (sin cotizar) — para empezar el render</button>
+    <button type="button" class="ghost-btn" id="goBtn" ${listo && !r.limite ? "" : "disabled"}>✅ Registrar con cotización y enviar PDF</button>
     <button type="button" class="ghost-btn" id="pdfBtn" ${listo ? "" : "disabled"}>📄 Solo cotización en PDF (sin registrar)</button>
-    <button type="button" class="ghost-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Solo cotización por WhatsApp (sin registrar)</button>`;
+    <button type="button" class="ghost-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Enviar cotización por WhatsApp con PDF (sin registrar)</button>`;
+  $("resumen").innerHTML = `
+    ${r.errores.map(e => `<div class="err-box">${esc(e)}</div>`).join("")}
+    ${r.avisos.map(a => `<div class="warn-box">${esc(a)}</div>`).join("")}
+    ${cuerpo}`;
 }
 
 // Eventos de los productos
@@ -520,7 +542,7 @@ $("itemsBox").addEventListener("click", (e) => {
   items = items.filter(x => x.id !== +id); pintarItems();
 });
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); });
-["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas","fEnvio"].forEach(id => $(id).addEventListener("input", actualizar));
+["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas","fEnvio","fModo"].forEach(id => $(id).addEventListener("input", actualizar));
 function folioNuevo(){ const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `COT-${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
 function cuentaActual(){ return $("fFactura").value === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal; }
 function datosPDF(){
@@ -529,6 +551,7 @@ function datosPDF(){
     folio: folioActual || (folioCot = folioCot || folioNuevo()), cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(),
     fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: $("fNotas").value.trim(),
     entrega: r.entrega, dosCaras: r.dosCaras, requiereFactura: $("fFactura").value === "si",
+    soloPrecios: !!r.comparar, envioGratis: r.comparar ? false : !!r.envioGratis,
     items: r.lineas.map(l => ({
       nombre: esPers(l.it) ? (l.it.desc.trim() || "Exhibidor personalizado") + " (a medida)" : l.it.modelo,
       medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${parseInt(l.it.niveles, 10) || 1} nivel${(parseInt(l.it.niveles, 10) || 1) === 1 ? "" : "es"}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
@@ -623,6 +646,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   texto(money(d.total), R, y, { bold: true, size: 13, align: "right", color: TERRA });
   y += 6;
   texto("IVA incluido", xL, y, { size: 8.5, color: MUTED });
+  if(d.envioGratis){ y += 6; texto("Envío nacional", xL, y, { size: 10 }); texto("GRATIS", R, y, { size: 10, bold: true, align: "right", color: [58, 125, 90] }); }
   y += 7;
   texto("Anticipo (" + Math.round(d.pctAnticipo * 100) + "%)", xL, y, { size: 10 });
   texto(money(d.anticipo), R, y, { size: 10, align: "right", bold: true });
@@ -659,7 +683,8 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
 
   }
   // --- Términos y condiciones ---
-  const envio = (d.total - (d.envio || 0)) > 1000 ? "Envío nacional gratis a todo el país, o recolección en sucursal (lunes a viernes, 10:00 a 19:00 h)." : "Envío gratis en compras mayores a $1,000 MXN; también puedes recolectar en sucursal (lunes a viernes, 10:00 a 19:00 h).";
+  const gratisEnv = d.envioGratis != null ? d.envioGratis : (d.total - (d.envio || 0)) > 1000;
+  const envio = gratisEnv ? "Envío nacional gratis a todo el país, o recolección en sucursal (lunes a viernes, 10:00 a 19:00 h)." : "Envío gratis en compras mayores a $1,000 MXN; también puedes recolectar en sucursal (lunes a viernes, 10:00 a 19:00 h).";
   const terminos = [
     ["Vigencia", "Esta cotización es válida por " + CONFIG.vigenciaDias + " días naturales (hasta el " + d.vigencia + ")."],
     ["Qué incluye", "Diseño estructural, " + (d.dosCaras ? "impresión por ambas caras (frente y vuelta)" : "impresión por una cara (exterior; el interior queda en blanco)") + ", corte, material e IVA. Todos los exhibidores se entregan desarmados."],
@@ -720,20 +745,26 @@ function waUrl(tel, texto){
 const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
 const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
 function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n") + "\nMaterial: Coroplast (polipropileno corrugado)" + (d.items[0] && d.items[0].grosor ? [...new Set(d.items.map(i => i.grosor).filter(Boolean))].map(matDet).join(" /") : ""); }
+const lineaEnvio = (d) => d.envio ? `Envío: ${fmt(d.envio)}\n` : (d.envioGratis ? "Envío nacional: gratis 🚚\n" : "");
+// Mensajes cortos: todo el detalle (productos, condiciones, datos de pago) va en el PDF adjunto.
 function mensajePedido(d){
-  const c = d.cuenta || {};
-  const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
-  return `Hola ${d.cliente} 👋 Soy de Joart Digital. Tu pedido quedó registrado con el folio *${d.folio}*.\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}${pago}\n\nTe mando tu render 3D sin costo para aprobación. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${d.folio}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+  return `Hola ${d.cliente} 👋 Tu pedido quedó registrado con el folio *${d.folio}*. En el PDF va tu cotización con condiciones y datos de pago.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n\nTe mando tu render 3D sin costo. Sigue tu pedido en vivo:\n${PORTAL_URL}?codigo=${d.folio}`;
 }
 function mensajeCotizacion(d){
-  const c = d.cuenta || {};
-  const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "";
-  return `Hola ${d.cliente}, te comparto tu cotización ${d.folio} de Joart Digital:\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\nVigencia: hasta el ${d.vigencia}${pago}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+  if(d.soloPrecios) return `Hola ${d.cliente} 👋 Te comparto tu cotización ${d.folio} con los precios por pieza según la cantidad. El detalle va en el PDF. Vigencia: hasta el ${d.vigencia}.`;
+  return `Hola ${d.cliente} 👋 Te comparto tu cotización ${d.folio}; el detalle va en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido)\nVigencia: hasta el ${d.vigencia}`;
 }
 const fileToB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 
+const normNom = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 async function registrar(btn, rapido){
   const r = ultimo; if(!r) return;
+  if(r.comparar){ alert("Estás en “Comparar cantidades”: eso es solo para ver precios. Cambia a “Un pedido” para registrar."); return; }
+  if(r.limite){ alert(r.limite); return; }
+  // Evita duplicados: si el cliente ya tiene un pedido en curso, avisa antes de crear otro.
+  const nom = normNom($("fCliente").value);
+  const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
+  if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o el precio, NO crees otro: ve a Pedidos, ábrelo y usa “Cobrar”.\n\n¿Crear un pedido nuevo de todos modos?`)) return;
   if(!rapido){
     if(r.errores.length) return;
     if(r.lineas.some(l => !(l.unit > 0))){ alert("Falta precio en algún producto."); return; }
@@ -798,13 +829,13 @@ $("resumen").addEventListener("click", (e) => {
   if(id === "goBtn") registrar(e.target, false);
   if(id === "quickBtn") registrar(e.target, true);
   if(id === "pdfBtn"){ const d = datosPDF(); construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); }
-  if(id === "quoteWa"){ const d = datosPDF(); window.open(waUrl($("fContacto").value, mensajeCotizacion(d)), "_blank"); }
+  if(id === "quoteWa"){ const d = datosPDF(); compartirPDF(d, mensajeCotizacion(d), $("fContacto").value); }
 });
 $("shareDone").addEventListener("click", () => { if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga."); return; } compartirPDF(registrado.datos, mensajePedido(registrado.datos), $("fContacto").value); });
 $("pdfDone").addEventListener("click", () => { const d = registrado.datos; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); });
 $("againBtn").addEventListener("click", () => {
   ["fCliente","fContacto","fZona","fNotas","fEnvio"].forEach(id => $(id).value = "");
-  $("fLogo").value = ""; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
+  $("fLogo").value = ""; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una"; $("fModo").value = "pedido";
   folioActual = null; folioCot = null; registrado = null; items = [nuevoItem()]; pintarItems();
   $("done").classList.remove("show"); $("formNuevo").style.display = ""; window.scrollTo(0, 0);
 });
@@ -824,26 +855,34 @@ async function cargarLista(){
   try{
     const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
     if(!r.ok){ box.textContent = r.error || "No se pudo leer el tablero."; return; }
+    listaCache = r.tareas || [];
+    const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
     const orden = ["1. Solicitudes / Brief","2. En renders","3. Revisión interna","4. En revisión cliente","5. Corrección requerida","6. Pre-prensa / Suajes","7. En producción"];
     const grupos = {}; (r.tareas || []).forEach(t => { const k = (t.estatus || "").trim(); if(k.toLowerCase() === "entregado") return; (grupos[k] = grupos[k] || []).push(t); });
     const claves = Object.keys(grupos).sort((a, b) => (orden.indexOf(a) < 0 ? 99 : orden.indexOf(a)) - (orden.indexOf(b) < 0 ? 99 : orden.indexOf(b)));
     box.innerHTML = claves.length ? claves.map(k => `<div class="col-h">${esc(k)} · ${grupos[k].length}</div>` + grupos[k].map(t => `
-      <button type="button" class="ped" data-cod="${esc(t.codigo || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}</small></span>${t.pagado ? `<span class="pg ok">${esc(String(t.pagado))}</span>` : `<span class="pg">sin pago</span>`}</button>`).join("")).join("") : "Nada en curso 🎉";
+      <button type="button" class="ped" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span>${t.pagado ? `<span class="pg ok">${esc(String(t.pagado))}</span>` : `<span class="pg">sin pago</span>`}</button>`).join("")).join("") : "Nada en curso 🎉";
   }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
 }
 $("pRefrescar").addEventListener("click", (e) => { e.preventDefault(); cargarLista(); });
-$("pLista").addEventListener("click", (e) => { const b = e.target.closest(".ped"); if(!b) return; if(!b.dataset.cod){ toast("Este pedido no tiene código (se agregó a mano)."); return; } $("pCodigo").value = b.dataset.cod; abrirPedido(b.dataset.cod); window.scrollTo(0, 0); });
+$("pLista").addEventListener("click", (e) => { const b = e.target.closest(".ped"); if(!b) return; if(!b.dataset.cod){ toast("Este pedido no tiene código (se agregó a mano)."); return; } $("pCodigo").value = b.dataset.cod; abrirPedido(b.dataset.cod, b.dataset.nom); window.scrollTo(0, 0); });
 $("pBuscar").addEventListener("click", () => abrirPedido($("pCodigo").value));
 $("pCodigo").addEventListener("keydown", (e) => { if(e.key === "Enter") abrirPedido($("pCodigo").value); });
 
-let ped = null;
-async function abrirPedido(cod){
+let listaCache = [], ped = null, abrirTok = 0;
+async function abrirPedido(cod, nombreEsperado){
   cod = String(cod || "").trim().toUpperCase(); const err = $("pErr"); err.style.display = "none";
   if(!cod){ err.textContent = "Escribe un código."; err.style.display = "block"; return; }
+  const tok = ++abrirTok;   // si tocas otro pedido antes de que responda el anterior, se ignora la respuesta vieja
   try{
-    const p = await post("buscarPedido", { codigo: cod });
+    const p = await post("buscarPedido", { codigo: cod, nombre: nombreEsperado || "" });
+    if(tok !== abrirTok) return;
     if(!p.ok){ err.textContent = p.error || "No se encontró el pedido."; err.style.display = "block"; $("pDetalle").style.display = "none"; return; }
-    ped = { codigo: cod, cliente: p.cliente, contacto: p.contacto, items: (p.items || []).filter(i => i.modelo !== "Envío"), pagado: p.pagado, factura: !!p.requiereFactura };
+    if(p.codigo && String(p.codigo).trim().toUpperCase() !== cod){ err.textContent = `El Sheets devolvió el código ${p.codigo} al pedir ${cod}. No se abrió para evitar mezclar pedidos.`; err.style.display = "block"; $("pDetalle").style.display = "none"; return; }
+    let alerta = "";
+    if(nombreEsperado && p.cliente){ const a = normNom(nombreEsperado), b = normNom(p.cliente); if(a && b && a !== b && !a.includes(b) && !b.includes(a)) alerta = `⚠ Tocaste «${nombreEsperado}» pero en el Sheets el código ${cod} es de «${p.cliente}». Revisa que el código no esté repetido o cambiado de fila antes de cobrar o avisar.`; }
+    ped = { codigo: cod, cliente: p.cliente, contacto: p.contacto, items: (p.items || []).filter(i => i.modelo !== "Envío"), pagado: p.pagado, factura: !!p.requiereFactura, alerta };
+    cb = null;
     pintarPedido();
   }catch(e){ console.error(e); err.textContent = "No se pudo conectar."; err.style.display = "block"; }
 }
@@ -855,6 +894,7 @@ function pintarPedido(){
       <div class="card-label">${esc(ped.codigo)}</div>
       <div style="font:800 17px 'Archivo Expanded',sans-serif;margin-bottom:6px">${esc(ped.cliente || "")}</div>
       <div class="mini">${lista}</div>
+      ${ped.alerta ? `<div class="err-box" style="margin-top:8px">${esc(ped.alerta)}</div>` : ""}
       ${ped.pagado ? `<div class="msg-ok">Pagado: ${esc(String(ped.pagado))}</div>` : ""}
       <div class="col-h">Cobro</div>
       <button type="button" class="a-btn a-terra" data-ac="cobrar">💳 Cobrar: cotización final y datos de pago</button>
@@ -863,6 +903,7 @@ function pintarPedido(){
       <button type="button" class="a-btn a-green" data-ac="pago50">💰 Anticipo recibido (50%)</button>
       <button type="button" class="a-btn a-green" data-ac="pago100">✅ Pago completo (100%)</button>
       <div class="col-h">Render</div>
+      <div class="mini" style="margin-bottom:8px">Pega el link del render y toca el botón: mueve la tarjeta a “En revisión cliente” y abre WhatsApp con el mensaje listo para enviárselo.</div>
       <div class="field"><input id="rLink" type="url" placeholder="Pega el link del render (Drive, imagen o PDF)"></div>
       <button type="button" class="a-btn a-terra" data-ac="render">🎨 Enviar render al cliente</button>
       <div class="col-h">Avisos al cliente</div>
@@ -997,14 +1038,13 @@ function datosCobro(){
     folio: ped.codigo, cliente: ped.cliente || "", contacto: ped.contacto || "", fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
     entrega: cb.entrega, dosCaras: cb.caras === "dos", requiereFactura: cb.factura === "si",
     items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado, grosor: l.it.grosor })),
+    envioGratis: (c.subtotal + c.recargo) > 1000,
     subtotal: c.subtotal, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, envio: c.envio, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
     cuenta: cb.factura === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal,
   };
 }
 function mensajeCobro(d){
-  const c = d.cuenta || {};
-  const pago = c.clabe ? `\n\nDatos para tu transferencia:\n${c.banco} — ${c.titular}\nCLABE: ${c.clabe}\nReferencia: ${d.folio}` : "\n\n(Te paso los datos de pago enseguida)";
-  return `Hola ${d.cliente} 👋 Aquí está la cotización final de tu pedido *${d.folio}*:\n\n${listaProductos(d)}\n\n${d.envio ? "Envío: " + fmt(d.envio) + "\n" : ""}Total: ${fmt(d.total)} MXN (IVA incluido)\nAnticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}${pago}\n\nEn el PDF van las condiciones. Sigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}\n\nTérminos y condiciones: ${CONFIG.terminosURL}`;
+  return `Hola ${d.cliente} 👋 Aquí está la cotización final de tu pedido *${d.folio}*; en el PDF van el detalle, las condiciones y los datos de pago.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
 }
 $("pDetalle").addEventListener("input", (e) => {
   if(!cb) return; const t = e.target;
