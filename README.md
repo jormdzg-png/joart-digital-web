@@ -1,13 +1,12 @@
 # Joart Digital — herramientas
 
-**Uso diario (guárdalo en favoritos):** `panel.html` — cotizar (también comparar cantidades sin registrar), registrar pedido, enviar al cliente (PDF + enlace), pagos, renders y avisos. Acepta dictado por voz ("20 pop display de dos niveles para Boticas Unión en 5 mm").
+**Uso diario (guárdalo en favoritos):** `panel.html` — *Joart Core*.
+- **Nuevo:** registras el pedido (dictado, chat de WhatsApp pegado o a mano) con modelo o personalizado, medidas, cantidad, detalles e imágenes. No cotiza. Va a Sheets y ClickUp.
+- **Proyectos:** buscas al cliente, abres su ficha y generas la cotización con lo registrado (cambias cantidades o detalles). PDF + mensaje de WhatsApp con enlace.
+- **Más:** configurador, asistente, tu cuenta sin factura (con factura sale la de Luz María).
 
-**Para el cliente:** `configurador.html` (exhibidor en 3D con su logo y colores, cotiza por WhatsApp), `mi-pedido.html?codigo=JD-XXXXX` (estatus en vivo) y `aprobar-render.html`. `seguimiento.html` redirige a Mi pedido (enlaces viejos).
+**Para el cliente:** `configurador.html` (exhibidor en 3D con su logo), `mi-pedido.html?codigo=JD-XXXXX` (estatus en vivo) y `aprobar-render.html`. `seguimiento.html` redirige a Mi pedido.
 
-**Producción:** `tandas.html` — acomoda las piezas en hojas de 244 × 122 cm, estima hojas/merma/costo, compara con el método del catálogo y deja capturar las hojas realmente usadas.
+**Código compartido:** `joart-core.js` (precios, modelos, fórmula de personalizados con niveles/escalones/separadores, lectura de pedidos dictados). `vendor/` trae Three.js.
 
-**Desde el panel (pestaña Más):** asistente, tandas y configurador.
-
-**Código compartido:** `joart-core.js` es la única fuente de precios, modelos, geometría, acomodo en hojas y lectura de pedidos dictados. Si cambian precios, se editan ahí y panel, configurador y tandas se actualizan juntos. `vendor/` trae Three.js (sin depender de CDN).
-
-Backend: Google Apps Script (no está en este repo).
+Backend: Google Apps Script (no está en este repo). Los estatus y pagos se llevan en el Sheet, no en el panel.

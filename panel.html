@@ -2,233 +2,306 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#3D405B">
-<title>Joart Digital — Panel</title>
+<meta name="theme-color" content="#070A14">
+<title>Joart Core</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
   :root{
-    --cream:#F4F1DE; --terracota:#E07A5F; --terracota-dark:#C4603F;
-    --navy:#3D405B; --sage:#81B29A; --sand:#F2CC8F;
-    --card:#FFFFFF; --line:#E3DFCB; --muted:#6E6C63;
+    --bg:#070A14; --bg2:#0C1222; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
+    --line:rgba(242,204,143,.20); --line-hi:rgba(224,122,95,.65);
+    --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --disp:'Archivo Expanded','Inter',sans-serif;
   }
-  *{box-sizing:border-box;}
-  body{ margin:0; background:var(--cream); color:var(--navy); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; display:flex; justify-content:center; min-height:100vh; }
-  h1{ font-family:'Archivo Expanded',sans-serif; font-weight:800; margin:0; }
-  .wrap{ width:100%; max-width:600px; padding:24px 20px 80px; }
-  .top{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-  .top img{ width:32px; height:32px; }
-  .top-title{ font-size:15px; font-weight:700; }
-  .top-tag{ font-size:11.5px; color:var(--muted); }
-  h1.page-title{ font-size:22px; margin:18px 0 4px; }
-  .page-sub{ font-size:13px; color:var(--muted); margin:0 0 22px; }
-  .card{ background:var(--card); border:1px solid var(--line); padding:20px; margin-bottom:16px; }
-  .card-label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin-bottom:12px; }
-  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
-  .field label{ font-size:12px; font-weight:600; color:var(--muted); }
-  .field input, .field select, .field textarea{ border:1px solid var(--line); background:var(--cream); color:var(--navy); padding:10px 12px; font-family:'Inter',sans-serif; font-size:14px; width:100%; }
-  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--terracota); }
-  .field-hint{ font-size:11.5px; color:var(--muted); }
-  .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none !important; }
+  html{ color-scheme:dark; }
+  body{ margin:0; min-height:100vh; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); }
+  body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+    background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+    background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+  .wrap{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; padding:14px 16px calc(120px + env(safe-area-inset-bottom)); }
 
-  .item{ border:1px solid var(--line); padding:14px; margin-bottom:12px; background:#FDFCF7; }
-  .item-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .rm-btn{ background:none; border:none; color:var(--terracota-dark); font-weight:700; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; }
-  .calc{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted); }
-  .calc .imp{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:15px; color:var(--navy); white-space:nowrap; }
-  .add-btn{ width:100%; background:transparent; color:var(--navy); border:1.5px dashed var(--navy); padding:11px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; }
-  .add-btn:hover{ background:rgba(61,64,91,.06); }
+  /* ---------- encabezado ---------- */
+  .top{ display:flex; align-items:center; gap:12px; padding:6px 0 14px; }
+  .core-logo{ width:42px; height:42px; flex:none; }
+  .top b{ display:block; font:800 15px var(--disp); letter-spacing:.12em; }
+  .top small{ display:block; font:400 10.5px var(--mono); color:var(--mute); letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
+  .online{ margin-left:auto; display:flex; align-items:center; gap:7px; font:600 10px var(--mono); letter-spacing:.14em; color:var(--sage); }
+  .online i{ width:7px; height:7px; border-radius:50%; background:var(--sage); box-shadow:0 0 10px var(--sage); animation:pulso 2.2s ease-in-out infinite; }
+  @keyframes pulso{ 50%{ opacity:.35; transform:scale(.8); } }
 
-  .warn-box{ background:#FCEBDD; border:1px solid #F0C9A8; color:#8A4A1E; padding:10px 12px; font-size:12.5px; margin-bottom:10px; }
-  .err-box{ background:#F9D9D2; border:1px solid #E7A89B; color:#7A2A1B; padding:10px 12px; font-size:12.5px; margin-bottom:10px; font-weight:600; }
+  .tabs{ display:flex; position:sticky; top:0; z-index:20; margin:0 -16px 16px; padding:0 8px; background:linear-gradient(var(--bg) 70%, transparent); backdrop-filter:blur(8px); }
+  .tab{ flex:1; background:none; border:none; color:var(--mute); padding:13px 6px; font:600 11.5px var(--mono); letter-spacing:.16em; cursor:pointer; position:relative; text-transform:uppercase; }
+  .tab::after{ content:""; position:absolute; left:18%; right:18%; bottom:4px; height:2px; background:var(--terra); box-shadow:0 0 12px var(--terra); transform:scaleX(0); transition:transform .25s; }
+  .tab.on{ color:var(--sand); } .tab.on::after{ transform:scaleX(1); }
+  .pane{ display:none; } .pane.on{ display:block; animation:entra .35s ease both; }
+  @keyframes entra{ from{ opacity:0; transform:translateY(8px); } }
 
-  .resumen{ background:var(--navy); color:var(--cream); padding:18px; margin-bottom:16px; }
-  .res-line.envio-gratis{ color:#B7E4C7; font-weight:700; }
-  .res-line{ display:flex; justify-content:space-between; font-size:13px; padding:3px 0; color:rgba(244,241,222,.8); }
-  .res-total{ font-family:'Archivo Expanded',sans-serif; font-size:24px; font-weight:800; color:var(--sand); margin:6px 0 2px; }
-  .res-sub{ font-size:12px; color:rgba(244,241,222,.6); margin-bottom:12px; }
-  .cobro-split{ display:flex; gap:10px; margin:12px 0; }
-  .cobro-split-item{ flex:1; background:rgba(244,241,222,.08); padding:10px 12px; }
-  .cobro-split-item span{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:rgba(244,241,222,.55); margin-bottom:3px; }
-  .cobro-split-item strong{ font-family:'Archivo Expanded',sans-serif; font-size:16px; font-weight:800; }
-  .pdf-btn{ width:100%; background:var(--terracota); color:white; border:none; padding:14px; font-size:14.5px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:8px; }
-  .pdf-btn:hover{ background:var(--terracota-dark); }
-  .pdf-btn:disabled{ background:rgba(244,241,222,.15); color:rgba(244,241,222,.4); cursor:not-allowed; }
-  .copy-btn{ width:100%; background:var(--sage); color:#1B3B30; border:none; padding:12px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:8px; }
-  .copy-btn:hover{ background:#6FA089; }
-  .copy-btn:disabled{ opacity:.45; cursor:not-allowed; }
-  .copy-btn.copied{ background:var(--sand); }
+  /* ---------- paneles HUD ---------- */
+  .hud{ position:relative; background:var(--panel); border:1px solid var(--line); padding:18px 16px 16px; margin-bottom:14px; backdrop-filter:blur(6px); }
+  .hud::before, .hud::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+  .hud::before{ top:-1px; left:-1px; border-top:2px solid var(--terra); border-left:2px solid var(--terra); }
+  .hud::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--sand); border-right:2px solid var(--sand); }
+  .lbl{ display:flex; align-items:center; gap:10px; font:600 10.5px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--sand); margin:0 0 14px; }
+  .lbl::before{ content:"//"; color:var(--terra); }
+  .lbl::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--line), transparent); }
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; min-width:0; } .field:last-child{ margin-bottom:0; }
+  .field label{ font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
+  input, select, textarea{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:11px 12px; font:500 14.5px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s, background .2s; }
+  input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18); background:rgba(255,255,255,.06); }
+  select option{ background:#10172C; color:var(--ink); }
+  textarea{ resize:vertical; min-height:64px; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .row3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .hint{ font-size:11.5px; color:var(--mute); line-height:1.45; }
+  .flash{ animation:flash 1.4s ease-out; }
+  @keyframes flash{ 0%{ box-shadow:0 0 0 2px var(--sand), 0 0 22px rgba(242,204,143,.55); background:rgba(242,204,143,.14); } 100%{ box-shadow:none; } }
 
-  .lock-screen{ position:fixed; inset:0; background:var(--navy); z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px; text-align:center; }
-  .lock-icon{ width:52px;height:52px; background:rgba(244,241,222,.08); border:1px solid rgba(244,241,222,.15); display:flex;align-items:center;justify-content:center; }
-  .lock-screen h2{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:20px; margin:0; color:var(--cream); }
-  .lock-screen p{ font-size:13px; color:rgba(244,241,222,.55); margin:0; max-width:32ch; }
-  .lock-form{ display:flex; gap:8px; width:100%; max-width:300px; }
-  .lock-form input{ flex:1; background:rgba(244,241,222,.06); border:1px solid rgba(244,241,222,.2); color:var(--cream); padding:11px 13px; font-family:'Inter',sans-serif; font-size:14px; }
-  .lock-form input:focus{ outline:none; border-color:var(--terracota); }
-  .lock-btn{ background:var(--terracota); color:white; border:none; padding:0 18px; font-weight:700; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; }
-  .lock-error{ font-size:12.5px; color:#F6B99A; min-height:16px; }
-  .tabs{ display:flex; position:sticky; top:0; z-index:20; background:var(--navy); margin:0 -20px 18px; padding:0 8px; }
-  .tab{ flex:1; background:none; border:none; color:rgba(244,241,222,.6); padding:14px 6px; font:700 13px 'Inter',sans-serif; cursor:pointer; border-bottom:3px solid transparent; }
-  .tab.on{ color:var(--cream); border-bottom-color:var(--terracota); }
-  .tab .n{ background:var(--terracota); color:#fff; border-radius:9px; padding:1px 6px; font-size:11px; margin-left:4px; }
-  .pane{ display:none; } .pane.on{ display:block; }
-  .go-btn{ width:100%; background:var(--terracota); color:#fff; border:none; padding:16px; font:800 15px 'Inter',sans-serif; cursor:pointer; margin-bottom:8px; }
-  .go-btn:hover{ background:var(--terracota-dark); } .go-btn:disabled{ background:rgba(244,241,222,.15); color:rgba(244,241,222,.4); cursor:not-allowed; }
-  .ghost-btn{ width:100%; background:transparent; color:var(--cream); border:1px solid rgba(244,241,222,.35); padding:11px; font:600 13px 'Inter',sans-serif; cursor:pointer; margin-bottom:8px; }
-  .ghost-btn:disabled{ opacity:.4; cursor:not-allowed; }
-  .done{ background:var(--navy); color:var(--cream); padding:20px; margin-bottom:16px; display:none; }
-  .done.show{ display:block; }
-  .done .code{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:30px; color:var(--sand); letter-spacing:.04em; }
-  .done .lbl{ font-size:12px; color:rgba(244,241,222,.6); margin-bottom:4px; }
-  .a-btn{ display:block; text-align:center; text-decoration:none; width:100%; border:none; padding:13px; font:700 14px 'Inter',sans-serif; cursor:pointer; margin:8px 0 0; }
-  .a-green{ background:var(--sage); color:#1B3B30; } .a-terra{ background:var(--terracota); color:#fff; } .a-line{ background:transparent; color:var(--cream); border:1px solid rgba(244,241,222,.35); }
-  .a-dark{ background:var(--navy); color:var(--cream); } .a-out{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
-  .a-btn:disabled{ opacity:.5; cursor:not-allowed; }
-  .col-h{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin:16px 0 6px; }
-  .ped{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); padding:12px 14px; margin-bottom:6px; cursor:pointer; font:500 14px 'Inter',sans-serif; color:var(--navy); }
-  .ped small{ color:var(--muted); font-size:11.5px; display:block; } .ped .pg{ font-size:11px; font-weight:700; padding:2px 8px; background:var(--sand); }
-  .ped .pg.ok{ background:var(--sage); }
-  .aviso{ background:var(--card); border:1px solid var(--line); padding:14px; margin-bottom:10px; }
-  .aviso .m{ white-space:pre-wrap; font-size:13px; background:var(--cream); padding:10px; margin:8px 0; }
-  .msg-ok{ font-size:12.5px; color:#2F6B53; font-weight:600; margin:6px 0; }
-  .mini{ font-size:12px; color:var(--muted); }
-  .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--navy); color:var(--cream); padding:10px 16px; font-size:13px; z-index:60; display:none; max-width:90vw; }
+  /* ---------- botones ---------- */
+  .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:13px 14px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; text-decoration:none; text-align:center; transition:all .2s; margin-top:8px;
+    clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .btn:hover{ background:rgba(242,204,143,.1); box-shadow:0 0 18px rgba(242,204,143,.2); }
+  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(224,122,95,.35); }
+  .btn.go:hover{ filter:brightness(1.1); box-shadow:0 0 34px rgba(224,122,95,.55); }
+  .btn.ok{ background:rgba(129,178,154,.14); border-color:rgba(129,178,154,.6); color:#B5DEC9; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
+  .btn.mini{ display:inline-block; width:auto; padding:8px 12px; margin:0; font-size:11px; }
+  .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0; }
+
+  /* ---------- orbe de voz ---------- */
+  .orb-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:4px 0 12px; }
+  .orb{ position:relative; width:150px; height:150px; border:none; background:none; cursor:pointer; padding:0; }
+  .orb svg{ width:100%; height:100%; overflow:visible; }
+  .orb .r1{ transform-origin:75px 75px; animation:gira 28s linear infinite; }
+  .orb .r2{ transform-origin:75px 75px; animation:gira 18s linear infinite reverse; }
+  .orb .r3{ transform-origin:75px 75px; animation:gira 40s linear infinite; }
+  .orb .core{ transform-origin:75px 75px; animation:late 3.2s ease-in-out infinite; }
+  .orb.on .r1{ animation-duration:4s; } .orb.on .r2{ animation-duration:3s; } .orb.on .core{ animation:late .7s ease-in-out infinite; }
+  .orb::after{ content:""; position:absolute; inset:14px; border-radius:50%; border:1px solid var(--terra); opacity:0; }
+  .orb.on::after{ animation:onda 1.4s ease-out infinite; }
+  @keyframes gira{ to{ transform:rotate(360deg); } }
+  @keyframes late{ 50%{ transform:scale(1.07); filter:brightness(1.25); } }
+  @keyframes onda{ 0%{ opacity:.8; transform:scale(.9); } 100%{ opacity:0; transform:scale(1.7); } }
+  .orb-txt{ font:600 11px var(--mono); letter-spacing:.18em; color:var(--mute); text-transform:uppercase; min-height:16px; text-align:center; }
+  .orb.on + .orb-txt{ color:var(--terra); }
+  .readout{ font:400 12px/1.55 var(--mono); color:var(--mute); margin-top:10px; border-left:2px solid var(--line-hi); padding:2px 0 2px 10px; }
+  .readout b{ color:var(--sand); font-weight:600; }
+
+  /* ---------- productos ---------- */
+  .item{ position:relative; border:1px solid var(--line); background:rgba(255,255,255,.025); padding:14px 12px 12px; margin-bottom:12px; }
+  .item-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font:600 10.5px var(--mono); letter-spacing:.16em; color:var(--terra); text-transform:uppercase; }
+  .item .calc{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font:400 11.5px var(--mono); color:var(--mute); }
+  .item .calc b{ font:800 15px var(--disp); color:var(--sand); white-space:nowrap; }
+  .adder{ width:100%; background:transparent; color:var(--mute); border:1px dashed rgba(242,204,143,.35); padding:12px; font:600 11.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+  .adder:hover{ color:var(--sand); border-color:var(--sand); }
+
+  .drop{ border:1px dashed rgba(242,204,143,.4); padding:18px; text-align:center; cursor:pointer; color:var(--mute); font-size:13px; transition:all .2s; }
+  .drop:hover, .drop.over{ border-color:var(--terra); color:var(--sand); background:rgba(224,122,95,.07); box-shadow:0 0 22px rgba(224,122,95,.15); }
+  .drop b{ display:block; font:600 11px var(--mono); letter-spacing:.16em; color:var(--sand); margin-bottom:4px; text-transform:uppercase; }
+  .thumbs{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .thumb{ position:relative; width:64px; height:64px; border:1px solid var(--line); background:#0a0f1f; display:flex; align-items:center; justify-content:center; overflow:hidden; font:600 10px var(--mono); color:var(--mute); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .thumb button{ position:absolute; top:0; right:0; width:20px; height:20px; border:none; background:rgba(7,10,20,.85); color:var(--ink); cursor:pointer; font-size:13px; line-height:1; }
+
+  /* ---------- barra de registro ---------- */
+  .dock{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, rgba(7,10,20,.94) 38%); }
+  .dock .in{ max-width:640px; margin:0 auto; }
+  .dock .btn{ margin:0; padding:16px 14px; font-size:13.5px; }
+  .dock .estado{ font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); text-align:center; margin-bottom:6px; text-transform:uppercase; }
+  .dock .estado.falta{ color:var(--danger); }
+
+  /* ---------- registrado ---------- */
+  .done{ text-align:center; padding:26px 16px 18px; border-color:rgba(129,178,154,.55); background:radial-gradient(circle at 50% 0%, rgba(129,178,154,.16), transparent 70%), var(--panel); }
+  .done .tag{ font:600 10.5px var(--mono); letter-spacing:.22em; color:var(--sage); text-transform:uppercase; }
+  .done .code{ font:800 30px var(--disp); letter-spacing:.06em; color:var(--sand); margin:10px 0 6px; text-shadow:0 0 22px rgba(242,204,143,.45); min-height:38px; }
+  .check{ width:62px; height:62px; margin:0 auto 6px; }
+  .check circle{ stroke-dasharray:190; stroke-dashoffset:190; animation:trazo .7s ease-out forwards; }
+  .check path{ stroke-dasharray:40; stroke-dashoffset:40; animation:trazo .45s .55s ease-out forwards; }
+  @keyframes trazo{ to{ stroke-dashoffset:0; } }
+
+  /* ---------- proyectos ---------- */
+  .search{ position:relative; margin-bottom:14px; }
+  .search input{ padding-left:38px; font-size:15px; }
+  .search svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:17px; height:17px; stroke:var(--terra); fill:none; stroke-width:2; }
+  .col-h{ font:600 10.5px var(--mono); letter-spacing:.18em; color:var(--mute); text-transform:uppercase; margin:18px 0 8px; display:flex; justify-content:space-between; align-items:center; }
+  .proj{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:13px 14px; margin-bottom:6px; cursor:pointer; font:600 14.5px 'Inter',sans-serif; position:relative; transition:all .18s; }
+  .proj:hover{ border-color:var(--line-hi); transform:translateX(3px); box-shadow:-3px 0 0 var(--terra); }
+  .proj small{ display:block; font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); margin-top:3px; }
+  .proj .go-arrow{ color:var(--terra); font:600 16px var(--mono); }
+  .proj.old{ opacity:.6; }
+  .back{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:4px 0 12px; }
+  .ficha-name{ font:800 20px var(--disp); margin:0 0 4px; }
+  .ficha-code{ font:600 11px var(--mono); letter-spacing:.16em; color:var(--sand); }
+  .linea{ display:flex; gap:10px; padding:9px 0; border-top:1px dashed var(--line); font-size:14px; }
+  .linea:first-child{ border-top:none; } .linea b{ font:800 14px var(--disp); color:var(--sand); min-width:42px; }
+  .linea small{ display:block; color:var(--mute); font:400 11px var(--mono); margin-top:2px; }
+
+  /* ---------- resumen de cotización ---------- */
+  .sum{ border:1px solid var(--line-hi); background:linear-gradient(160deg, rgba(224,122,95,.14), rgba(16,23,44,.9)); padding:16px; margin-top:12px; }
+  .sum .l{ display:flex; justify-content:space-between; font:400 12.5px var(--mono); color:var(--mute); padding:3px 0; }
+  .sum .l.g{ color:var(--sage); font-weight:600; }
+  .sum .tot{ font:800 28px var(--disp); color:var(--sand); margin:8px 0 4px; text-shadow:0 0 20px rgba(242,204,143,.35); }
+  .split{ display:flex; gap:10px; margin:10px 0 4px; }
+  .split div{ flex:1; background:rgba(255,255,255,.05); padding:9px 11px; font:400 10px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
+  .split strong{ display:block; font:800 16px var(--disp); color:var(--ink); letter-spacing:0; margin-top:3px; }
+  .box{ padding:10px 12px; font-size:12.5px; margin:10px 0; line-height:1.45; border:1px solid; }
+  .box.err{ background:rgba(255,130,114,.10); border-color:rgba(255,130,114,.5); color:#FFB4A9; font-weight:600; }
+  .box.warn{ background:rgba(242,204,143,.08); border-color:rgba(242,204,143,.4); color:var(--sand); }
+
+  /* ---------- candado y arranque ---------- */
+  .lock{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:radial-gradient(700px 500px at 50% 30%, #1B2547, var(--bg) 70%); }
+  .lock h2{ font:800 18px var(--disp); letter-spacing:.14em; margin:0; }
+  .lock p{ font:400 12px var(--mono); letter-spacing:.08em; color:var(--mute); margin:0; max-width:34ch; line-height:1.6; }
+  .lock-form{ display:flex; gap:8px; width:100%; max-width:320px; } .lock-form input{ flex:1; text-align:center; letter-spacing:.3em; }
+  .lock-form .btn{ width:auto; margin:0; padding:0 18px; }
+  .lock-err{ font:400 12px var(--mono); color:var(--danger); min-height:16px; }
+  .boot{ position:fixed; inset:0; z-index:80; background:var(--bg); display:none; flex-direction:column; align-items:center; justify-content:center; gap:22px; transition:opacity .5s; }
+  .boot.on{ display:flex; } .boot.off{ opacity:0; pointer-events:none; }
+  .boot .core-logo{ width:96px; height:96px; }
+  .boot pre{ margin:0; font:400 12px/1.9 var(--mono); color:var(--sage); letter-spacing:.08em; min-width:240px; }
+  .boot pre i{ color:var(--sand); font-style:normal; }
+  .toast{ position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:10px 16px; font:500 12.5px 'Inter',sans-serif; z-index:70; display:none; max-width:90vw; box-shadow:0 0 24px rgba(224,122,95,.3); }
+  .saludo{ font:800 21px var(--disp); margin:2px 0 4px; } .saludo + .hint{ margin-bottom:16px; }
+  a{ color:var(--terra); }
+  @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
 </style>
 </head>
 <body>
 
-<div class="lock-screen" id="lockScreen">
-  <div class="lock-icon">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1DE" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-  </div>
-  <div>
-    <h2>Acceso restringido</h2>
-    <p>Panel interno de Joart Digital. Escribe la contraseña para continuar.</p>
-  </div>
-  <div class="lock-form">
-    <input type="password" id="lockInput" placeholder="Contraseña">
-    <button type="button" class="lock-btn" id="lockBtn">Entrar</button>
-  </div>
-  <div class="lock-error" id="lockError"></div>
+<!-- ============ CANDADO ============ -->
+<div class="lock" id="lockScreen">
+  <svg class="core-logo" style="width:78px;height:78px" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
+  <div><h2>JOART CORE</h2><p style="margin-top:10px">Acceso restringido. Escribe tu clave para entrar.</p></div>
+  <div class="lock-form"><input type="password" id="lockInput" placeholder="••••••" autocomplete="current-password"><button type="button" class="btn go" id="lockBtn">Entrar</button></div>
+  <div class="lock-err" id="lockError"></div>
 </div>
 
-<div class="wrap">
+<!-- ============ ARRANQUE ============ -->
+<div class="boot" id="boot">
+  <svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
+  <pre id="bootLog"></pre>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gCore" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF6DC"/><stop offset=".45" stop-color="#F2CC8F"/><stop offset="1" stop-color="#E07A5F" stop-opacity=".15"/></radialGradient>
+    <symbol id="reactor" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#F2CC8F" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 5"/>
+      <g class="rot" style="transform-origin:32px 32px;animation:gira 22s linear infinite"><path d="M32 6 A26 26 0 0 1 58 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/><path d="M32 58 A26 26 0 0 1 6 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/></g>
+      <circle cx="32" cy="32" r="19" fill="none" stroke="#F2CC8F" stroke-width="1.4" stroke-opacity=".8"/>
+      <g stroke="#F2CC8F" stroke-width="2" stroke-linecap="round" stroke-opacity=".9"><path d="M32 17v6M32 41v6M17 32h6M41 32h6"/></g>
+      <circle cx="32" cy="32" r="9" fill="url(#gCore)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap" id="app">
   <div class="top">
-    <img id="logoImg" alt="">
-    <div><div class="top-title">Joart Digital</div><div class="top-tag">Panel de trabajo</div></div>
+    <svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
+    <div><b>JOART CORE</b><small>centro de pedidos</small></div>
+    <div class="online"><i></i>EN LÍNEA</div>
   </div>
   <div class="tabs">
-    <button class="tab on" data-tab="nuevo">Nuevo pedido</button>
-    <button class="tab" data-tab="pedidos">Pedidos</button>
-    <button class="tab" data-tab="posventa">Posventa</button>
-    <button class="tab" data-tab="avisos">Avisos<span class="n" id="avN" hidden></span></button>
+    <button class="tab on" data-tab="nuevo">Nuevo</button>
+    <button class="tab" data-tab="proyectos">Proyectos</button>
     <button class="tab" data-tab="mas">Más</button>
   </div>
 
-  <!-- ============ NUEVO ============ -->
+  <!-- ============ NUEVO PEDIDO ============ -->
   <section class="pane on" id="pane-nuevo">
-    <div class="done" id="done">
-      <div class="lbl">Pedido registrado ✅ (ya está en Sheets y ClickUp)</div>
+    <div id="doneBox" hidden class="hud done">
+      <svg class="check" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="none" stroke="#81B29A" stroke-width="2.5"/><path d="M18 33l9 9 19-20" fill="none" stroke="#81B29A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="tag">Pedido registrado · ya está en Sheets y ClickUp</div>
       <div class="code" id="doneCode">—</div>
-      <div class="msg-ok" id="doneWarn" style="color:#F6B99A"></div>
-      <div class="mini" id="doneHint" style="color:rgba(244,241,222,.75)"></div>
-      <button type="button" class="a-btn a-terra" id="shareDone">📲 Enviar al cliente (PDF + enlace de seguimiento)</button>
-      <a class="a-btn a-green" id="waDone" target="_blank" rel="noopener">💬 Solo mensaje por WhatsApp</a>
-      <button type="button" class="a-btn a-line" id="pdfDone">📄 Descargar PDF</button>
-      <button type="button" class="a-btn a-line" id="againBtn">+ Nuevo pedido</button>
+      <div class="hint" id="doneWarn" style="color:var(--danger)"></div>
+      <a class="btn ok" id="waDone" target="_blank" rel="noopener">💬 Mandar el código al cliente por WhatsApp</a>
+      <button type="button" class="btn go" id="againBtn">+ Nuevo pedido</button>
     </div>
 
     <div id="formNuevo">
-      <div class="card" id="dictCard">
-        <div class="card-label">Dictar o escribir el pedido</div>
-        <div class="field"><textarea id="fDictado" rows="2" placeholder="Ej. cotiza 30 floor stand chico para Maya Solar en 5 mm"></textarea></div>
-        <div class="row" style="grid-template-columns:auto 1fr;">
-          <button type="button" class="a-btn a-terra" id="micBtn" style="margin:0;width:auto;padding:0 16px">🎤 Dictar</button>
-          <button type="button" class="a-btn a-dark" id="llenarBtn" style="margin:0">✨ Llenar el formulario</button>
+      <div class="saludo" id="saludo">Hola, Jorge</div>
+      <div class="hint" id="saludoSub">Cuéntame el pedido o pega el chat. Yo lleno el formulario.</div>
+
+      <div class="hud">
+        <div class="lbl">Dictar o pegar chat</div>
+        <div class="orb-wrap">
+          <button type="button" class="orb" id="orb" aria-label="Dictar pedido">
+            <svg viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="71" fill="none" stroke="#F2CC8F" stroke-opacity=".18"/>
+              <g class="r1"><circle cx="75" cy="75" r="66" fill="none" stroke="#F2CC8F" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="2 9"/><path d="M75 9 A66 66 0 0 1 141 75" fill="none" stroke="#E07A5F" stroke-width="3" stroke-linecap="round"/></g>
+              <g class="r2"><circle cx="75" cy="75" r="55" fill="none" stroke="#E07A5F" stroke-opacity=".5" stroke-width="1" stroke-dasharray="14 8 3 8"/><path d="M75 130 A55 55 0 0 1 20 75" fill="none" stroke="#F2CC8F" stroke-width="2.4" stroke-linecap="round"/></g>
+              <g class="r3"><circle cx="75" cy="75" r="44" fill="none" stroke="#F2CC8F" stroke-opacity=".35" stroke-width="1"/><g stroke="#F2CC8F" stroke-width="2.2" stroke-linecap="round"><path d="M75 28v8M75 114v8M28 75h8M114 75h8"/></g></g>
+              <g class="core"><circle cx="75" cy="75" r="30" fill="url(#gCore)"/><g fill="none" stroke="#1a1020" stroke-width="3.2" stroke-linecap="round"><rect x="68" y="60" width="14" height="22" rx="7" fill="#1a1020" stroke="none"/><path d="M60 76a15 15 0 0 0 30 0M75 91v8"/></g></g>
+            </svg>
+          </button>
+          <div class="orb-txt" id="orbTxt">Toca y habla</div>
         </div>
-        <div class="field-hint" id="dictOut">Dices cliente, modelo, cantidad y grosor; el panel llena todo. Revisa antes de registrar.</div>
+        <div class="field"><textarea id="fDictado" rows="3" placeholder="…o pega aquí el chat de WhatsApp con el cliente"></textarea></div>
+        <button type="button" class="btn" id="llenarBtn">✨ Interpretar y llenar</button>
+        <div class="readout" id="dictOut" hidden></div>
       </div>
-      <div class="card">
-        <div class="card-label">Cliente</div>
+
+      <div class="hud">
+        <div class="lbl">Cliente</div>
         <div class="row">
-          <div class="field"><label for="fCliente">Nombre o empresa *</label><input id="fCliente" type="text" placeholder="Ej. Papas Chidas"></div>
-          <div class="field"><label for="fContacto">WhatsApp del cliente</label><input id="fContacto" type="tel" placeholder="55 1234 5678"></div>
+          <div class="field"><label for="fCliente">Nombre o marca *</label><input id="fCliente" type="text" placeholder="Ej. Papas Chidas" autocomplete="off"></div>
+          <div class="field"><label for="fContacto">WhatsApp</label><input id="fContacto" type="tel" placeholder="55 1234 5678" autocomplete="off"></div>
         </div>
         <div class="row">
-          <div class="field"><label for="fZona">Estado / ciudad</label><input id="fZona" type="text" list="listaZonas" placeholder="Opcional"></div>
-          <div class="field"><label for="fFactura">¿Requiere factura?</label><select id="fFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
+          <div class="field"><label for="fZona">Estado / ciudad</label><input id="fZona" type="text" list="listaZonas" placeholder="Opcional" autocomplete="off"></div>
+          <div class="field"><label for="fFactura">¿Factura?</label><select id="fFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
         </div>
         <datalist id="listaZonas"></datalist>
       </div>
 
-      <div class="card">
-        <div class="card-label">Productos</div>
+      <div class="hud">
+        <div class="lbl">Productos</div>
         <div id="itemsBox"></div>
-        <button type="button" class="add-btn" id="addBtn">+ Agregar otro producto</button>
+        <button type="button" class="adder" id="addBtn">+ Agregar otro producto</button>
       </div>
 
-      <div class="card">
-        <div class="card-label">Opciones</div>
+      <div class="hud">
+        <div class="lbl">Detalles</div>
+        <div class="field"><label for="fNotas">Lo que pidió el cliente</label><textarea id="fNotas" rows="3" placeholder="Colores, rejillas, impresión en laterales, medidas especiales, referencias…"></textarea></div>
         <div class="row">
-          <div class="field"><label for="fEntrega">Tipo de entrega</label>
-            <select id="fEntrega"><option value="estandar">Estándar — 7 días hábiles</option><option value="expres">Exprés — 4 días hábiles (+15%)</option><option value="urgente">Urgente — 2 días hábiles (+25%)</option></select></div>
-          <div class="field"><label for="fCaras">Impresión</label>
-            <select id="fCaras"><option value="una">Una cara (exterior)</option><option value="dos">Frente y vuelta (+30% / +40%)</option></select></div>
+          <div class="field"><label for="fEntrega">Entrega que pidió</label><select id="fEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés</option><option value="urgente">Urgente</option></select></div>
+          <div class="field"><label for="fCaras">Impresión</label><select id="fCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
         </div>
-        <div class="field"><label for="fModo">¿Qué estás cotizando?</label>
-          <select id="fModo"><option value="pedido">Un pedido (las cantidades se suman)</option><option value="opciones">Comparar cantidades (solo precios, no se suman)</option></select>
-          <div class="field-hint">“Comparar cantidades”: agrega el mismo modelo con 50, 100, 150 pzs, etc. para que el cliente vea precios. No se puede registrar como pedido.</div></div>
-        <div class="field"><label for="fEnvio">Costo de envío (solo aplica si el pedido es de $1,000 o menos)</label><input id="fEnvio" type="number" min="0" step="any" placeholder="0"></div>
-        <div class="field"><label for="fNotas">Notas (salen en el PDF y en el pedido)</label><textarea id="fNotas" rows="2" placeholder="Ej. Colores según pantone enviado."></textarea></div>
-        <div class="field"><label for="fLogo">Logo / archivos del cliente (opcional, hasta 5)</label><input id="fLogo" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg"></div>
       </div>
 
-      <div class="resumen" id="resumen"></div>
+      <div class="hud">
+        <div class="lbl">Logo e imágenes</div>
+        <div class="drop" id="drop"><b>Toca, arrastra o pega (Ctrl+V)</b>Logo, referencias, pantallazos · hasta 5</div>
+        <input id="fLogo" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg" hidden>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
     </div>
   </section>
 
-  <!-- ============ PEDIDOS ============ -->
-  <section class="pane" id="pane-pedidos">
-    <div class="card">
-      <div class="card-label">Buscar por código</div>
-      <div class="row" style="grid-template-columns:1fr auto;">
-        <div class="field" style="margin:0"><input id="pCodigo" type="text" placeholder="JD-XXXXX" autocapitalize="characters"></div>
-        <button type="button" class="a-btn a-dark" id="pBuscar" style="margin:0;width:auto;padding:0 18px">Abrir</button>
-      </div>
-      <div class="err-box" id="pErr" style="display:none;margin-top:10px"></div>
+  <!-- ============ PROYECTOS ============ -->
+  <section class="pane" id="pane-proyectos">
+    <div id="listaVista">
+      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="busca" type="search" placeholder="Buscar cliente o código…" autocomplete="off"></div>
+      <div id="pLista" class="hint">Cargando proyectos…</div>
     </div>
-    <div id="pDetalle" style="display:none"></div>
-    <div class="col-h" style="display:flex;justify-content:space-between"><span>En curso</span><a href="#" id="pRefrescar" style="color:var(--terracota-dark);text-decoration:none">Actualizar</a></div>
-    <div id="pLista" class="mini">Cargando…</div>
-  </section>
-
-  <!-- ============ POSVENTA ============ -->
-  <section class="pane" id="pane-posventa">
-    <p class="mini" style="margin-top:0">Pedidos entregados. <b>Pedir opinión</b> manda una calificación del 1 al 5 y la reseña. <b>Recompra</b> invita a reponer. Cada botón abre WhatsApp con el mensaje listo y queda marcado ✓.</p>
-    <div id="pvLista" class="mini">Cargando…</div>
-  </section>
-
-  <!-- ============ AVISOS ============ -->
-  <section class="pane" id="pane-avisos">
-    <p class="mini" style="margin-top:0">Mensajes listos para tus clientes. Toca el botón verde: abre WhatsApp con el texto ya escrito.</p>
-    <div id="avLista" class="mini">Cargando…</div>
+    <div id="fichaVista" hidden></div>
   </section>
 
   <!-- ============ MÁS ============ -->
   <section class="pane" id="pane-mas">
-    <div class="card">
-      <div class="card-label">Herramientas</div>
-      <a class="a-btn a-out" href="asistente.html">🤖 Asistente</a>
-      <a class="a-btn a-out" href="tandas.html">📐 Tandas y hojas (cuántas láminas usaré)</a>
-      <a class="a-btn a-out" href="configurador.html" target="_blank" rel="noopener">🧊 Configurador 3D (para mandar al cliente)</a>
-      <a class="a-btn a-out" href="mi-pedido.html" target="_blank" rel="noopener">👁 Ver “Mi pedido” (lo que ve el cliente)</a>
+    <div class="hud">
+      <div class="lbl">Herramientas</div>
+      <a class="btn" href="configurador.html" target="_blank" rel="noopener">🧊 Configurador 3D · para el cliente</a>
+      <a class="btn" href="asistente.html">🤖 Asistente</a>
+      <a class="btn" href="mi-pedido.html" target="_blank" rel="noopener">👁 Mi pedido · lo que ve el cliente</a>
     </div>
-    <div class="card">
-      <div class="card-label">Cuenta para pagos sin factura</div>
-      <div class="field-hint" style="margin-bottom:10px">Sale en el PDF y en el cobro cuando el cliente <b>no</b> pide factura. Con factura sale la cuenta de Luz María. Se guarda solo en este dispositivo.</div>
+    <div class="hud">
+      <div class="lbl">Cuenta para pagos sin factura</div>
+      <div class="hint" style="margin-bottom:12px">Sale en la cotización cuando el cliente <b>no</b> pide factura. Con factura sale la de Luz María. Se guarda solo en este dispositivo.</div>
       <div class="row">
         <div class="field"><label for="ctTitular">Titular</label><input id="ctTitular" type="text" autocomplete="off"></div>
         <div class="field"><label for="ctBanco">Banco</label><input id="ctBanco" type="text" autocomplete="off"></div>
@@ -237,24 +310,23 @@
         <div class="field"><label for="ctClabe">CLABE</label><input id="ctClabe" type="text" inputmode="numeric" autocomplete="off"></div>
         <div class="field"><label for="ctCuenta">Cuenta (opcional)</label><input id="ctCuenta" type="text" inputmode="numeric" autocomplete="off"></div>
       </div>
-      <button type="button" class="a-btn" id="ctGuardar">Guardar mi cuenta</button>
-      <div class="field-hint" id="ctEstado" style="margin-top:8px"></div>
+      <button type="button" class="btn" id="ctGuardar">Guardar mi cuenta</button>
+      <div class="hint" id="ctEstado" style="margin-top:10px"></div>
     </div>
-    <div class="card">
-      <div class="card-label">Sesión</div>
-      <button type="button" class="a-btn a-out" id="salirBtn">Cerrar sesión en este dispositivo</button>
-    </div>
+    <div class="hud"><div class="lbl">Sesión</div><button type="button" class="btn" id="salirBtn">Cerrar sesión en este dispositivo</button></div>
   </section>
 </div>
+
+<div class="dock" id="dock"><div class="in">
+  <div class="estado" id="dockEstado">Falta el nombre del cliente</div>
+  <button type="button" class="btn go" id="regBtn">⚡ Registrar pedido</button>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script src="jspdf.umd.min.js"></script>
 <script>if(!window.jspdf){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"><\/script>'); }</script>
 <script src="joart-core.js"></script>
 <script>
-// ====================================================================
-//  CONFIGURACIÓN — aquí se cambian datos de pago, vigencia y enlaces
-// ====================================================================
 const CONFIG = {
   // CON factura → cuenta fiscal (Luz María). SIN factura → tu cuenta personal, que se captura en Más → "Cuenta sin factura"
   // y se guarda solo en este dispositivo (no va en el código público).
@@ -273,32 +345,28 @@ const $ = (id) => document.getElementById(id);
 const fmt = (n) => "$" + Math.round(n).toLocaleString("es-MX");
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fechaTexto = (d) => `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
-const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const normNom = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const normM = (s) => String(s || "").replace(/[—–]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
+const catalogoDe = (modelo) => MODELOS.find(m => normM(m.nombre) === normM(modelo));
+const fileToB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 
-// ===== Acceso (misma contraseña y candado que tus otras herramientas) =====
+// ===================== ACCESO =====================
 let passwordActual = "";
 const PORTAL_URL = "https://jormdzg-png.github.io/joart-digital-web/mi-pedido.html";
 async function post(accion, extra){
   const r = await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ accion, password: passwordActual }, extra || {})) });
   return await r.json();
 }
-function toast(t){ const el = $("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = "none", 2600); }
+function toast(t){ const el = $("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = "none", 2800); }
 async function intentarAcceso(pw){
-  const auto = typeof pw === "string";
-  const intento = auto ? pw : $("lockInput").value;
-  if(!intento){ $("lockError").textContent = "Escribe la contraseña."; return; }
-  $("lockBtn").disabled = true; $("lockBtn").textContent = "Verificando..."; $("lockError").textContent = "";
+  const auto = typeof pw === "string", intento = auto ? pw : $("lockInput").value;
+  if(!intento){ $("lockError").textContent = "Escribe la clave."; return; }
+  $("lockBtn").disabled = true; $("lockBtn").textContent = "…"; $("lockError").textContent = "";
   try{
     const result = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ accion:"verificarConexion", password: intento }) })).json();
-    if(result.ok){
-      passwordActual = intento;
-      try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){}
-      $("lockScreen").style.display = "none";
-      iniciarApp();
-    }else{
-      $("lockError").textContent = auto ? "" : "Contraseña incorrecta.";
-      if(auto){ try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} }
-    }
+    if(result.ok){ passwordActual = intento; try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){} $("lockScreen").style.display = "none"; iniciarApp(); }
+    else{ $("lockError").textContent = auto ? "" : "Clave incorrecta."; if(auto){ try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} } }
   }catch(e){ console.error(e); $("lockError").textContent = "No se pudo verificar. Intenta de nuevo."; }
   finally{ $("lockBtn").disabled = false; $("lockBtn").textContent = "Entrar"; $("lockScreen").style.visibility = ""; }
 }
@@ -306,205 +374,423 @@ $("lockBtn").addEventListener("click", () => intentarAcceso());
 $("lockInput").addEventListener("keydown", (e) => { if(e.key === "Enter") intentarAcceso(); });
 try{ const g = localStorage.getItem("joart_sheet_key"); if(g){ $("lockScreen").style.visibility = "hidden"; intentarAcceso(g); } }catch(e){}
 
-// Precios, modelos, geometría, dictado y acomodo viven en joart-core.js (única fuente).
-
-// ===================== ESTADO =====================
-let items = [], nextId = 1;
-function nuevoItem(){ return { id: nextId++, modelo: MODELOS[0].nombre, desc: "", alto: "", ancho: "", prof: "", niveles: 1, tipoPers: "niveles", cantidad: 1, grosor: "4 mm", grosorTocado: false, manual: "" }; }
-const esPers = (it) => it.modelo === PERSONALIZADO;
-function esPiso(it){ if(esPers(it)) return (parseFloat(it.alto) || 0) >= 100; const m = MODELOS.find(x => x.nombre === it.modelo); return !!(m && m.piso); }
-function grosoresPermitidos(it){ return esPers(it) ? ["4 mm","5 mm","6 mm"] : grosoresDeModelo(it.modelo); }
-
-// ===================== CÁLCULO =====================
-function calcular(){
-  const piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
-  const comparar = $("fModo").value === "opciones";
-  const dosCaras = $("fCaras").value === "dos";
-  const pctCaras = dosCaras ? (piezas >= 30 ? 0.40 : 0.30) : 0;
-  const entrega = $("fEntrega").value;
-  const pctEntrega = entrega === "expres" ? 0.15 : entrega === "urgente" ? 0.25 : 0;
-
-  const lineas = items.map(it => {
-    const q = parseInt(it.cantidad, 10) || 0;
-    const permitidos = grosoresPermitidos(it);
-    if(!it.grosorTocado) it.grosor = esPiso(it) ? "5 mm" : "4 mm";
-    if(permitidos.indexOf(it.grosor) === -1) it.grosor = permitidos[0];
-    let base = null, hint = "";
-    if(q >= 1){
-      if(esPers(it)){
-        const a = parseFloat(it.alto), b = parseFloat(it.ancho), c = parseFloat(it.prof), n = parseInt(it.niveles, 10) || 1;
-        if(a > 0 && b > 0 && c > 0){ base = cotizarPersonalizado(a, b, c, n, q, it.grosor, it.tipoPers); hint = "Fórmula de personalizados"; }
-        else hint = "Captura alto, ancho y profundidad";
-      }else{
-        base = precioCatalogo(it.modelo, it.grosor, q);
-        if(base != null) hint = `Tabla: escalón de ${QUIEBRES[escalonIdx(q)]} pz`;
-      }
-    }
-    const manual = parseFloat(it.manual) || 0;
-    let unit = null;
-    if(manual > 0){ unit = manual; hint = "Precio manual (final por pieza)"; }
-    else if(base != null){ unit = pctCaras ? up5(base * (1 + pctCaras)) : base; if(pctCaras) hint += ` · +${Math.round(pctCaras*100)}% frente y vuelta`; }
-    return { it, q, unit, importe: unit != null ? unit * q : 0, hint };
-  });
-
-  const subtotal = lineas.reduce((s, l) => s + l.importe, 0);
-  const recargoEntrega = comparar ? 0 : Math.round(subtotal * pctEntrega);
-  const envioAplica = !comparar && (subtotal + recargoEntrega) <= 1000;
-  const envioGratis = !comparar && (subtotal + recargoEntrega) > 1000;
-  const envio = envioAplica ? (parseFloat($("fEnvio") ? $("fEnvio").value : "") || 0) : 0;
-  const total = subtotal + recargoEntrega + envio;
-  const pctAnticipo = entrega === "urgente" ? 1 : 0.5;
-  const anticipo = Math.round(total * pctAnticipo);
-  const saldo = total - anticipo;
-
-  const avisos = [], errores = [];
-  // El tope de 100 pzs solo bloquea REGISTRAR un pedido; cotizar y comparar precios siempre se puede.
-  let limite = "";
-  if(comparar){
-    if(lineas.some(l => l.q > CONFIG.maxPiezas)) avisos.push(`Hay opciones de más de ${CONFIG.maxPiezas} piezas: el precio es solo de referencia (se usa el escalón de ${CONFIG.maxPiezas} pzs). Un pedido así lo evalúas tú manualmente.`);
-  }else if(piezas > CONFIG.maxPiezas){
-    limite = `El pedido suma ${piezas} piezas: el máximo para registrar es ${CONFIG.maxPiezas}. Puedes cotizarlo en PDF/WhatsApp, pero no registrarlo (se evalúa manualmente). Si solo quieres ver precios de varias cantidades, cambia a “Comparar cantidades”.`;
-    avisos.push(limite);
-  }
-  if(entrega !== "estandar" && !comparar){
-    if(piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas; este pedido tiene ${piezas}.`);
-    if(items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos: confirma que el diseño sea simple.");
-    avisos.push("Exprés y urgente: pago acreditado antes de las 12:00 h y confirmación por escrito.");
-  }
-  if(lineas.some(l => l.unit == null)) errores.push("Falta completar algún producto (cantidad o medidas).");
-  return { lineas, piezas, comparar, limite, dosCaras, pctCaras, entrega, pctEntrega, subtotal, recargoEntrega, envio, envioAplica, envioGratis, total, pctAnticipo, anticipo, saldo, avisos, errores };
-}
-function pintarItems(){
-  $("itemsBox").innerHTML = items.map((it, i) => {
-    const pers = esPers(it);
-    const opts = MODELOS.map(m => `<option value="${esc(m.nombre)}"${m.nombre === it.modelo ? " selected" : ""}>${esc(m.nombre)}</option>`).join("")
-      + `<option value="${PERSONALIZADO}"${pers ? " selected" : ""}>Personalizado (a medida)</option>`;
-    const gros = grosoresPermitidos(it).map(g => `<option${g === it.grosor ? " selected" : ""}>${g}</option>`).join("");
-    const medidas = !pers ? `<div class="field-hint" style="margin:-6px 0 10px;">${esc((MODELOS.find(m => m.nombre === it.modelo) || {}).medidas || "")}</div>` : "";
-    const persCampos = pers ? `
-      <div class="field"><label>Descripción (sale en el PDF)</label><input data-f="desc" type="text" value="${esc(it.desc)}" placeholder="Ej. Exhibidor para botanas"></div>
-      <div class="row3">
-        <div class="field"><label>Alto (cm)</label><input data-f="alto" type="number" min="1" step="any" value="${esc(it.alto)}"></div>
-        <div class="field"><label>Ancho (cm)</label><input data-f="ancho" type="number" min="1" step="any" value="${esc(it.ancho)}"></div>
-        <div class="field"><label>Prof. (cm)</label><input data-f="prof" type="number" min="1" step="any" value="${esc(it.prof)}"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Tipo de exhibidor</label><select data-f="tipoPers">${Object.keys(TIPOS_PERS).map(k => `<option value="${k}"${(it.tipoPers || "niveles") === k ? " selected" : ""}>${TIPOS_PERS[k].etiqueta.split(" /")[0]}</option>`).join("")}</select></div>
-        <div class="field"><label>${esc(({ niveles: "Cuántos niveles / charolas", escalonado: "Cuántos escalones", separadores: "Cuántos separadores" })[it.tipoPers || "niveles"])}</label><input data-f="niveles" type="number" min="1" step="1" value="${esc(it.niveles)}"></div>
-      </div>` : "";
-    return `<div class="item" data-id="${it.id}">
-      <div class="item-head"><span>Producto ${i + 1}</span>${items.length > 1 ? `<button type="button" class="rm-btn" data-rm="${it.id}">Quitar</button>` : ""}</div>
-      <div class="field"><label>Modelo</label><select data-f="modelo">${opts}</select></div>
-      ${medidas}${persCampos}
-      <div class="row3">
-        <div class="field"><label>Cantidad</label><input data-f="cantidad" type="number" min="1" step="1" value="${esc(it.cantidad)}"></div>
-        <div class="field"><label>Grosor</label><select data-f="grosor">${gros}</select></div>
-        <div class="field"><label>Precio manual</label><input data-f="manual" type="number" min="0" step="any" value="${esc(it.manual)}" placeholder="Auto"></div>
-      </div>
-      <div class="calc"><span data-hint></span><span class="imp" data-imp>—</span></div>
-    </div>`;
-  }).join("");
-  actualizar();
-}
-
-let ultimo = null;
-function actualizar(){
-  const r = calcular(); ultimo = r;
-  r.lineas.forEach(l => {
-    const card = document.querySelector(`.item[data-id="${l.it.id}"]`); if(!card) return;
-    card.querySelector("[data-hint]").textContent = l.unit != null ? `${fmt(l.unit)} c/u · ${l.hint}` : l.hint;
-    card.querySelector("[data-imp]").textContent = l.unit != null ? fmt(l.importe) : "—";
-    const sel = card.querySelector('[data-f="grosor"]');
-    if(sel && sel.value !== l.it.grosor) sel.value = l.it.grosor;
-  });
-  const listo = r.errores.length === 0 && $("fCliente").value.trim() !== "";
-  const nombreEntrega = { estandar: "Estándar (7 días hábiles)", expres: "Exprés (4 días hábiles)", urgente: "Urgente (2 días hábiles)" }[r.entrega];
-  const hayNombre = $("fCliente").value.trim() !== "";
-  const cuerpo = r.comparar ? `
-    ${r.lineas.map(l => `<div class="res-line"><span>${l.q} pz${l.unit != null ? " · " + fmt(l.unit) + " c/u" : ""}<br><small>${esc(esPers(l.it) ? (l.it.desc.trim() || "Personalizado") : l.it.modelo)}</small></span><span>${l.unit != null ? fmt(l.importe) : "—"}</span></div>`).join("")}
-    <div class="res-sub">Cada renglón es una opción distinta: no se suman. IVA incluido · vigencia ${CONFIG.vigenciaDias} días.</div>
-    ${hayNombre ? "" : `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>`}
-    <button type="button" class="go-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Enviar comparativo por WhatsApp (con PDF)</button>
-    <button type="button" class="ghost-btn" id="pdfBtn" ${listo ? "" : "disabled"}>📄 Solo comparativo en PDF</button>` : `
-    <div class="res-line"><span>${r.piezas} pieza${r.piezas === 1 ? "" : "s"} · ${nombreEntrega}</span><span>${fmt(r.subtotal)}</span></div>
-    ${r.recargoEntrega ? `<div class="res-line"><span>Recargo ${r.entrega === "expres" ? "exprés" : "urgente"} (${Math.round(r.pctEntrega * 100)}%)</span><span>${fmt(r.recargoEntrega)}</span></div>` : ""}
-    ${r.envio ? `<div class="res-line"><span>Envío</span><span>${fmt(r.envio)}</span></div>` : ""}
-    ${r.envioGratis ? `<div class="res-line envio-gratis"><span>🚚 Envío nacional</span><span><b>GRATIS</b></span></div>` : ""}
-    <div class="res-total">${fmt(r.total)} MXN</div>
-    <div class="res-sub">IVA incluido · vigencia ${CONFIG.vigenciaDias} días${r.envioGratis ? " · envío nacional gratis (pedido mayor a $1,000)" : ""}</div>
-    <div class="cobro-split">
-      <div class="cobro-split-item"><span>Anticipo (${Math.round(r.pctAnticipo * 100)}%)</span><strong>${fmt(r.anticipo)}</strong></div>
-      <div class="cobro-split-item"><span>Saldo</span><strong>${fmt(r.saldo)}</strong></div>
-    </div>
-    ${r.envioAplica && !r.envio && r.subtotal > 0 ? `<div class="warn-box">Pedido de $1,000 o menos: el envío no va incluido. Si lo vas a cobrar, escribe el costo en “Costo de envío”.</div>` : ""}
-    ${hayNombre ? "" : `<div class="warn-box">Escribe el nombre del cliente para continuar.</div>`}
-    <button type="button" class="go-btn" id="quickBtn" ${hayNombre && !r.limite ? "" : "disabled"}>📝 Registrar ahora (sin cotizar) — para empezar el render</button>
-    <button type="button" class="ghost-btn" id="goBtn" ${listo && !r.limite ? "" : "disabled"}>✅ Registrar con cotización y enviar PDF</button>
-    <button type="button" class="ghost-btn" id="pdfBtn" ${listo ? "" : "disabled"}>📄 Solo cotización en PDF (sin registrar)</button>
-    <button type="button" class="ghost-btn" id="quoteWa" ${listo ? "" : "disabled"}>💬 Enviar cotización por WhatsApp con PDF (sin registrar)</button>`;
-  $("resumen").innerHTML = `
-    ${r.errores.map(e => `<div class="err-box">${esc(e)}</div>`).join("")}
-    ${r.avisos.map(a => `<div class="warn-box">${esc(a)}</div>`).join("")}
-    ${cuerpo}`;
-}
-
-// Eventos de los productos
-$("itemsBox").addEventListener("input", (e) => {
-  const card = e.target.closest(".item"); if(!card || !e.target.dataset.f) return;
-  const it = items.find(x => x.id === +card.dataset.id), f = e.target.dataset.f;
-  if(f === "modelo"){ it.modelo = e.target.value; it.grosorTocado = false; it.manual = ""; pintarItems(); return; }
-  if(f === "tipoPers"){ it.tipoPers = e.target.value; pintarItems(); return; }
-  if(f === "grosor"){ it.grosor = e.target.value; it.grosorTocado = true; }
-  else it[f] = e.target.value;
-  actualizar();
-});
-$("itemsBox").addEventListener("click", (e) => {
-  const id = e.target.dataset && e.target.dataset.rm; if(!id) return;
-  items = items.filter(x => x.id !== +id); pintarItems();
-});
-$("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); });
-["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas","fEnvio","fModo"].forEach(id => $(id).addEventListener("input", actualizar));
-function folioNuevo(){ const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `COT-${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
-// ---- Cuenta sin factura (pestaña Más)
+// ===================== CUENTAS (sin factura = tuya · con factura = Luz María) =====================
+const CUENTA_KEY = "joart_cuenta_personal";
+function cargarCuentaPersonal(){ try{ const c = JSON.parse(localStorage.getItem(CUENTA_KEY) || "null"); if(c && c.clabe) CONFIG.cuentaPersonal = c; }catch(e){} }
+const cuentaDe = (factura) => factura ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal;
+function cuentaListaParaPDF(d){ return !!(d && d.cuenta && d.cuenta.clabe) || confirm("Falta capturar tu cuenta para pagos SIN factura (Más → Cuenta sin factura).\n\n¿Generar el PDF sin datos bancarios?"); }
 function pintarCuenta(){
   const c = CONFIG.cuentaPersonal || {};
   $("ctTitular").value = c.titular || ""; $("ctBanco").value = c.banco || ""; $("ctClabe").value = c.clabe || ""; $("ctCuenta").value = c.cuenta || "";
-  $("ctEstado").textContent = c.clabe ? "✓ Cuenta guardada. Sin factura saldrá la tuya; con factura, la de " + CONFIG.cuentaFiscal.titular + "." : "⚠ Aún no hay cuenta para pagos sin factura: los PDF sin factura saldrían sin datos bancarios.";
+  $("ctEstado").textContent = c.clabe ? "✓ Cuenta guardada. Sin factura sale la tuya; con factura, la de " + CONFIG.cuentaFiscal.titular + "." : "⚠ Aún no hay cuenta para pagos sin factura: esas cotizaciones saldrían sin datos bancarios.";
 }
 $("ctGuardar").addEventListener("click", () => {
   const c = { titular: $("ctTitular").value.trim(), banco: $("ctBanco").value.trim(), clabe: $("ctClabe").value.trim(), cuenta: $("ctCuenta").value.trim() };
   if(!c.titular || !c.banco || c.clabe.replace(/\D/g, "").length !== 18){ alert("Revisa: titular, banco y CLABE (18 dígitos)."); return; }
   try{ localStorage.setItem(CUENTA_KEY, JSON.stringify(c)); }catch(e){ alert("No pude guardar en este navegador."); return; }
-  CONFIG.cuentaPersonal = c; pintarCuenta(); actualizar();
+  CONFIG.cuentaPersonal = c; pintarCuenta(); toast("Cuenta guardada");
 });
-const CUENTA_KEY = "joart_cuenta_personal";
-function cargarCuentaPersonal(){ try{ const c = JSON.parse(localStorage.getItem(CUENTA_KEY) || "null"); if(c && c.clabe) CONFIG.cuentaPersonal = c; }catch(e){} }
 cargarCuentaPersonal(); pintarCuenta();
-function cuentaDe(factura){ return factura ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal; }
-function cuentaActual(){ return cuentaDe($("fFactura").value === "si"); }
-// Si falta la cuenta personal, avisa antes de generar un PDF sin datos bancarios.
-function cuentaListaParaPDF(d){ return !!(d && d.cuenta && d.cuenta.clabe) || confirm("Falta capturar tu cuenta para pagos SIN factura (Más → Cuenta sin factura).\n\n¿Generar el PDF sin datos bancarios?"); }
-function datosPDF(){
-  const r = ultimo, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000);
-  return {
-    folio: folioActual || (folioCot = folioCot || folioNuevo()), cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(),
-    fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: $("fNotas").value.trim(),
-    entrega: r.entrega, dosCaras: r.dosCaras, requiereFactura: $("fFactura").value === "si",
-    soloPrecios: !!r.comparar, envioGratis: r.comparar ? false : !!r.envioGratis,
-    items: r.lineas.map(l => ({
-      nombre: esPers(l.it) ? (l.it.desc.trim() || "Exhibidor personalizado") + " (a medida)" : l.it.modelo,
-      medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${cuantosTexto(l.it)}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
-      cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor,
-    })),
-    subtotal: r.subtotal, envio: r.envio, recargoEntrega: r.recargoEntrega, pctEntrega: r.pctEntrega, total: r.total, pctAnticipo: r.pctAnticipo, anticipo: r.anticipo, saldo: r.saldo,
-    cuenta: cuentaActual(),
-  };
+
+// ===================== PRODUCTOS (mismo editor en Nuevo y en la cotización) =====================
+const esPers = (it) => it.modelo === PERSONALIZADO;
+function esPiso(it){ if(esPers(it)) return (parseFloat(it.alto) || 0) >= 100; const m = MODELOS.find(x => x.nombre === it.modelo); return !!(m && m.piso); }
+const grosoresPermitidos = (it) => esPers(it) ? ["4 mm","5 mm","6 mm"] : grosoresDeModelo(it.modelo);
+let nextId = 1;
+function nuevoItem(){ return { id: nextId++, modelo: MODELOS[0].nombre, desc: "", alto: "", ancho: "", prof: "", niveles: 1, tipoPers: "niveles", cantidad: 1, grosor: "4 mm", grosorTocado: false, manual: "" }; }
+const hpDe = (it) => hpExhibidor(geomPers(it.alto, it.ancho, it.prof, it.niveles, it.tipoPers));
+function cuantosTexto(it){ const n = parseInt(it.niveles, 10) || 1, u = (TIPOS_PERS[it.tipoPers] || TIPOS_PERS.niveles).unidad; return n + " " + (n === 1 ? u[0] : u[1]); }
+const medidasDe = (it) => esPers(it) ? ((parseFloat(it.alto) > 0 && parseFloat(it.ancho) > 0 && parseFloat(it.prof) > 0) ? `${it.alto} x ${it.ancho} x ${it.prof} cm, ${cuantosTexto(it)}` : "a definir") : ((MODELOS.find(m => m.nombre === it.modelo) || {}).medidas || "");
+const nombreDe = (it) => esPers(it) ? ((it.desc || "").trim() || "Diseño personalizado") : it.modelo;
+
+function itemHTML(it, i, total, conPrecio, calc){
+  const pers = esPers(it);
+  const opts = MODELOS.map(m => `<option value="${esc(m.nombre)}"${m.nombre === it.modelo ? " selected" : ""}>${esc(m.nombre)}</option>`).join("") + `<option value="${PERSONALIZADO}"${pers ? " selected" : ""}>Personalizado (a medida)</option>`;
+  const gros = grosoresPermitidos(it).map(g => `<option${g === it.grosor ? " selected" : ""}>${g}</option>`).join("");
+  const tipos = Object.keys(TIPOS_PERS).map(k => `<option value="${k}"${(it.tipoPers || "niveles") === k ? " selected" : ""}>${TIPOS_PERS[k].etiqueta.split(" /")[0].split(" (")[0]}</option>`).join("");
+  const etq = ({ niveles: "Cuántos niveles", escalonado: "Cuántos escalones", separadores: "Cuántos separadores" })[it.tipoPers || "niveles"];
+  return `<div class="item" data-id="${it.id}">
+    <div class="item-head"><span>Producto ${i + 1}</span>${total > 1 ? `<button type="button" class="link" data-rm="${it.id}">Quitar</button>` : ""}</div>
+    <div class="field"><label>Modelo</label><select data-f="modelo">${opts}</select></div>
+    ${pers ? `
+      <div class="field"><label>Descripción</label><input data-f="desc" type="text" value="${esc(it.desc)}" placeholder="Ej. Exhibidor para botanas"></div>
+      <div class="row3">
+        <div class="field"><label>Alto cm</label><input data-f="alto" type="number" min="1" step="any" inputmode="decimal" value="${esc(it.alto)}"></div>
+        <div class="field"><label>Ancho cm</label><input data-f="ancho" type="number" min="1" step="any" inputmode="decimal" value="${esc(it.ancho)}"></div>
+        <div class="field"><label>Fondo cm</label><input data-f="prof" type="number" min="1" step="any" inputmode="decimal" value="${esc(it.prof)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Tipo</label><select data-f="tipoPers">${tipos}</select></div>
+        <div class="field"><label>${etq}</label><input data-f="niveles" type="number" min="1" step="1" inputmode="numeric" value="${esc(it.niveles)}"></div>
+      </div>` : `<div class="hint" style="margin:-4px 0 10px">${esc(medidasDe(it))}</div>`}
+    <div class="row${conPrecio ? " row3" : ""}">
+      <div class="field"><label>Cantidad</label><input data-f="cantidad" type="number" min="1" step="1" inputmode="numeric" value="${esc(it.cantidad)}"></div>
+      <div class="field"><label>Grosor</label><select data-f="grosor">${gros}</select></div>
+      ${conPrecio ? `<div class="field"><label>Precio c/u</label><input data-f="manual" type="number" min="0" step="any" inputmode="decimal" value="${esc(it.manual)}" placeholder="${calc && calc.unit != null ? Math.round(calc.unit) : "Auto"}"></div>` : ""}
+    </div>
+    ${conPrecio ? `<div class="calc"><span>${esc(calc ? calc.hint : "")}</span><b>${calc && calc.unit != null ? fmt(calc.importe) : "—"}</b></div>` : ""}
+  </div>`;
+}
+// Pinta una lista de productos dentro de "box". arr = arreglo de items, cambio() se llama al editar.
+function enlazarItems(box, getArr, setArr, conPrecio, cambio){
+  const pintar = () => { const arr = getArr(), calcs = conPrecio ? calcularLineas(arr, cambio.ctx ? cambio.ctx() : {}) : []; box.innerHTML = arr.map((it, i) => itemHTML(it, i, arr.length, conPrecio, calcs[i])).join(""); };
+  box.addEventListener("input", (e) => {
+    const card = e.target.closest(".item"); if(!card || !e.target.dataset.f) return;
+    const arr = getArr(), it = arr.find(x => x.id === +card.dataset.id), f = e.target.dataset.f; if(!it) return;
+    if(f === "modelo"){
+      const antes = it.modelo; it.modelo = e.target.value; it.grosorTocado = false; it.manual = "";
+      if(it.modelo === PERSONALIZADO && antes !== PERSONALIZADO){   // personalizado "basado en" el modelo que tenía
+        const m = MODELOS.find(x => x.nombre === antes), g = GEOM[antes];
+        if(m && g){ const d = m.medidas.match(/([\d.]+)\s*x\s*([\d.]+)\s*x\s*([\d.]+)/); if(d){ it.alto = d[1]; it.ancho = d[2]; it.prof = d[3]; } it.tipoPers = g.tipo === "separadores" ? "separadores" : g.tipo === "escalonado" ? "escalonado" : "niveles"; it.niveles = g.tipo === "separadores" ? (g.sep || 1) : g.n; }
+      }
+      pintar(); cambio(); return; }
+    if(f === "tipoPers"){ it.tipoPers = e.target.value; pintar(); cambio(); return; }
+    if(f === "grosor"){ it.grosor = e.target.value; it.grosorTocado = true; } else it[f] = e.target.value;
+    if(conPrecio) refrescarPrecios(box, getArr, cambio); cambio();
+  });
+  box.addEventListener("click", (e) => { const id = e.target.dataset && e.target.dataset.rm; if(!id) return; setArr(getArr().filter(x => x.id !== +id)); pintar(); cambio(); });
+  return pintar;
+}
+// Actualiza importes sin repintar (para no perder el foco al teclear)
+function refrescarPrecios(box, getArr, cambio){
+  const arr = getArr(), calcs = calcularLineas(arr, cambio.ctx ? cambio.ctx() : {});
+  arr.forEach((it, i) => { const card = box.querySelector(`.item[data-id="${it.id}"]`); if(!card) return; const c = calcs[i];
+    const b = card.querySelector(".calc b"), s = card.querySelector(".calc span"), m = card.querySelector('[data-f="manual"]');
+    if(b) b.textContent = c.unit != null ? fmt(c.importe) : "—"; if(s) s.textContent = c.hint; if(m && document.activeElement !== m) m.placeholder = c.unit != null ? Math.round(c.unit) : "Auto"; });
+}
+// Precio de cada línea (catálogo, fórmula de personalizados o precio manual)
+function calcularLineas(arr, ctx){
+  const piezas = arr.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0), pctCaras = ctx.caras === "dos" ? (piezas >= 30 ? 0.40 : 0.30) : 0;
+  return arr.map(it => {
+    const q = parseInt(it.cantidad, 10) || 0, permitidos = grosoresPermitidos(it);
+    if(!it.grosorTocado) it.grosor = esPiso(it) ? "5 mm" : "4 mm";
+    if(permitidos.indexOf(it.grosor) === -1) it.grosor = permitidos[0];
+    let base = null, hint = "";
+    if(q >= 1){
+      if(esPers(it)){ const a = parseFloat(it.alto), b = parseFloat(it.ancho), c = parseFloat(it.prof), n = parseInt(it.niveles, 10) || 1;
+        if(a > 0 && b > 0 && c > 0){ base = cotizarPersonalizado(a, b, c, n, q, it.grosor, it.tipoPers); hint = "Fórmula de personalizados"; } else hint = "Captura alto, ancho y fondo"; }
+      else{ base = precioCatalogo(it.modelo, it.grosor, q); if(base != null) hint = `Tabla: escalón de ${QUIEBRES[escalonIdx(q)]} pz`; }
+    }
+    const manual = parseFloat(it.manual) || 0; let unit = null;
+    if(manual > 0){ unit = manual; hint = "Precio manual"; }
+    else if(base != null){ unit = pctCaras ? up5(base * (1 + pctCaras)) : base; if(pctCaras) hint += ` · +${Math.round(pctCaras * 100)}% frente y vuelta`; }
+    return { it, q, unit, importe: unit != null ? unit * q : 0, hint };
+  });
+}
+
+// ===================== NUEVO PEDIDO (solo registro, sin cotizar) =====================
+let items = [nuevoItem()], archivos = [], listaCache = [], registrando = false;
+const cambioNuevo = () => { actualizarDock(); };
+const pintarItems = enlazarItems($("itemsBox"), () => items, (a) => { items = a; }, false, cambioNuevo);
+$("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); actualizarDock(); });
+["fCliente","fContacto","fZona","fFactura","fNotas","fEntrega","fCaras"].forEach(id => $(id).addEventListener("input", actualizarDock));
+
+function faltantes(){
+  const f = []; if(!$("fCliente").value.trim()) f.push("el nombre del cliente");
+  if(items.some(it => esPers(it) && !(parseFloat(it.alto) > 0 && parseFloat(it.ancho) > 0 && parseFloat(it.prof) > 0))) f.push("las medidas del personalizado");
+  return f;
+}
+function actualizarDock(){
+  const f = faltantes(), e = $("dockEstado"), piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
+  e.className = "estado" + (f.length ? " falta" : "");
+  e.textContent = f.length ? "Falta " + f.join(" y ") : `Listo · ${piezas} pieza${piezas === 1 ? "" : "s"}${archivos.length ? " · " + archivos.length + " archivo" + (archivos.length === 1 ? "" : "s") : ""}`;
+  $("regBtn").disabled = registrando || f.length > 0;
+}
+
+// --- Imágenes: tocar, arrastrar o pegar
+function pintarThumbs(){
+  $("thumbs").innerHTML = archivos.map((f, i) => `<div class="thumb">${f.type.startsWith("image/") ? `<img alt="" src="${URL.createObjectURL(f)}">` : esc((f.name.split(".").pop() || "").toUpperCase())}<button type="button" data-q="${i}" aria-label="Quitar">×</button></div>`).join("");
+  actualizarDock();
+}
+function sumarArchivos(lista){ const nuevos = Array.from(lista || []); if(!nuevos.length) return; archivos = archivos.concat(nuevos).slice(0, 5); pintarThumbs(); }
+$("drop").addEventListener("click", () => $("fLogo").click());
+$("fLogo").addEventListener("change", (e) => { sumarArchivos(e.target.files); e.target.value = ""; });
+$("thumbs").addEventListener("click", (e) => { const q = e.target.dataset && e.target.dataset.q; if(q === undefined) return; archivos.splice(+q, 1); pintarThumbs(); });
+["dragenter","dragover"].forEach(ev => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave","drop"].forEach(ev => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.remove("over"); }));
+$("drop").addEventListener("drop", (e) => sumarArchivos(e.dataTransfer.files));
+document.addEventListener("paste", (e) => { if(!$("pane-nuevo").classList.contains("on")) return; const fs = Array.from((e.clipboardData && e.clipboardData.files) || []); if(fs.length){ e.preventDefault(); sumarArchivos(fs); toast("Imagen agregada"); } });
+
+// --- Dictado y chat pegado
+function limpiarChat(t){
+  return String(t || "")
+    .replace(/^\s*\[?\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s?[ap]\.?\s?m\.?)?\]?\s*(?:-\s*)?[^:\n]{1,40}:\s*/gim, "")
+    .replace(/<Multimedia omitido>|<Media omitted>|imagen omitida|archivo adjunto:?[^\n]*/gi, " ").replace(/\n+/g, ". ");
+}
+function aplicarDictado(texto){
+  const out = $("dictOut"); out.hidden = false;
+  if(!String(texto || "").trim()){ out.textContent = "Dicta o pega algo primero."; return; }
+  const limpio = limpiarChat(texto), r = parsearPedidoTexto(limpio), marcados = [];
+  const poner = (id, v) => { const el = $(id); el.value = v; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); marcados.push(id); };
+  if(r.cliente) poner("fCliente", r.cliente);
+  if(r.entrega) poner("fEntrega", r.entrega); if(r.caras) poner("fCaras", r.caras); if(r.factura) poner("fFactura", r.factura);
+  const tel = limpio.match(/(?:\+?\s?52\s?1?\s?)?\b(\d{2}[\s-]?\d{4}[\s-]?\d{4})\b/); if(tel && !$("fContacto").value.trim()) poner("fContacto", tel[1].replace(/[\s-]/g, ""));
+  if(r.items.length){
+    items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
+      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; it.tipoPers = x.tipoPers || "niveles"; }
+      if(r.grosor && (x.modelo === PERSONALIZADO || grosoresDeModelo(x.modelo).includes(r.grosor))){ it.grosor = r.grosor; it.grosorTocado = true; } return it; });
+    pintarItems(); document.querySelectorAll("#itemsBox .item").forEach(c => c.classList.add("flash"));
+  }
+  const nom = (n) => n === PERSONALIZADO ? "Personalizado" : n;
+  const partes = [r.items.length ? r.items.map(x => `<b>${x.cantidad}</b> × ${esc(nom(x.modelo))}${x.alto ? ` (${x.alto}×${x.ancho}×${x.prof}${x.tipoPers && x.tipoPers !== "niveles" ? ", " + x.niveles + " " + TIPOS_PERS[x.tipoPers].unidad[x.niveles === 1 ? 0 : 1] : ""})` : ""}`).join(" + ") : "⚠ no reconocí el modelo",
+    r.cliente ? "cliente <b>" + esc(r.cliente) + "</b>" : "⚠ falta el cliente", r.grosor && "<b>" + r.grosor + "</b>", r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta", r.factura && "con factura"].filter(Boolean);
+  out.innerHTML = "ENTENDÍ ▸ " + partes.join(" · ") + "<br>Revisa los campos marcados antes de registrar.";
+  actualizarDock();
+}
+$("llenarBtn").addEventListener("click", () => aplicarDictado($("fDictado").value));
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, orb = $("orb"), txt = $("orbTxt");
+  if(!SR){ txt.textContent = "Escribe o pega abajo (o usa el micrófono de tu teclado)"; orb.style.opacity = .5; orb.style.cursor = "default"; return; }
+  let rec = null, oyendo = false;
+  orb.addEventListener("click", () => {
+    if(oyendo && rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = "es-MX"; rec.interimResults = true; rec.continuous = false; oyendo = true; orb.classList.add("on"); txt.textContent = "Escuchando… toca para terminar";
+    rec.onresult = (e) => { $("fDictado").value = Array.from(e.results).map(x => x[0].transcript).join(" "); };
+    rec.onerror = (e) => { txt.textContent = e.error === "not-allowed" ? "Permite el micrófono en el navegador" : "No pude escuchar (" + e.error + ")"; };
+    rec.onend = () => { oyendo = false; orb.classList.remove("on"); if(/Escuchando/.test(txt.textContent)) txt.textContent = "Toca y habla"; if($("fDictado").value.trim()) aplicarDictado($("fDictado").value); };
+    try{ rec.start(); }catch(err){ oyendo = false; orb.classList.remove("on"); txt.textContent = "Toca y habla"; }
+  });
+})();
+
+// --- Registrar
+async function registrar(){
+  if(registrando) return; const f = faltantes(); if(f.length){ toast("Falta " + f.join(" y ")); return; }
+  const piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
+  if(piezas > CONFIG.maxPiezas && !confirm(`El pedido suma ${piezas} piezas y el máximo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Registrarlo de todos modos?`)) return;
+  const nom = normNom($("fCliente").value);
+  const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
+  if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o un detalle, NO crees otro: ve a Proyectos, ábrelo y actualiza la cotización.\n\n¿Crear uno nuevo de todos modos?`)) return;
+  const sinCant = items.some(it => !(parseInt(it.cantidad, 10) > 0)), extras = [];
+  if($("fEntrega").value !== "estandar") extras.push("Entrega " + ({ expres: "exprés (4 días háb.)", urgente: "urgente (2 días háb.; pago 100%)" })[$("fEntrega").value]);
+  if($("fCaras").value === "dos") extras.push("Impresión frente y vuelta");
+  if(sinCant) extras.push("Cantidad por confirmar");
+  const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
+  const lineas = items.map(it => ({ modelo: nombreDe(it), medidas: medidasDe(it), cantidad: parseInt(it.cantidad, 10) || 1, grosor: it.grosor, precioUnitario: 0, personalizado: esPers(it), hpPorPieza: esPers(it) ? hpDe(it) : null }));
+  const order = { cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: lineas };
+  registrando = true; $("regBtn").disabled = true; $("regBtn").textContent = "Registrando…";
+  try{
+    let logos = []; if(archivos.length){ try{ logos = await Promise.all(archivos.map(async f => ({ nombre: f.name, tipo: f.type, contenido: await fileToB64(f) }))); }catch(e){ console.error(e); } }
+    const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ order, logos, password: passwordActual }) })).json();
+    if(!res.ok){ alert("No se pudo registrar: " + (res.error || "error desconocido")); return; }
+    mostrarRegistrado(res, order);
+    cargarLista();
+  }catch(e){ console.error(e); alert("No se pudo conectar. No se registró nada; intenta de nuevo."); }
+  finally{ registrando = false; $("regBtn").textContent = "⚡ Registrar pedido"; actualizarDock(); }
+}
+function mostrarRegistrado(res, order){
+  const cod = res.codigoSeguimiento || "—";
+  $("formNuevo").hidden = true; $("dock").hidden = true; $("doneBox").hidden = false; window.scrollTo(0, 0);
+  const el = $("doneCode"); el.textContent = ""; [...cod].forEach((c, i) => setTimeout(() => { el.textContent += c; }, 70 * i));
+  $("doneWarn").textContent = (res.clickup && res.clickup.ok === false) ? "⚠ Se guardó en Sheets, pero NO se creó la tarjeta de ClickUp: " + (res.clickup.motivo || "error") : "";
+  $("waDone").href = waUrl(order.contacto, `Hola ${order.cliente} 👋 Recibimos tu logo y tu pedido quedó registrado con el código *${cod}*. Ya estamos preparando tu render 3D, sin costo. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${cod}`);
+}
+$("regBtn").addEventListener("click", registrar);
+$("againBtn").addEventListener("click", () => {
+  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
+  archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); $("dictOut").hidden = true;
+  $("doneBox").hidden = true; $("formNuevo").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); actualizarDock();
+});
+
+// ===================== PROYECTOS =====================
+async function cargarLista(){
+  const box = $("pLista");
+  try{
+    const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
+    if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return 0; }
+    listaCache = r.tareas || []; pintarLista(); return listaCache.length;
+  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; return 0; }
+}
+function pintarLista(){
+  const q = normNom($("busca").value), box = $("pLista");
+  const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
+  const entregado = (t) => (t.estatus || "").trim().toLowerCase() === "entregado";
+  const coincide = (t) => !q || normNom(t.nombre).includes(q) || normNom(t.codigo).includes(q);
+  const fila = (t) => `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="go-arrow">›</span></button>`;
+  const activos = listaCache.filter(t => !entregado(t) && coincide(t)), viejos = listaCache.filter(t => entregado(t) && coincide(t));
+  if(!listaCache.length){ box.textContent = "Aún no hay proyectos."; return; }
+  box.innerHTML = (activos.length ? `<div class="col-h"><span>En curso · ${activos.length}</span><button type="button" class="link" id="pRefrescar">Actualizar</button></div>` + activos.map(fila).join("") : (q ? "" : `<div class="hint">No hay proyectos en curso.</div>`))
+    + (viejos.length && (q || activos.length === 0) ? `<div class="col-h"><span>Entregados · ${viejos.length}</span></div>` + viejos.slice(0, 40).map(fila).join("") : (viejos.length ? `<div class="col-h"><span>Entregados · ${viejos.length}</span><span>escribe para buscarlos</span></div>` : ""))
+    + (q && !activos.length && !viejos.length ? `<div class="hint">Nada con “${esc($("busca").value)}”.</div>` : "");
+}
+$("busca").addEventListener("input", pintarLista);
+$("pLista").addEventListener("click", (e) => {
+  if(e.target.id === "pRefrescar"){ cargarLista(); return; }
+  const b = e.target.closest(".proj"); if(!b) return;
+  if(!b.dataset.cod){ toast("Este proyecto no tiene código (se agregó a mano)."); return; }
+  abrirProyecto(b.dataset.cod, b.dataset.nom);
+});
+
+let ped = null, abrirTok = 0, cot = null;
+async function abrirProyecto(cod, nombreEsperado){
+  cod = String(cod || "").trim().toUpperCase(); const tok = ++abrirTok;
+  $("listaVista").hidden = true; $("fichaVista").hidden = false; $("fichaVista").innerHTML = `<div class="hint" style="padding:30px 0;text-align:center">ABRIENDO ${esc(cod)}…</div>`; window.scrollTo(0, 0);
+  const falla = (m) => { $("fichaVista").innerHTML = `<button class="back" id="volver">‹ Proyectos</button><div class="box err">${esc(m)}</div>`; };
+  try{
+    const p = await post("buscarPedido", { codigo: cod, nombre: nombreEsperado || "" });
+    if(tok !== abrirTok) return;   // tocaste otro antes de que respondiera este
+    if(!p.ok){ falla(p.error || "No se encontró el pedido."); return; }
+    if(p.codigo && String(p.codigo).trim().toUpperCase() !== cod){ falla(`El Sheets devolvió el código ${p.codigo} al pedir ${cod}. No se abrió para evitar mezclar proyectos.`); return; }
+    let alerta = "";
+    if(nombreEsperado && p.cliente){ const a = normNom(nombreEsperado), b = normNom(p.cliente); if(a && b && a !== b && !a.includes(b) && !b.includes(a)) alerta = `⚠ Tocaste «${nombreEsperado}» pero en el Sheets el código ${cod} es de «${p.cliente}». Revisa que el código no esté repetido o que no hayas movido filas.`; }
+    ped = { codigo: cod, cliente: p.cliente || nombreEsperado || "", contacto: p.contacto || "", notas: p.notas || "", items: (p.items || []).filter(i => i.modelo !== "Envío"), factura: !!p.requiereFactura, alerta };
+    cot = null; pintarFicha();
+  }catch(e){ console.error(e); falla("No se pudo conectar."); }
+}
+function pintarFicha(){
+  const lista = ped.items.map(it => `<div class="linea"><b>${esc(it.cantidad || "")}×</b><span>${esc(it.modelo || it.nombre || "")}<small>${esc([it.medidas && it.medidas !== "a definir" ? it.medidas : "", it.grosor].filter(Boolean).join(" · "))}</small></span></div>`).join("");
+  $("fichaVista").innerHTML = `<button class="back" id="volver">‹ Proyectos</button>
+    <div class="hud">
+      <div class="ficha-code">${esc(ped.codigo)}</div><h2 class="ficha-name">${esc(ped.cliente)}</h2>
+      ${ped.contacto ? `<div class="hint">WhatsApp ${esc(ped.contacto)}</div>` : ""}
+      ${ped.alerta ? `<div class="box err">${esc(ped.alerta)}</div>` : ""}
+      <div class="lbl" style="margin-top:16px">Lo que se registró</div>
+      ${lista || `<div class="hint">Sin productos registrados.</div>`}
+      ${ped.notas ? `<div class="hint" style="margin-top:8px">📝 ${esc(ped.notas)}</div>` : ""}
+      <button type="button" class="btn go" id="armarCot">${cot ? "Cotización abierta ↓" : "📄 Generar cotización"}</button>
+      <a class="btn" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, `Hola ${ped.cliente} 👋 Aquí puedes ver el estatus de tu pedido en vivo: ${PORTAL_URL}?codigo=${ped.codigo}`))}">🔗 Mandar enlace de seguimiento</a>
+    </div>
+    <div id="cotBox"></div>`;
+  if(cot) pintarCot();
+}
+$("fichaVista").addEventListener("click", (e) => {
+  if(e.target.id === "volver"){ abrirTok++; $("fichaVista").hidden = true; $("listaVista").hidden = false; ped = null; cot = null; window.scrollTo(0, 0); return; }
+  if(e.target.id === "armarCot"){ armarCot(); }
+});
+
+// ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
+const DIMS = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i;
+function itemDesdeRegistro(x){
+  const it = nuevoItem(), cat = catalogoDe(x.modelo);
+  it.cantidad = parseInt(x.cantidad, 10) || 1; if(x.grosor && ["4 mm","5 mm","6 mm"].includes(String(x.grosor).replace(/^(\d)mm$/, "$1 mm"))){ it.grosor = String(x.grosor).replace(/^(\d)mm$/, "$1 mm"); it.grosorTocado = true; }
+  it.extra = x;
+  if(cat){ it.modelo = cat.nombre; return it; }
+  it.modelo = PERSONALIZADO; it.desc = String(x.modelo || "").replace(/\s*\(a medida\)\s*$/i, "");
+  const d = String(x.medidas || "").match(DIMS); if(d){ it.alto = d[1].replace(",", "."); it.ancho = d[2].replace(",", "."); it.prof = d[3].replace(",", "."); }
+  const n = String(x.medidas || "").match(/(\d+)\s*(nivel|charola|escal|separador)/i);
+  if(n){ it.niveles = parseInt(n[1], 10) || 1; it.tipoPers = /escal/i.test(n[2]) ? "escalonado" : /separador/i.test(n[2]) ? "separadores" : "niveles"; }
+  if(!d && Number(x.precioUnitario) > 0) it.manual = Number(x.precioUnitario);
+  return it;
+}
+function armarCot(){
+  if(!cot){
+    const txt = (ped.notas || "").toLowerCase();
+    cot = { items: ped.items.map(itemDesdeRegistro), entrega: /urgente/.test(txt) ? "urgente" : /expres|exprés/.test(txt) ? "expres" : "estandar", caras: /frente y vuelta/.test(txt) ? "dos" : "una", factura: ped.factura ? "si" : "no", envio: "" };
+    if(!cot.items.length) cot.items = [nuevoItem()];
+  }
+  pintarFicha(); $("cotBox").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+let repintarCot = null;
+function pintarCot(){
+  $("cotBox").innerHTML = `<div class="hud">
+    <div class="lbl">Cotización</div>
+    <div id="cotItems"></div>
+    <button type="button" class="adder" id="cotAdd">+ Agregar producto</button>
+    <div class="row" style="margin-top:14px">
+      <div class="field"><label>Entrega</label><select id="cEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +15%</option><option value="urgente">Urgente +25%</option></select></div>
+      <div class="field"><label>Impresión</label><select id="cCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
+      <div class="field"><label>Envío (si ≤ $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div id="cotRes"></div>
+  </div>`;
+  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio;
+  const cambio = () => calcCot(); cambio.ctx = () => ({ caras: cot.caras });
+  repintarCot = enlazarItems($("cotItems"), () => cot.items, (a) => { cot.items = a; }, true, cambio);
+  $("cotAdd").addEventListener("click", () => { cot.items.push(nuevoItem()); repintarCot(); calcCot(); });
+  ["cEntrega","cCaras","cFactura","cEnvio"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; if(id === "cCaras") repintarCot(); calcCot(); }));
+  repintarCot(); calcCot();
+}
+function calcCot(){
+  const lineas = calcularLineas(cot.items, { caras: cot.caras }), piezas = lineas.reduce((s, l) => s + l.q, 0);
+  const pctEntrega = cot.entrega === "expres" ? 0.15 : cot.entrega === "urgente" ? 0.25 : 0;
+  const subtotal = lineas.reduce((s, l) => s + l.importe, 0), recargo = Math.round(subtotal * pctEntrega);
+  const envioAplica = (subtotal + recargo) <= 1000, envio = envioAplica ? (parseFloat(cot.envio) || 0) : 0, total = subtotal + recargo + envio;
+  const pctA = cot.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
+  const err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
+  const avisos = [];
+  if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
+  if(cot.entrega !== "estandar" && piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas.`);
+  if(cot.entrega !== "estandar" && cot.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
+  cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err };
+  $("cotRes").innerHTML = `<div class="sum">
+    ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
+    <div class="l"><span>${piezas} pieza${piezas === 1 ? "" : "s"}</span><span>${fmt(subtotal)}</span></div>
+    ${recargo ? `<div class="l"><span>Recargo ${cot.entrega === "expres" ? "exprés" : "urgente"}</span><span>${fmt(recargo)}</span></div>` : ""}
+    ${envio ? `<div class="l"><span>Envío</span><span>${fmt(envio)}</span></div>` : ""}
+    ${(subtotal + recargo) > 1000 ? `<div class="l g"><span>🚚 Envío nacional GRATIS</span><span></span></div>` : (subtotal > 0 && !envio ? `<div class="box warn">Pedido de $1,000 o menos: el envío no va incluido. Escribe el costo si lo cobras.</div>` : "")}
+    <div class="tot">${fmt(total)} <small style="font:600 11px var(--mono);color:var(--mute)">MXN · IVA incluido</small></div>
+    <div class="split"><div>Anticipo ${Math.round(pctA * 100)}%<strong>${fmt(anticipo)}</strong></div><div>Saldo<strong>${fmt(total - anticipo)}</strong></div></div>
+    <button type="button" class="btn go" id="cotEnviar" ${err ? "disabled" : ""}>📲 Guardar y enviar al cliente</button>
+    <button type="button" class="btn" id="cotPdf" ${err ? "disabled" : ""}>📄 Solo descargar PDF</button>
+    <button type="button" class="btn" id="cotGuardar" ${err ? "disabled" : ""}>💾 Guardar cambios sin enviar</button>
+  </div>`;
 }
 const nombreArchivo = (d) => `Cotizacion-${d.cliente.replace(/[^\wÀ-ſ]+/g, "-").replace(/^-|-$/g, "")}-${d.folio}.pdf`;
-function crearPDF(){
-  if(!window.jspdf){ alert("No cargó la librería de PDF. Revisa tu conexión y recarga la página."); return null; }
-  const d = datosPDF(); if(!cuentaListaParaPDF(d)) return null; return { doc: construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), d };
+function datosCot(){
+  const c = cot.calc, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000);
+  return { folio: ped.codigo, cliente: ped.cliente, contacto: ped.contacto, fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
+    entrega: cot.entrega, dosCaras: cot.caras === "dos", requiereFactura: cot.factura === "si", soloPrecios: false, envioGratis: (c.subtotal + c.recargo) > 1000,
+    items: c.lineas.map(l => ({ nombre: esPers(l.it) ? nombreDe(l.it) + " (a medida)" : l.it.modelo, medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })),
+    subtotal: c.subtotal, envio: c.envio, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
+    cuenta: cuentaDe(cot.factura === "si") };
 }
+function waUrl(tel, texto){
+  let n = String(tel || "").replace(/\D/g, ""); if(n.length === 10) n = "52" + n; else if(n.length === 13 && n.startsWith("521")) n = "52" + n.slice(3);
+  return "https://wa.me/" + (n.length >= 11 ? n : "") + "?text=" + encodeURIComponent(texto);
+}
+const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
+const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
+const lineaEnvio = (d) => d.envio ? `Envío: ${fmt(d.envio)}\n` : (d.envioGratis ? "Envío nacional: gratis 🚚\n" : "");
+const mensajeCot = (d) => `Hola ${d.cliente} 👋 Te comparto la cotización de tu pedido *${d.folio}*; el detalle, las condiciones y los datos de pago van en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido) · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\nVigencia: hasta el ${d.vigencia}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
+async function compartirPDF(d, texto, tel){
+  if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga la página."); return; }
+  if(!cuentaListaParaPDF(d)) return;
+  const doc = construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), file = new File([doc.output("blob")], nombreArchivo(d), { type: "application/pdf" });
+  try{ if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: "Joart Digital " + d.folio, text: texto }); return; } }catch(err){ if(err && err.name === "AbortError") return; }
+  doc.save(nombreArchivo(d)); window.open(waUrl(tel, texto), "_blank");   // escritorio: baja el PDF y abre WhatsApp con el texto
+}
+async function guardarCot(){
+  const c = cot.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
+  const itemsG = c.lineas.map(l => Object.assign({}, l.it.extra || {}, { modelo: nombreDe(l.it), medidas: medidasDe(l.it), cantidad: l.q, grosor: l.it.grosor, precioUnitario: Math.round(l.unit * factor * 100) / 100, personalizado: esPers(l.it), hpPorPieza: esPers(l.it) ? hpDe(l.it) : null }));
+  if(c.envio) itemsG.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
+  const r = await post("guardarCobro", { codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si" });
+  if(!r.ok) throw new Error(r.error || "error");
+}
+$("fichaVista").addEventListener("click", async (e) => {
+  const id = e.target.id; if(!cot || !["cotEnviar","cotPdf","cotGuardar"].includes(id)) return;
+  const b = e.target, orig = b.textContent;
+  if(cot.calc.err){ toast(cot.calc.err); return; }
+  const d = datosCot();
+  if(id === "cotPdf"){ if(!window.jspdf){ alert("No cargó la librería de PDF."); return; } if(!cuentaListaParaPDF(d)) return; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); return; }
+  b.disabled = true; b.textContent = "Guardando…";
+  try{ await guardarCot(); toast("Guardado en Sheets"); if(id === "cotEnviar") await compartirPDF(d, mensajeCot(d), ped.contacto); }
+  catch(err){ console.error(err); alert("No se pudo guardar: " + (err.message || "error de conexión") + ". No se envió nada."); }
+  finally{ b.disabled = false; b.textContent = orig; }
+});
+
+// ===================== PESTAÑAS Y ARRANQUE =====================
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => abrirTab(b.dataset.tab)));
+function abrirTab(t){
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
+  document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
+  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); window.scrollTo(0, 0);
+}
+$("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
+const dormir = (ms) => new Promise(r => setTimeout(r, ms));
+async function iniciarApp(){
+  const boot = $("boot"), log = $("bootLog"), t0 = Date.now(); boot.classList.remove("off"); boot.classList.add("on");
+  const lines = ["<i>▸</i> ACCESO AUTORIZADO ........ OK", "<i>▸</i> LEYENDO PROYECTOS …"], dibuja = () => { log.innerHTML = lines.join("\n"); }; dibuja();
+  const n = await cargarLista(); lines[1] = `<i>▸</i> PROYECTOS ................ ${n}`; dibuja();
+  const h = new Date().getHours(); $("saludo").textContent = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", Jorge";
+  $("saludoSub").textContent = n ? `${listaCache.filter(t => (t.estatus || "").trim().toLowerCase() !== "entregado").length} proyectos en curso. Cuéntame el pedido nuevo o pega el chat.` : "Cuéntame el pedido o pega el chat. Yo lleno el formulario.";
+  await dormir(Math.max(0, 900 - (Date.now() - t0))); boot.classList.add("off"); setTimeout(() => boot.classList.remove("on"), 550);
+}
+const ZONAS = ["Aguascalientes","Baja California","Baja California Sur","Campeche","CDMX","Chiapas","Chihuahua","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Monterrey","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
+$("listaZonas").innerHTML = ZONAS.map(z => `<option value="${z}">`).join("");
+pintarItems(); actualizarDock();
+
 // ===================== COTIZACIÓN EN PDF =====================
 function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -666,417 +952,6 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   for(let p = 1; p <= n; p++){ doc.setPage(p); texto(d.folio + "  ·  Página " + p + " de " + n, W / 2, 291, { size: 7.5, color: MUTED, align: "center" }); }
   return doc;
 }
-
-// ===================== REGISTRO Y ENVÍO =====================
-let folioActual = null, folioCot = null, registrado = null;
-function hpDe(it){ return hpExhibidor(geomPers(it.alto, it.ancho, it.prof, it.niveles, it.tipoPers)); }
-// "3 niveles" · "1 escalón" · "2 separadores"
-function cuantosTexto(it){ const n = parseInt(it.niveles, 10) || 1, u = TIPOS_PERS[it.tipoPers] ? TIPOS_PERS[it.tipoPers].unidad : TIPOS_PERS.niveles.unidad; return n + " " + (n === 1 ? u[0] : u[1]); }
-function diasHabiles(n){
-  const d = new Date(); let s = 0;
-  while(s < n){ d.setDate(d.getDate() + 1); const w = d.getDay(); if(w !== 0 && w !== 6) s++; }
-  const p = (x) => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
-}
-function waUrl(tel, texto){
-  let n = String(tel || "").replace(/\D/g, "");
-  if(n.length === 10) n = "52" + n; else if(n.length === 13 && n.startsWith("521")) n = "52" + n.slice(3);
-  return "https://wa.me/" + (n.length >= 11 ? n : "") + "?text=" + encodeURIComponent(texto);
-}
-const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
-const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
-function listaProductos(d){ return d.items.map(it => `• ${it.cantidad} × ${it.nombre}`).join("\n") + "\nMaterial: Coroplast (polipropileno corrugado)" + (d.items[0] && d.items[0].grosor ? [...new Set(d.items.map(i => i.grosor).filter(Boolean))].map(matDet).join(" /") : ""); }
-const lineaEnvio = (d) => d.envio ? `Envío: ${fmt(d.envio)}\n` : (d.envioGratis ? "Envío nacional: gratis 🚚\n" : "");
-// Mensajes cortos: todo el detalle (productos, condiciones, datos de pago) va en el PDF adjunto.
-function mensajePedido(d){
-  return `Hola ${d.cliente} 👋 Tu pedido quedó registrado con el folio *${d.folio}*. En el PDF va tu cotización con condiciones y datos de pago.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n\nTe mando tu render 3D sin costo. Sigue tu pedido en vivo:\n${PORTAL_URL}?codigo=${d.folio}`;
-}
-function mensajeCotizacion(d){
-  if(d.soloPrecios) return `Hola ${d.cliente} 👋 Te comparto tu cotización ${d.folio} con los precios por pieza según la cantidad. El detalle va en el PDF. Vigencia: hasta el ${d.vigencia}.`;
-  return `Hola ${d.cliente} 👋 Te comparto tu cotización ${d.folio}; el detalle va en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido)\nVigencia: hasta el ${d.vigencia}`;
-}
-const fileToB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
-
-const normNom = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-async function registrar(btn, rapido){
-  const r = ultimo; if(!r) return;
-  if(r.comparar){ alert("Estás en “Comparar cantidades”: eso es solo para ver precios. Cambia a “Un pedido” para registrar."); return; }
-  if(r.limite){ alert(r.limite); return; }
-  // Evita duplicados: si el cliente ya tiene un pedido en curso, avisa antes de crear otro.
-  const nom = normNom($("fCliente").value);
-  const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
-  if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o el precio, NO crees otro: ve a Pedidos, ábrelo y usa “Cobrar”.\n\n¿Crear un pedido nuevo de todos modos?`)) return;
-  if(!rapido){
-    if(r.errores.length) return;
-    if(r.lineas.some(l => !(l.unit > 0))){ alert("Falta precio en algún producto."); return; }
-  }
-  const factor = (!rapido && r.subtotal > 0) ? (r.subtotal + r.recargoEntrega) / r.subtotal : 1;   // recargo exprés/urgente repartido en el precio unitario
-  const items2 = r.lineas.map(l => {
-    const pers = esPers(l.it);
-    const m = MODELOS.find(x => x.nombre === l.it.modelo);
-    return {
-      modelo: pers ? (l.it.desc.trim() || "Diseño personalizado") : l.it.modelo,
-      medidas: pers ? ((parseFloat(l.it.alto) > 0) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm` : "a definir") : (m ? m.medidas : ""),
-      cantidad: l.q || 1, grosor: l.it.grosor,
-      precioUnitario: rapido ? 0 : Math.round(l.unit * factor * 100) / 100,
-      personalizado: pers, hpPorPieza: pers ? hpDe(l.it) : null,
-    };
-  });
-  if(!rapido && r.envio) items2.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: r.envio, personalizado: false, hpPorPieza: null });
-  const extras = [];
-  if(r.pctEntrega) extras.push(`Entrega ${r.entrega === "expres" ? "exprés (4 días háb.)" : "urgente (2 días háb.; pago 100%)"}: +${Math.round(r.pctEntrega*100)}% ya incluido en precios`);
-  if(r.dosCaras) extras.push("Impresión frente y vuelta");
-  if(rapido) extras.push("Cantidad y precio por confirmar");
-  const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
-  const order = { cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: items2 };
-
-  const orig = btn.textContent; btn.disabled = true; btn.textContent = "Registrando…";
-  try{
-    let logos = [];
-    const files = Array.from($("fLogo").files || []).slice(0, 5);
-    if(files.length){ try{ logos = await Promise.all(files.map(async f => ({ nombre: f.name, tipo: f.type, contenido: await fileToB64(f) }))); }catch(e){ console.error(e); } }
-    const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ order, logos, password: passwordActual }) })).json();
-    if(!res.ok){ alert("No se pudo registrar: " + (res.error || "error desconocido")); return; }
-    folioActual = res.codigoSeguimiento;
-    registrado = { datos: rapido ? null : datosPDF(), rapido: !!rapido };
-    $("doneCode").textContent = folioActual || "—";
-    $("doneWarn").textContent = (res.clickup && res.clickup.ok === false) ? "⚠ Se guardó en Sheets, pero NO se creó la tarjeta de ClickUp: " + (res.clickup.motivo || "error") : "";
-    const msgReg = rapido ? `Hola ${$("fCliente").value.trim()} 👋 Recibimos tu logo y tu pedido quedó registrado con el código *${folioActual}*. Ya estamos preparando tu render 3D, sin costo. Aquí sigues tu pedido en vivo, sin teclear nada:\n${PORTAL_URL}?codigo=${folioActual}` : mensajePedido(registrado.datos);
-    $("waDone").href = waUrl($("fContacto").value, msgReg);
-    $("shareDone").style.display = $("pdfDone").style.display = rapido ? "none" : "";
-    $("doneHint").textContent = rapido ? "Sigue: manda el render. Cuando confirmen piezas, entra a Pedidos → abre este código → “Cobrar”." : "";
-    $("formNuevo").style.display = "none"; $("done").classList.add("show"); window.scrollTo(0, 0);
-    if(!rapido) guardarCobroAuto(folioActual, order.requiereFactura);
-    cargarLista();
-  }catch(e){ console.error(e); alert("No se pudo conectar. Antes de reintentar revisa en Sheets que el pedido no se haya creado ya."); }
-  finally{ btn.disabled = false; btn.textContent = orig; }
-}
-async function guardarCobroAuto(codigo, factura){   // deja el cobro listo (como hacía "Generar cobro")
-  try{ const p = await post("buscarPedido", { codigo }); if(p.ok) await post("guardarCobro", { codigo, items: p.items, requiereFactura: factura }); }catch(e){ console.error(e); }
-}
-async function compartirPDF(d, texto, fallbackTel){
-  if(!cuentaListaParaPDF(d)) return;
-  const r = { doc: construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), d };
-  const file = new File([r.doc.output("blob")], nombreArchivo(d), { type: "application/pdf" });
-  try{
-    if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: "Joart Digital " + d.folio, text: texto }); return; }
-  }catch(err){ if(err && err.name === "AbortError") return; }
-  r.doc.save(nombreArchivo(d));                       // escritorio: baja el PDF y abre WhatsApp con el texto
-  window.open(waUrl(fallbackTel, texto), "_blank");
-}
-
-$("resumen").addEventListener("click", (e) => {
-  const id = e.target.id; if(!id) return;
-  if(!window.jspdf && id !== "goBtn" && id !== "quickBtn"){ alert("No cargó la librería de PDF. Revisa tu conexión y recarga."); return; }
-  if(id === "goBtn") registrar(e.target, false);
-  if(id === "quickBtn") registrar(e.target, true);
-  if(id === "pdfBtn"){ const d = datosPDF(); construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); }
-  if(id === "quoteWa"){ const d = datosPDF(); compartirPDF(d, mensajeCotizacion(d), $("fContacto").value); }
-});
-$("shareDone").addEventListener("click", () => { if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga."); return; } compartirPDF(registrado.datos, mensajePedido(registrado.datos), $("fContacto").value); });
-$("pdfDone").addEventListener("click", () => { const d = registrado.datos; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); });
-$("againBtn").addEventListener("click", () => {
-  ["fCliente","fContacto","fZona","fNotas","fEnvio"].forEach(id => $(id).value = "");
-  $("fLogo").value = ""; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una"; $("fModo").value = "pedido";
-  folioActual = null; folioCot = null; registrado = null; items = [nuevoItem()]; $("fDictado").value = ""; pintarItems();
-  $("done").classList.remove("show"); $("formNuevo").style.display = ""; window.scrollTo(0, 0);
-});
-
-// ===================== PESTAÑAS =====================
-document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => abrirTab(b.dataset.tab)));
-function abrirTab(t){
-  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
-  document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
-  if(t === "pedidos") cargarLista(); if(t === "avisos") cargarAvisos(); if(t === "posventa") cargarPosventa();
-  window.scrollTo(0, 0);
-}
-
-// ===================== PEDIDOS =====================
-async function cargarLista(){
-  const box = $("pLista");
-  try{
-    const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
-    if(!r.ok){ box.textContent = r.error || "No se pudo leer el tablero."; return; }
-    listaCache = r.tareas || [];
-    const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
-    const orden = ["1. Solicitudes / Brief","2. En renders","3. Revisión interna","4. En revisión cliente","5. Corrección requerida","6. Pre-prensa / Suajes","7. En producción"];
-    const grupos = {}; (r.tareas || []).forEach(t => { const k = (t.estatus || "").trim(); if(k.toLowerCase() === "entregado") return; (grupos[k] = grupos[k] || []).push(t); });
-    const claves = Object.keys(grupos).sort((a, b) => (orden.indexOf(a) < 0 ? 99 : orden.indexOf(a)) - (orden.indexOf(b) < 0 ? 99 : orden.indexOf(b)));
-    box.innerHTML = claves.length ? claves.map(k => `<div class="col-h">${esc(k)} · ${grupos[k].length}</div>` + grupos[k].map(t => `
-      <button type="button" class="ped" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span>${t.pagado ? `<span class="pg ok">${esc(String(t.pagado))}</span>` : `<span class="pg">sin pago</span>`}</button>`).join("")).join("") : "Nada en curso 🎉";
-  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
-}
-$("pRefrescar").addEventListener("click", (e) => { e.preventDefault(); cargarLista(); });
-$("pLista").addEventListener("click", (e) => { const b = e.target.closest(".ped"); if(!b) return; if(!b.dataset.cod){ toast("Este pedido no tiene código (se agregó a mano)."); return; } $("pCodigo").value = b.dataset.cod; abrirPedido(b.dataset.cod, b.dataset.nom); window.scrollTo(0, 0); });
-$("pBuscar").addEventListener("click", () => abrirPedido($("pCodigo").value));
-$("pCodigo").addEventListener("keydown", (e) => { if(e.key === "Enter") abrirPedido($("pCodigo").value); });
-
-let listaCache = [], ped = null, abrirTok = 0;
-async function abrirPedido(cod, nombreEsperado){
-  cod = String(cod || "").trim().toUpperCase(); const err = $("pErr"); err.style.display = "none";
-  if(!cod){ err.textContent = "Escribe un código."; err.style.display = "block"; return; }
-  const tok = ++abrirTok;   // si tocas otro pedido antes de que responda el anterior, se ignora la respuesta vieja
-  try{
-    const p = await post("buscarPedido", { codigo: cod, nombre: nombreEsperado || "" });
-    if(tok !== abrirTok) return;
-    if(!p.ok){ err.textContent = p.error || "No se encontró el pedido."; err.style.display = "block"; $("pDetalle").style.display = "none"; return; }
-    if(p.codigo && String(p.codigo).trim().toUpperCase() !== cod){ err.textContent = `El Sheets devolvió el código ${p.codigo} al pedir ${cod}. No se abrió para evitar mezclar pedidos.`; err.style.display = "block"; $("pDetalle").style.display = "none"; return; }
-    let alerta = "";
-    if(nombreEsperado && p.cliente){ const a = normNom(nombreEsperado), b = normNom(p.cliente); if(a && b && a !== b && !a.includes(b) && !b.includes(a)) alerta = `⚠ Tocaste «${nombreEsperado}» pero en el Sheets el código ${cod} es de «${p.cliente}». Revisa que el código no esté repetido o cambiado de fila antes de cobrar o avisar.`; }
-    ped = { codigo: cod, cliente: p.cliente, contacto: p.contacto, items: (p.items || []).filter(i => i.modelo !== "Envío"), pagado: p.pagado, factura: !!p.requiereFactura, alerta };
-    cb = null;
-    pintarPedido();
-  }catch(e){ console.error(e); err.textContent = "No se pudo conectar."; err.style.display = "block"; }
-}
-function pintarPedido(){
-  const lista = ped.items.map(it => `• ${esc(it.cantidad)} × ${esc(it.modelo || it.nombre || "")}`).join("<br>");
-  $("pDetalle").style.display = "block";
-  $("pDetalle").innerHTML = `
-    <div class="card">
-      <div class="card-label">${esc(ped.codigo)}</div>
-      <div style="font:800 17px 'Archivo Expanded',sans-serif;margin-bottom:6px">${esc(ped.cliente || "")}</div>
-      <div class="mini">${lista}</div>
-      ${ped.alerta ? `<div class="err-box" style="margin-top:8px">${esc(ped.alerta)}</div>` : ""}
-      ${ped.pagado ? `<div class="msg-ok">Pagado: ${esc(String(ped.pagado))}</div>` : ""}
-      <div class="col-h">Cobro</div>
-      <button type="button" class="a-btn a-terra" data-ac="cobrar">💳 Cobrar: cotización final y datos de pago</button>
-      <div id="cbBox"></div>
-      <div class="col-h">Pagos recibidos</div>
-      <button type="button" class="a-btn a-green" data-ac="pago50">💰 Anticipo recibido (50%)</button>
-      <button type="button" class="a-btn a-green" data-ac="pago100">✅ Pago completo (100%)</button>
-      <div class="col-h">Render</div>
-      <div class="mini" style="margin-bottom:8px">Pega el link del render y toca el botón: mueve la tarjeta a “En revisión cliente” y abre WhatsApp con el mensaje listo para enviárselo.</div>
-      <div class="field"><input id="rLink" type="url" placeholder="Pega el link del render (Drive, imagen o PDF)"></div>
-      <button type="button" class="a-btn a-terra" data-ac="render">🎨 Enviar render al cliente</button>
-      <div class="col-h">Avisos al cliente</div>
-      <div class="field"><select id="avTipo">
-        <option value="pieza_lista">Pieza lista (con foto)</option><option value="pago_completo">Pago completo recibido</option><option value="envio">Pedido enviado (con guía)</option>
-        <option value="recordatorio_anticipo">Recordatorio de anticipo</option><option value="recordatorio_render">Recordatorio de aprobar render</option><option value="entregado">Pedido entregado</option></select></div>
-      <div class="field"><input id="avExtra" type="text" placeholder="Link de la foto"></div>
-      <button type="button" class="a-btn a-dark" data-ac="aviso">Crear aviso</button>
-      <a class="a-btn a-out" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, `Hola ${ped.cliente || ""} 👋 Aquí puedes ver el estatus de tu pedido en vivo: ${PORTAL_URL}?codigo=${ped.codigo}`))}">🔗 Mandar enlace de seguimiento por WhatsApp</a>
-      <div id="pRes"></div>
-    </div>`;
-  const sel = $("avTipo"), ex = $("avExtra");
-  const aj = () => { const t = sel.value; ex.style.display = (t === "pieza_lista" || t === "envio") ? "" : "none"; ex.placeholder = t === "envio" ? "Paquetería y guía (opcional)" : "Link de la foto"; };
-  sel.addEventListener("change", aj); aj();
-}
-$("pDetalle").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-ac]"); if(!b || !ped) return;
-  const ac = b.dataset.ac, res = $("pRes"), orig = b.textContent; b.disabled = true;
-  try{
-    if(ac === "cobrar"){ pintarCobro(); return; }
-    if(ac === "pago50" || ac === "pago100"){
-      const pct = ac === "pago50" ? 50 : 100, r = await post("marcarPago", { codigo: ped.codigo, porcentaje: pct });
-      if(!r.ok){ toast(r.error || "No se pudo marcar."); return; }
-      const t = pct === 50 ? `Hola ${ped.cliente || ""} 👋 ¡Recibimos tu anticipo del pedido ${ped.codigo}! Gracias. Seguimos con tu pedido y te aviso cada avance aquí: ${PORTAL_URL}?codigo=${ped.codigo}`
-                           : `Hola ${ped.cliente || ""} 👋 ¡Recibimos tu pago completo del pedido ${ped.codigo}! Gracias. Te aviso en cuanto salga: ${PORTAL_URL}?codigo=${ped.codigo}`;
-      res.innerHTML = `<div class="msg-ok">✓ Marcado en Sheets (${pct}%)</div><a class="a-btn a-green" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, t))}">💬 Avisar al cliente</a>`;
-      cargarLista();
-    }
-    if(ac === "render"){
-      const link = $("rLink").value.trim(); if(!link){ toast("Pega el link del render."); return; }
-      const r = await post("enviarRender", { codigo: ped.codigo, linkRender: link });
-      if(!r.ok){ toast(r.error || "No se pudo enviar."); return; }
-      res.innerHTML = `<div class="msg-ok">✓ Tarjeta movida a “En revisión cliente”</div><a class="a-btn a-green" target="_blank" rel="noopener" href="${esc(r.waLink)}">💬 Abrir WhatsApp con el render</a>`;
-      cargarLista();
-    }
-    if(ac === "aviso"){
-      const tipo = $("avTipo").value, extra = $("avExtra").value.trim();
-      const r = await post("avisoManual", { codigo: ped.codigo, tipo, linkFoto: tipo === "pieza_lista" ? extra : "", guia: tipo === "envio" ? extra : "" });
-      if(!r.ok){ toast(r.error || "No se pudo crear."); return; }
-      abrirTab("avisos"); toast("Aviso creado: ya está en la lista");
-    }
-  }catch(err){ console.error(err); toast("No se pudo conectar."); }
-  finally{ b.disabled = false; b.textContent = orig; }
-});
-
-
-// ===================== POSVENTA =====================
-const pvKey = "joart_posventa";
-const pvLeer = () => { try{ return JSON.parse(localStorage.getItem(pvKey) || "{}"); }catch(e){ return {}; } };
-const pvGuardar = (o) => { try{ localStorage.setItem(pvKey, JSON.stringify(o)); }catch(e){} };
-const pvDia = (t) => t ? new Date(t).toLocaleDateString("es-MX", { day:"numeric", month:"short" }) : "";
-function mensajePosventa(tipo, cliente, codigo){
-  if(tipo === "op"){
-    return `Hola ${cliente} 👋 Gracias por confiar en Joart Digital con tu pedido ${codigo}. ¿Cómo estuvo tu experiencia? Respóndeme con un número del 1 al 5 (5 = excelente) y, si algo se puede mejorar, cuéntame.` + (CONFIG.reviewURL ? `\n\nSi quedaste contento, una reseña nos ayuda muchísimo: ${CONFIG.reviewURL}` : "");
-  }
-  return `Hola ${cliente} 👋 ¿Cómo les ha ido con sus exhibidores? Si quieres reponer o hacer un pedido nuevo, ya tengo tu diseño y logo: mándame modelo y cantidades y te cotizo hoy. Entre más piezas, mejor precio por pieza.`;
-}
-async function cargarPosventa(){
-  const box = $("pvLista");
-  try{
-    const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
-    if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return; }
-    const ent = (r.tareas || []).filter(t => (t.estatus || "").trim().toLowerCase() === "entregado" && t.codigo).slice(0, 40), marc = pvLeer();
-    box.innerHTML = ent.length ? ent.map(t => { const m = marc[t.codigo] || {}; return `<div class="aviso"><strong>${esc(t.nombre || "")}</strong> <span class="mini">· ${esc(t.codigo)}</span>
-      <button type="button" class="a-btn ${m.op ? "a-out" : "a-green"}" data-pv="op" data-cod="${esc(t.codigo)}" data-nom="${esc(t.nombre || "")}">${m.op ? "✓ Opinión enviada " + pvDia(m.op) + " (reenviar)" : "⭐ Pedir opinión y reseña"}</button>
-      <button type="button" class="a-btn ${m.re ? "a-out" : "a-dark"}" data-pv="re" data-cod="${esc(t.codigo)}" data-nom="${esc(t.nombre || "")}">${m.re ? "✓ Recompra enviada " + pvDia(m.re) + " (reenviar)" : "🔁 Invitar a recomprar"}</button></div>`; }).join("") : "Aún no hay pedidos entregados con código.";
-  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
-}
-$("pvLista").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-pv]"); if(!b) return; b.disabled = true;
-  try{
-    const p = await post("buscarPedido", { codigo: b.dataset.cod });
-    if(!p.ok){ toast(p.error || "No se encontró el pedido."); return; }
-    const w = window.open(waUrl(p.contacto, mensajePosventa(b.dataset.pv, p.cliente || b.dataset.nom, b.dataset.cod)), "_blank");
-    const m = pvLeer(); m[b.dataset.cod] = Object.assign(m[b.dataset.cod] || {}, { [b.dataset.pv]: Date.now() }); pvGuardar(m); cargarPosventa();
-  }catch(err){ console.error(err); toast("No se pudo conectar."); }
-  finally{ b.disabled = false; }
-});
-
-// ===================== COBRAR (cotización final de un pedido ya registrado) =====================
-const normM = (s) => String(s || "").replace(/[—–]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
-const catalogoDe = (modelo) => MODELOS.find(m => normM(m.nombre) === normM(modelo));
-let cb = null;
-function pintarCobro(){
-  cb = { lineas: ped.items.map(it => ({ it, q: parseInt(it.cantidad, 10) || 1, precio: Number(it.precioUnitario) || 0, manual: false })), entrega: "estandar", caras: "una", factura: ped.factura ? "si" : "no", envio: "" };
-  $("cbBox").innerHTML = `
-    <div class="card" style="margin:12px 0 0;background:#FDFCF7">
-      <div id="cbItems"></div>
-      <div class="row">
-        <div class="field"><label>Entrega</label><select id="cbEntrega"><option value="estandar">Estándar — 7 días háb.</option><option value="expres">Exprés (+15%)</option><option value="urgente">Urgente (+25%)</option></select></div>
-        <div class="field"><label>Impresión</label><select id="cbCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>¿Factura?</label><select id="cbFactura"><option value="no">No</option><option value="si"${ped.factura ? " selected" : ""}>Sí</option></select></div>
-        <div class="field"><label>Costo de envío (si ≤ $1,000)</label><input id="cbEnvio" type="number" min="0" step="any" placeholder="0"></div>
-      </div>
-      <div class="resumen" id="cbRes" style="margin:0"></div>
-    </div>`;
-  calcCobro(true);
-}
-function calcCobro(redibujar){
-  const piezas = cb.lineas.reduce((s, l) => s + l.q, 0);
-  const pctCaras = cb.caras === "dos" ? (piezas >= 30 ? 0.40 : 0.30) : 0;
-  const pctEntrega = cb.entrega === "expres" ? 0.15 : cb.entrega === "urgente" ? 0.25 : 0;
-  cb.lineas.forEach(l => {
-    const cat = catalogoDe(l.it.modelo);
-    const base = (cat && !l.manual && !l.it.personalizado) ? precioCatalogo(cat.nombre, l.it.grosor || "4 mm", l.q) : null;
-    l.unit = base != null ? (pctCaras ? up5(base * (1 + pctCaras)) : base) : l.precio;
-    if(base != null) l.precio = l.unit;
-  });
-  if(redibujar) $("cbItems").innerHTML = cb.lineas.map((l, i) => `<div class="item"><div class="item-head"><span>${esc(l.it.modelo)} · ${esc(l.it.grosor || "")}</span></div>
-    <div class="row"><div class="field"><label>Cantidad</label><input data-cbq="${i}" type="number" min="1" step="1" value="${l.q}"></div>
-    <div class="field"><label>Precio c/u</label><input data-cbp="${i}" type="number" min="0" step="any" value="${l.unit || ""}" placeholder="0"></div></div></div>`).join("");
-  const subtotal = cb.lineas.reduce((s, l) => s + (l.unit || 0) * l.q, 0), recargo = Math.round(subtotal * pctEntrega);
-  const envioAplica = (subtotal + recargo) <= 1000, envio = envioAplica ? (parseFloat(cb.envio) || 0) : 0, total = subtotal + recargo + envio;
-  const pctA = cb.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
-  const err = piezas > CONFIG.maxPiezas ? `Máximo ${CONFIG.maxPiezas} piezas.` : (cb.lineas.some(l => !(l.unit > 0)) ? "Falta el precio de algún producto." : "");
-  cb.calc = { piezas, pctCaras, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err };
-  $("cbRes").innerHTML = `${err ? `<div class="err-box">${esc(err)}</div>` : ""}
-    <div class="res-line"><span>${piezas} pieza${piezas === 1 ? "" : "s"}</span><span>${fmt(subtotal)}</span></div>
-    ${recargo ? `<div class="res-line"><span>Recargo ${cb.entrega === "expres" ? "exprés" : "urgente"}</span><span>${fmt(recargo)}</span></div>` : ""}
-    ${envio ? `<div class="res-line"><span>Envío</span><span>${fmt(envio)}</span></div>` : ""}
-    ${envioAplica && !envio && subtotal > 0 ? `<div class="warn-box">Pedido de $1,000 o menos: envío no incluido. Escribe el costo si lo vas a cobrar.</div>` : ""}
-    <div class="res-total">${fmt(total)} MXN</div>
-    <div class="cobro-split"><div class="cobro-split-item"><span>Anticipo (${Math.round(pctA * 100)}%)</span><strong>${fmt(anticipo)}</strong></div><div class="cobro-split-item"><span>Saldo</span><strong>${fmt(total - anticipo)}</strong></div></div>
-    <button type="button" class="go-btn" id="cbGo" ${err ? "disabled" : ""}>💳 Guardar cobro y enviar al cliente</button>
-    <button type="button" class="ghost-btn" id="cbPdf" ${err ? "disabled" : ""}>📄 Solo descargar PDF</button>`;
-}
-function datosCobro(){
-  const c = cb.calc, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000);
-  return {
-    folio: ped.codigo, cliente: ped.cliente || "", contacto: ped.contacto || "", fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
-    entrega: cb.entrega, dosCaras: cb.caras === "dos", requiereFactura: cb.factura === "si",
-    items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado, grosor: l.it.grosor })),
-    envioGratis: (c.subtotal + c.recargo) > 1000,
-    subtotal: c.subtotal, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, envio: c.envio, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
-    cuenta: cuentaDe(cb.factura === "si"),
-  };
-}
-function mensajeCobro(d){
-  return `Hola ${d.cliente} 👋 Aquí está la cotización final de tu pedido *${d.folio}*; en el PDF van el detalle, las condiciones y los datos de pago.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
-}
-$("pDetalle").addEventListener("input", (e) => {
-  if(!cb) return; const t = e.target;
-  if(t.dataset.cbq !== undefined){ cb.lineas[+t.dataset.cbq].q = Math.max(1, parseInt(t.value, 10) || 1); calcCobro(false); const l = cb.lineas[+t.dataset.cbq]; const pi = document.querySelector(`[data-cbp="${t.dataset.cbq}"]`); if(pi && !l.manual) pi.value = l.unit || ""; cb.lineas.forEach((x, i) => { const p = document.querySelector(`[data-cbp="${i}"]`); if(p && !x.manual && x.unit) p.value = x.unit; }); }
-  else if(t.dataset.cbp !== undefined){ const l = cb.lineas[+t.dataset.cbp]; l.manual = true; l.precio = parseFloat(t.value) || 0; calcCobro(false); }
-  else if(t.id === "cbEntrega"){ cb.entrega = t.value; calcCobro(false); }
-  else if(t.id === "cbCaras"){ cb.caras = t.value; calcCobro(false); cb.lineas.forEach((x, i) => { const p = document.querySelector(`[data-cbp="${i}"]`); if(p && !x.manual && x.unit) p.value = x.unit; }); }
-  else if(t.id === "cbFactura"){ cb.factura = t.value; }
-  else if(t.id === "cbEnvio"){ cb.envio = t.value; calcCobro(false); }
-});
-$("pDetalle").addEventListener("click", async (e) => {
-  const id = e.target.id; if(!cb || (id !== "cbGo" && id !== "cbPdf")) return;
-  if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga."); return; }
-  const d = datosCobro();
-  if(id === "cbPdf"){ construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); return; }
-  const b = e.target, orig = b.textContent; b.disabled = true; b.textContent = "Guardando…";
-  try{
-    const c = cb.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
-    const items = cb.lineas.map(l => Object.assign({}, l.it, { cantidad: l.q, precioUnitario: Math.round(l.unit * factor * 100) / 100 }));
-    if(c.envio) items.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
-    const r = await post("guardarCobro", { codigo: ped.codigo, items, requiereFactura: cb.factura === "si" });
-    if(!r.ok){ alert("No se pudo guardar el cobro: " + (r.error || "error")); return; }
-    toast("Cobro guardado en Sheets");
-    await compartirPDF(d, mensajeCobro(d), ped.contacto);
-  }catch(err){ console.error(err); alert("No se pudo conectar."); }
-  finally{ b.disabled = false; b.textContent = orig; }
-});
-
-// ===================== AVISOS =====================
-async function cargarAvisos(){
-  const box = $("avLista");
-  try{
-    const r = await post("listarAvisos");
-    if(!r.ok){ box.textContent = r.error || "No se pudieron leer."; return; }
-    const av = r.avisos || []; marcarBadge(av.length);
-    box.innerHTML = av.length ? av.map(a => `<div class="aviso" data-id="${esc(a.id)}"><strong>${esc(a.cliente || "")}</strong> <span class="mini">· ${esc(a.codigo || "")} · ${esc(a.tipo || "")}</span><div class="m">${esc(a.mensaje || "")}</div>
-      <a class="a-btn a-green" target="_blank" rel="noopener" href="${esc(a.wa || "#")}">💬 Abrir WhatsApp</a><button type="button" class="a-btn a-out" data-ok="${esc(a.id)}">Ya lo envié</button></div>`).join("") : "No hay avisos pendientes 🎉";
-  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
-}
-function marcarBadge(n){ const b = $("avN"); b.hidden = !n; b.textContent = n; }
-$("avLista").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-ok]"); if(!b) return; b.disabled = true;
-  try{ const r = await post("marcarAvisoEnviado", { id: b.dataset.ok }); if(r.ok) cargarAvisos(); else { b.disabled = false; toast(r.error || "No se pudo marcar."); } }catch(err){ b.disabled = false; toast("No se pudo conectar."); }
-});
-
-// ===================== DICTADO (voz o texto → formulario) =====================
-function aplicarDictado(texto){
-  const r = parsearPedidoTexto(texto), out = $("dictOut");
-  if(!String(texto || "").trim()){ out.textContent = "Escribe o dicta algo primero."; return; }
-  if(r.cliente) $("fCliente").value = r.cliente;
-  if(r.entrega) $("fEntrega").value = r.entrega;
-  if(r.caras) $("fCaras").value = r.caras;
-  if(r.factura) $("fFactura").value = r.factura;
-  $("fModo").value = "pedido";
-  if(r.items.length){
-    items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
-      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; it.tipoPers = x.tipoPers || "niveles"; }
-      if(r.grosor){ it.grosor = r.grosor; it.grosorTocado = true; } return it; });
-    pintarItems();
-  }else actualizar();
-  const nom = (n) => n === PERSONALIZADO ? "Personalizado" : n;
-  const partes = [r.items.length ? r.items.map(x => `${x.cantidad} × ${nom(x.modelo)}${x.alto ? ` (${x.alto}×${x.ancho}×${x.prof})` : ""}`).join(" + ") : "⚠ no reconocí el modelo",
-    r.cliente ? "Cliente: " + r.cliente : "⚠ falta el cliente", r.grosor, r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta", r.factura && "con factura"].filter(Boolean);
-  out.textContent = "Entendí: " + partes.join(" · ") + ". Revisa el formulario.";
-}
-$("llenarBtn").addEventListener("click", () => aplicarDictado($("fDictado").value));
-(function(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $("micBtn");
-  if(!SR){ mic.style.display = "none"; $("dictOut").textContent = "Escribe el pedido (o usa el micrófono del teclado de tu teléfono) y toca “Llenar el formulario”."; return; }
-  let rec = null, oyendo = false;
-  mic.addEventListener("click", () => {
-    if(oyendo && rec){ rec.stop(); return; }
-    rec = new SR(); rec.lang = "es-MX"; rec.interimResults = true; rec.continuous = false; oyendo = true; mic.textContent = "⏹ Escuchando…";
-    rec.onresult = (e) => { $("fDictado").value = Array.from(e.results).map(x => x[0].transcript).join(" "); };
-    rec.onerror = (e) => { $("dictOut").textContent = e.error === "not-allowed" ? "Permite el micrófono en el navegador para dictar." : "No pude escuchar (" + e.error + ")."; };
-    rec.onend = () => { oyendo = false; mic.textContent = "🎤 Dictar"; if($("fDictado").value.trim()) aplicarDictado($("fDictado").value); };
-    try{ rec.start(); }catch(err){ oyendo = false; mic.textContent = "🎤 Dictar"; }
-  });
-})();
-
-// ===================== INICIO =====================
-$("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
-function iniciarApp(){ cargarAvisos(); cargarLista(); }
-document.addEventListener("visibilitychange", () => { if(!document.hidden && passwordActual) cargarAvisos(); });
-
-const ZONAS = ["Aguascalientes","Baja California","Baja California Sur","Campeche","CDMX","Chiapas","Chihuahua","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Monterrey","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
-$("listaZonas").innerHTML = ZONAS.map(z => `<option value="${z}">`).join("");
-$("logoImg").src = LOGO_DATA_URL;
-{ const ic = document.createElement("link"); ic.rel = "icon"; ic.type = "image/png"; ic.href = LOGO_DATA_URL; document.head.appendChild(ic); }
-items.push(nuevoItem());
-pintarItems();
 </script>
 </body>
 </html>

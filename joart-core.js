@@ -298,10 +298,10 @@ function parsearPedidoTexto(texto){
   if(/frente y vuelta|dos caras|ambas caras/.test(t)) res.caras = "dos";
   if(/con factura|requiere factura|factura si/.test(t)) res.factura = "si";
   // cliente
-  const mc = t.match(/\b(?:para|cliente|a nombre de|de parte de)\s+(?:un |una )?([a-z0-9&'.\- ]+?)(?=\s*(?:,|\ben \d|\b\d+ ?(?:mm|milimetros?)|\bcon\b|\bexpres|\burgente|\bfrente|\bfactura|\bde \d|\bpor \d|$))/);
+  const mc = t.match(/\b(?:para|cliente|a nombre de|de parte de|soy de|somos|mi marca es|mi negocio es|mi empresa es|me llamo)\s+(?:un |una )?([a-z0-9&'.\- ]+?)(?=\s*(?:,|\by (?:quiero|queremos|necesito|necesitamos|ocupo|ocupamos|me gustaria|nos gustaria)\b|\b(?:quiero|queremos|necesito|necesitamos|ocupo|ocupamos)\b|\ben \d|\b\d+ ?(?:mm|milimetros?)|\bcon\b|\bexpres|\burgente|\bfrente|\bfactura|\bde \d|\bpor \d|$))/);
   if(mc){   // se recupera la escritura original (con acentos) palabra por palabra
     const orig = String(texto || "").normalize("NFC").split(/\s+/), limpia = (w) => _sinAcentos(w).replace(/[^a-z0-9&'.\-]/g, "");
-    res.cliente = mc[1].trim().split(" ").map((tok) => { const w = orig.find((o) => limpia(o) === tok); return (w ? w.replace(/[,;.]+$/g, "") : tok).replace(/^\w/, (c) => c.toUpperCase()); }).join(" ");
+    res.cliente = mc[1].trim().split(" ").map((tok) => { const w = orig.find((o) => limpia(o) === tok) || (/^\d+$/.test(tok) ? orig.find((o) => numerosAPalabras(limpia(o)) === tok) : null); return (w ? w.replace(/[,;.]+$/g, "") : tok).replace(/^\w/, (c) => c.toUpperCase()); }).join(" ");
   }
   // modelos (se busca en el texto, antes de "para <cliente>" para no confundir el nombre)
   const zona = mc ? t.replace(mc[0], " ").replace(/\s+/g, " ") : t;
