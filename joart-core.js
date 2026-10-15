@@ -84,11 +84,36 @@ const TARIFA_A = [[0,2050],[0.5,1950],[1,1850],[2,1700],[4,1550],[7,1400],[10,13
 const TARIFA_B = [[0,1300],[3,1250],[5,1200],[7,1150],[10,1100],[15,1050],[20,1000],[30,950],[50,900],[100,800]];
 const EXTRA_GROSOR = { "4 mm": 0, "5 mm": 150, "6 mm": 400 };
 function tarifaPara(tabla, ht){ let t = tabla[0][1]; for(const [min, precio] of tabla) if(ht >= min) t = precio; return t; }
-function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor){
-  const A = alto, B = ancho, C = prof, N = niveles, Q = cantidad;
-  const AE = A*B + 2*(A*C) + N*(B*C) + N*(B*5) + (N >= 2 ? (N-1)*2*(B*3) : 0);
-  let HP = AE / 26000;
-  if(HP >= 0.8 && HP < 1) HP = 1;
+// ----- Área equivalente (cm²) de un exhibidor a medida, según su tipo -----
+//  niveles     : charolas/niveles (POP display, floor stand, box…)            n = niveles
+//  escalonado  : escalones (sin letrero por escalón)                          n = escalones
+//  separadores : una sola charola con N divisiones (rejilla de separadores)   sep = N separadores
+// Calibrado con el catálogo: 2 y 3 escalones (±7 %) y "Display con separadores" (0 %). Las divisiones miden ~⅓ de un lateral.
+const SEP_FACTOR = 0.33;
+const TIPOS_PERS = {
+  niveles:     { etiqueta: "Niveles / charolas", unidad: ["nivel", "niveles"] },
+  escalonado:  { etiqueta: "Escalones",          unidad: ["escalón", "escalones"] },
+  separadores: { etiqueta: "Separadores (divisiones)", unidad: ["separador", "separadores"] },
+};
+function areaExhibidor(g){
+  const [A, B, C] = g.d, N = Math.max(1, g.n || 1), tipo = g.tipo === "pegboard" ? "niveles" : (g.tipo || "niveles");
+  const apoyos = N >= 2 ? (N - 1) * 2 * (B * 3) : 0;
+  if(tipo === "escalonado")  return A*B + 2*(A*C) + N*(B*C) + apoyos;
+  if(tipo === "separadores") return A*B + 2*(A*C) + B*C + B*5 + (g.sep || 0) * SEP_FACTOR * (A*C);
+  return A*B + 2*(A*C) + N*(B*C) + N*(B*5) + apoyos;
+}
+// Hojas por pieza (fórmula de personalizados): área / 26,000 cm², y de 0.8 a 0.99 se cobra la hoja completa.
+function hpExhibidor(g){ if(!g) return null; let HP = areaExhibidor(g) / 26000; if(HP >= 0.8 && HP < 1) HP = 1; return HP; }
+// Convierte lo capturado (alto, ancho, prof, cantidad de niveles/escalones/separadores, tipo) en la geometría estándar.
+function geomPers(alto, ancho, prof, cuantos, tipo){
+  const a = parseFloat(alto), b = parseFloat(ancho), c = parseFloat(prof), n = Math.max(1, parseInt(cuantos, 10) || 1);
+  if(!(a > 0 && b > 0 && c > 0)) return null;
+  tipo = TIPOS_PERS[tipo] ? tipo : "niveles";
+  return tipo === "separadores" ? { d: [a, b, c], tipo, n: 1, sep: n } : { d: [a, b, c], tipo, n };
+}
+function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor, tipo){
+  const Q = cantidad;
+  const HP = hpExhibidor(geomPers(alto, ancho, prof, niveles, tipo));
   const HT = HP * Q;
   const costoHoja = tarifaPara(HP < 0.8 ? TARIFA_A : TARIFA_B, HT);
   const base = Math.ceil((Math.round(HT * costoHoja / Q * 100) / 100) / 5) * 5;
@@ -144,8 +169,7 @@ const GEOM = {
 // Geometría de un renglón (catálogo o personalizado). Devuelve null si faltan medidas.
 function geomDe(modelo, pers){
   if(modelo === PERSONALIZADO || (pers && pers.alto)){
-    const a = parseFloat(pers && pers.alto), b = parseFloat(pers && pers.ancho), c = parseFloat(pers && pers.prof), n = Math.max(1, parseInt(pers && pers.niveles, 10) || 1);
-    return (a > 0 && b > 0 && c > 0) ? { d: [a, b, c], tipo: "niveles", n } : null;
+    return pers ? geomPers(pers.alto, pers.ancho, pers.prof, pers.niveles, pers.tipoPers) : null;
   }
   return GEOM[modelo] || null;
 }
@@ -157,9 +181,9 @@ function piezasDe(g){
   out.push({ n: "respaldo", w: A, h: B });
   out.push({ n: "laterales (par)", w: A, h: C });
   for(let i = 0; i < N; i++) out.push({ n: "base " + (i + 1), w: B, h: C });
-  for(let i = 0; i < N; i++) out.push({ n: "letrero " + (i + 1), w: B, h: 5 });
+  if(g.tipo !== "escalonado") for(let i = 0; i < N; i++) out.push({ n: "letrero " + (i + 1), w: B, h: 5 });
   if(N >= 2) for(let i = 0; i < (N - 1) * 2; i++) out.push({ n: "soporte " + (i + 1), w: B, h: 3 });
-  if(g.sep) out.push({ n: "separadores (par)", w: A, h: C });
+  for(let i = 0; i < (g.sep || 0); i++) out.push({ n: "separador " + (i + 1), w: A, h: Math.round(C * SEP_FACTOR * 10) / 10 });
   return out;
 }
 // Ajusta para que el lado largo quede horizontal (eje de 244 cm).
@@ -220,7 +244,7 @@ function acomodar(piezas, opt){
 function planDeHojas(renglones, opt){
   const porGrosor = {};
   renglones.forEach((r, ri) => {
-    const g = geomDe(r.modelo, r.pers); if(!g) return;
+    const g = geomDe(r.modelo, r.pers || r); if(!g) return;
     const gr = GROSORES_VALIDOS.includes(r.grosor) ? r.grosor : "4 mm", q = Math.max(1, parseInt(r.cantidad, 10) || 1);
     const base = piezasDe(g);
     for(let k = 0; k < q; k++) base.forEach((p, pi) => (porGrosor[gr] = porGrosor[gr] || []).push({ id: `${ri}-${k}-${pi}`, ren: ri, n: p.n, w: p.w, h: p.h }));
@@ -281,22 +305,24 @@ function parsearPedidoTexto(texto){
   }
   // modelos (se busca en el texto, antes de "para <cliente>" para no confundir el nombre)
   const zona = mc ? t.replace(mc[0], " ").replace(/\s+/g, " ") : t;
+  const mpRx = /personalizad[oa][^0-9]{0,20}(\d+(?:[.,]\d+)?)\s*(?:x|por|\*)\s*(\d+(?:[.,]\d+)?)\s*(?:x|por|\*)\s*(\d+(?:[.,]\d+)?)(?:[^0-9]{0,20}(\d) ?(niveles?|charolas?|escalon(?:es)?|separadores?|divisiones|rejillas?))?/;
+  const mp = zona.match(mpRx);
+  const zonaMod = mp ? zona.replace(mp[0], " | ") : zona;   // así "4 separadores" de un personalizado no se confunde con el modelo "Display con separadores"
   const union = new RegExp("(" + ALIAS_MODELO.map(([, rx]) => `(?:${rx})`).join("|") + ")", "g");
   let m, ultimoFin = 0; const hallados = [];
-  while((m = union.exec(zona))){
+  while((m = union.exec(zonaMod))){
     const nombre = (ALIAS_MODELO.find(([, rx]) => new RegExp("^(?:" + rx + ")$").test(m[1])) || [])[0];
     if(!nombre){ continue; }
-    const antes = zona.slice(ultimoFin, m.index), despues = zona.slice(m.index + m[1].length, m.index + m[1].length + 18);
+    const antes = zonaMod.slice(ultimoFin, m.index), despues = zonaMod.slice(m.index + m[1].length, m.index + m[1].length + 18);
     let q = (antes.match(/(\d{1,3})\s*(?:piezas?|pzs?|unidades|exhibidores|displays?)?\s*(?:de\s+)?(?:los |las |el |la )?$/) || [])[1];
     if(!q) q = (despues.match(/^\s*(?:x\s*)?(\d{1,3})\s*(?:piezas?|pzs?|unidades)\b/) || [])[1];
     hallados.push({ modelo: nombre, cantidad: Math.min(Math.max(parseInt(q, 10) || 1, 1), 9999) });
     ultimoFin = m.index + m[1].length;
   }
   // personalizado: "personalizado de 30 por 20 por 10" / "30x20x10"
-  const mp = zona.match(/personalizad[oa][^0-9]{0,20}(\d+(?:[.,]\d+)?)\s*(?:x|por|\*)\s*(\d+(?:[.,]\d+)?)\s*(?:x|por|\*)\s*(\d+(?:[.,]\d+)?)(?:[^0-9]{0,20}(\d) ?(?:niveles?|charolas?))?/);
   if(mp){
     const antes = zona.slice(0, zona.indexOf(mp[0])), q = (antes.match(/(\d{1,3})\s*(?:piezas?|pzs?|unidades)?\s*(?:de\s+)?$/) || [])[1];
-    hallados.push({ modelo: PERSONALIZADO, cantidad: parseInt(q, 10) || 1, alto: mp[1].replace(",", "."), ancho: mp[2].replace(",", "."), prof: mp[3].replace(",", "."), niveles: parseInt(mp[4], 10) || 1 });
+    hallados.push({ modelo: PERSONALIZADO, cantidad: parseInt(q, 10) || 1, alto: mp[1].replace(",", "."), ancho: mp[2].replace(",", "."), prof: mp[3].replace(",", "."), niveles: parseInt(mp[4], 10) || 1, tipoPers: /escalon/.test(mp[5] || "") ? "escalonado" : /separador|division|rejilla/.test(mp[5] || "") ? "separadores" : "niveles" });
   }
   res.items = hallados;
   res.faltantes = [!res.cliente && "cliente", !res.items.length && "modelo"].filter(Boolean);
@@ -304,4 +330,4 @@ function parsearPedidoTexto(texto){
 }
 
 
-if(typeof module !== "undefined") module.exports = { QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
+if(typeof module !== "undefined") module.exports = { SEP_FACTOR, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };

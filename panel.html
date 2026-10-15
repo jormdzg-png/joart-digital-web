@@ -227,6 +227,20 @@
       <a class="a-btn a-out" href="mi-pedido.html" target="_blank" rel="noopener">👁 Ver “Mi pedido” (lo que ve el cliente)</a>
     </div>
     <div class="card">
+      <div class="card-label">Cuenta para pagos sin factura</div>
+      <div class="field-hint" style="margin-bottom:10px">Sale en el PDF y en el cobro cuando el cliente <b>no</b> pide factura. Con factura sale la cuenta de Luz María. Se guarda solo en este dispositivo.</div>
+      <div class="row">
+        <div class="field"><label for="ctTitular">Titular</label><input id="ctTitular" type="text" autocomplete="off"></div>
+        <div class="field"><label for="ctBanco">Banco</label><input id="ctBanco" type="text" autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="ctClabe">CLABE</label><input id="ctClabe" type="text" inputmode="numeric" autocomplete="off"></div>
+        <div class="field"><label for="ctCuenta">Cuenta (opcional)</label><input id="ctCuenta" type="text" inputmode="numeric" autocomplete="off"></div>
+      </div>
+      <button type="button" class="a-btn" id="ctGuardar">Guardar mi cuenta</button>
+      <div class="field-hint" id="ctEstado" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
       <div class="card-label">Sesión</div>
       <button type="button" class="a-btn a-out" id="salirBtn">Cerrar sesión en este dispositivo</button>
     </div>
@@ -242,8 +256,10 @@
 //  CONFIGURACIÓN — aquí se cambian datos de pago, vigencia y enlaces
 // ====================================================================
 const CONFIG = {
-  cuentaPersonal: { titular: "Luz María Espinosa Aviña", banco: "BBVA", clabe: "012 180 00491220977 7", cuenta: "049 122 0977" },
-  cuentaFiscal:   null,   // si algún día tienes cuenta para facturar: { titular:"", banco:"", clabe:"", cuenta:"" }
+  // CON factura → cuenta fiscal (Luz María). SIN factura → tu cuenta personal, que se captura en Más → "Cuenta sin factura"
+  // y se guarda solo en este dispositivo (no va en el código público).
+  cuentaFiscal:   { titular: "Luz María Espinosa Aviña", banco: "BBVA", clabe: "012 180 00491220977 7", cuenta: "049 122 0977" },
+  cuentaPersonal: null,
   vigenciaDias: 30,
   whatsapp: "56 2473 3000",
   web: "joartdigital.com.mx",
@@ -294,7 +310,7 @@ try{ const g = localStorage.getItem("joart_sheet_key"); if(g){ $("lockScreen").s
 
 // ===================== ESTADO =====================
 let items = [], nextId = 1;
-function nuevoItem(){ return { id: nextId++, modelo: MODELOS[0].nombre, desc: "", alto: "", ancho: "", prof: "", niveles: 1, cantidad: 1, grosor: "4 mm", grosorTocado: false, manual: "" }; }
+function nuevoItem(){ return { id: nextId++, modelo: MODELOS[0].nombre, desc: "", alto: "", ancho: "", prof: "", niveles: 1, tipoPers: "niveles", cantidad: 1, grosor: "4 mm", grosorTocado: false, manual: "" }; }
 const esPers = (it) => it.modelo === PERSONALIZADO;
 function esPiso(it){ if(esPers(it)) return (parseFloat(it.alto) || 0) >= 100; const m = MODELOS.find(x => x.nombre === it.modelo); return !!(m && m.piso); }
 function grosoresPermitidos(it){ return esPers(it) ? ["4 mm","5 mm","6 mm"] : grosoresDeModelo(it.modelo); }
@@ -317,7 +333,7 @@ function calcular(){
     if(q >= 1){
       if(esPers(it)){
         const a = parseFloat(it.alto), b = parseFloat(it.ancho), c = parseFloat(it.prof), n = parseInt(it.niveles, 10) || 1;
-        if(a > 0 && b > 0 && c > 0){ base = cotizarPersonalizado(a, b, c, n, q, it.grosor); hint = "Fórmula de personalizados"; }
+        if(a > 0 && b > 0 && c > 0){ base = cotizarPersonalizado(a, b, c, n, q, it.grosor, it.tipoPers); hint = "Fórmula de personalizados"; }
         else hint = "Captura alto, ancho y profundidad";
       }else{
         base = precioCatalogo(it.modelo, it.grosor, q);
@@ -372,7 +388,10 @@ function pintarItems(){
         <div class="field"><label>Ancho (cm)</label><input data-f="ancho" type="number" min="1" step="any" value="${esc(it.ancho)}"></div>
         <div class="field"><label>Prof. (cm)</label><input data-f="prof" type="number" min="1" step="any" value="${esc(it.prof)}"></div>
       </div>
-      <div class="field"><label>Niveles / charolas</label><input data-f="niveles" type="number" min="1" step="1" value="${esc(it.niveles)}"></div>` : "";
+      <div class="row">
+        <div class="field"><label>Tipo de exhibidor</label><select data-f="tipoPers">${Object.keys(TIPOS_PERS).map(k => `<option value="${k}"${(it.tipoPers || "niveles") === k ? " selected" : ""}>${TIPOS_PERS[k].etiqueta.split(" /")[0]}</option>`).join("")}</select></div>
+        <div class="field"><label>${esc(({ niveles: "Cuántos niveles / charolas", escalonado: "Cuántos escalones", separadores: "Cuántos separadores" })[it.tipoPers || "niveles"])}</label><input data-f="niveles" type="number" min="1" step="1" value="${esc(it.niveles)}"></div>
+      </div>` : "";
     return `<div class="item" data-id="${it.id}">
       <div class="item-head"><span>Producto ${i + 1}</span>${items.length > 1 ? `<button type="button" class="rm-btn" data-rm="${it.id}">Quitar</button>` : ""}</div>
       <div class="field"><label>Modelo</label><select data-f="modelo">${opts}</select></div>
@@ -434,6 +453,7 @@ $("itemsBox").addEventListener("input", (e) => {
   const card = e.target.closest(".item"); if(!card || !e.target.dataset.f) return;
   const it = items.find(x => x.id === +card.dataset.id), f = e.target.dataset.f;
   if(f === "modelo"){ it.modelo = e.target.value; it.grosorTocado = false; it.manual = ""; pintarItems(); return; }
+  if(f === "tipoPers"){ it.tipoPers = e.target.value; pintarItems(); return; }
   if(f === "grosor"){ it.grosor = e.target.value; it.grosorTocado = true; }
   else it[f] = e.target.value;
   actualizar();
@@ -445,7 +465,25 @@ $("itemsBox").addEventListener("click", (e) => {
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); });
 ["fCliente","fContacto","fFactura","fEntrega","fCaras","fNotas","fEnvio","fModo"].forEach(id => $(id).addEventListener("input", actualizar));
 function folioNuevo(){ const d = new Date(), p = (n) => String(n).padStart(2, "0"); return `COT-${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
-function cuentaActual(){ return $("fFactura").value === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal; }
+// ---- Cuenta sin factura (pestaña Más)
+function pintarCuenta(){
+  const c = CONFIG.cuentaPersonal || {};
+  $("ctTitular").value = c.titular || ""; $("ctBanco").value = c.banco || ""; $("ctClabe").value = c.clabe || ""; $("ctCuenta").value = c.cuenta || "";
+  $("ctEstado").textContent = c.clabe ? "✓ Cuenta guardada. Sin factura saldrá la tuya; con factura, la de " + CONFIG.cuentaFiscal.titular + "." : "⚠ Aún no hay cuenta para pagos sin factura: los PDF sin factura saldrían sin datos bancarios.";
+}
+$("ctGuardar").addEventListener("click", () => {
+  const c = { titular: $("ctTitular").value.trim(), banco: $("ctBanco").value.trim(), clabe: $("ctClabe").value.trim(), cuenta: $("ctCuenta").value.trim() };
+  if(!c.titular || !c.banco || c.clabe.replace(/\D/g, "").length !== 18){ alert("Revisa: titular, banco y CLABE (18 dígitos)."); return; }
+  try{ localStorage.setItem(CUENTA_KEY, JSON.stringify(c)); }catch(e){ alert("No pude guardar en este navegador."); return; }
+  CONFIG.cuentaPersonal = c; pintarCuenta(); actualizar();
+});
+const CUENTA_KEY = "joart_cuenta_personal";
+function cargarCuentaPersonal(){ try{ const c = JSON.parse(localStorage.getItem(CUENTA_KEY) || "null"); if(c && c.clabe) CONFIG.cuentaPersonal = c; }catch(e){} }
+cargarCuentaPersonal(); pintarCuenta();
+function cuentaDe(factura){ return factura ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal; }
+function cuentaActual(){ return cuentaDe($("fFactura").value === "si"); }
+// Si falta la cuenta personal, avisa antes de generar un PDF sin datos bancarios.
+function cuentaListaParaPDF(d){ return !!(d && d.cuenta && d.cuenta.clabe) || confirm("Falta capturar tu cuenta para pagos SIN factura (Más → Cuenta sin factura).\n\n¿Generar el PDF sin datos bancarios?"); }
 function datosPDF(){
   const r = ultimo, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000);
   return {
@@ -455,7 +493,7 @@ function datosPDF(){
     soloPrecios: !!r.comparar, envioGratis: r.comparar ? false : !!r.envioGratis,
     items: r.lineas.map(l => ({
       nombre: esPers(l.it) ? (l.it.desc.trim() || "Exhibidor personalizado") + " (a medida)" : l.it.modelo,
-      medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${parseInt(l.it.niveles, 10) || 1} nivel${(parseInt(l.it.niveles, 10) || 1) === 1 ? "" : "es"}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
+      medidas: esPers(l.it) ? `${l.it.alto} x ${l.it.ancho} x ${l.it.prof} cm, ${cuantosTexto(l.it)}` : (MODELOS.find(m => m.nombre === l.it.modelo) || {}).medidas,
       cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor,
     })),
     subtotal: r.subtotal, envio: r.envio, recargoEntrega: r.recargoEntrega, pctEntrega: r.pctEntrega, total: r.total, pctAnticipo: r.pctAnticipo, anticipo: r.anticipo, saldo: r.saldo,
@@ -465,7 +503,7 @@ function datosPDF(){
 const nombreArchivo = (d) => `Cotizacion-${d.cliente.replace(/[^\wÀ-ſ]+/g, "-").replace(/^-|-$/g, "")}-${d.folio}.pdf`;
 function crearPDF(){
   if(!window.jspdf){ alert("No cargó la librería de PDF. Revisa tu conexión y recarga la página."); return null; }
-  const d = datosPDF(); return { doc: construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), d };
+  const d = datosPDF(); if(!cuentaListaParaPDF(d)) return null; return { doc: construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), d };
 }
 // ===================== COTIZACIÓN EN PDF =====================
 function construirCotizacionPDF(jsPDF, d, logoDataUrl){
@@ -631,12 +669,9 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
 
 // ===================== REGISTRO Y ENVÍO =====================
 let folioActual = null, folioCot = null, registrado = null;
-function hpDe(it){
-  const A = parseFloat(it.alto), B = parseFloat(it.ancho), C = parseFloat(it.prof), N = parseInt(it.niveles, 10) || 1;
-  if(!(A > 0 && B > 0 && C > 0)) return null;
-  const AE = A*B + 2*(A*C) + N*(B*C) + N*(B*5) + (N >= 2 ? (N-1)*2*(B*3) : 0);
-  let HP = AE / 26000; if(HP >= 0.8 && HP < 1) HP = 1; return HP;
-}
+function hpDe(it){ return hpExhibidor(geomPers(it.alto, it.ancho, it.prof, it.niveles, it.tipoPers)); }
+// "3 niveles" · "1 escalón" · "2 separadores"
+function cuantosTexto(it){ const n = parseInt(it.niveles, 10) || 1, u = TIPOS_PERS[it.tipoPers] ? TIPOS_PERS[it.tipoPers].unidad : TIPOS_PERS.niveles.unidad; return n + " " + (n === 1 ? u[0] : u[1]); }
 function diasHabiles(n){
   const d = new Date(); let s = 0;
   while(s < n){ d.setDate(d.getDate() + 1); const w = d.getDay(); if(w !== 0 && w !== 6) s++; }
@@ -719,6 +754,7 @@ async function guardarCobroAuto(codigo, factura){   // deja el cobro listo (como
   try{ const p = await post("buscarPedido", { codigo }); if(p.ok) await post("guardarCobro", { codigo, items: p.items, requiereFactura: factura }); }catch(e){ console.error(e); }
 }
 async function compartirPDF(d, texto, fallbackTel){
+  if(!cuentaListaParaPDF(d)) return;
   const r = { doc: construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL), d };
   const file = new File([r.doc.output("blob")], nombreArchivo(d), { type: "application/pdf" });
   try{
@@ -945,7 +981,7 @@ function datosCobro(){
     items: cb.lineas.map(l => ({ nombre: l.it.modelo + (l.it.personalizado && !/personalizad/i.test(l.it.modelo) ? " (a medida)" : ""), medidas: (l.it.medidas && l.it.medidas !== "a definir") ? l.it.medidas : ((catalogoDe(l.it.modelo) || {}).medidas || ""), cantidad: l.q, precioUnitario: l.unit, personalizado: !!l.it.personalizado, grosor: l.it.grosor })),
     envioGratis: (c.subtotal + c.recargo) > 1000,
     subtotal: c.subtotal, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, envio: c.envio, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
-    cuenta: cb.factura === "si" ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal,
+    cuenta: cuentaDe(cb.factura === "si"),
   };
 }
 function mensajeCobro(d){
@@ -1006,7 +1042,7 @@ function aplicarDictado(texto){
   $("fModo").value = "pedido";
   if(r.items.length){
     items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
-      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; }
+      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; it.tipoPers = x.tipoPers || "niveles"; }
       if(r.grosor){ it.grosor = r.grosor; it.grosorTocado = true; } return it; });
     pintarItems();
   }else actualizar();

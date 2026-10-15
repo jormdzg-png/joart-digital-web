@@ -29,7 +29,7 @@
   .acciones{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
   .reng{ display:grid; grid-template-columns:1fr 78px 92px 38px; gap:8px; align-items:center; padding:10px 0; border-top:1px dashed var(--line); }
   .reng:first-of-type{ border-top:none; }
-  .reng .pers{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .reng .pers{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
   .reng .pers label{ font-size:11px; color:var(--muted); font-weight:600; display:block; margin-bottom:2px; }
   .reng .x{ background:transparent; border:1px solid var(--line); color:var(--muted); height:40px; cursor:pointer; font-size:16px; }
   .ajustes{ display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); align-items:center; }
@@ -98,7 +98,7 @@ let estado = { cliente: "", gap: 1, margen: 1, renglones: [], reales: {} };
 try { const g = JSON.parse(localStorage.getItem(LS) || "null"); if(g && Array.isArray(g.renglones)) estado = Object.assign(estado, g); } catch(e){}
 function guardar(){ try { localStorage.setItem(LS, JSON.stringify(estado)); } catch(e){} }
 
-const nuevoReng = (o) => Object.assign({ modelo: MODELOS[5].nombre, cantidad: 1, grosor: "4 mm", alto: "", ancho: "", prof: "", niveles: 1 }, o || {});
+const nuevoReng = (o) => Object.assign({ modelo: MODELOS[5].nombre, cantidad: 1, grosor: "4 mm", alto: "", ancho: "", prof: "", niveles: 1, tipoPers: "niveles" }, o || {});
 
 function pintarLista(){
   const cont = $("lista");
@@ -115,7 +115,8 @@ function pintarLista(){
         <div><label>Alto cm</label><input data-k="alto" type="number" step="0.1" value="${esc(r.alto)}"></div>
         <div><label>Ancho cm</label><input data-k="ancho" type="number" step="0.1" value="${esc(r.ancho)}"></div>
         <div><label>Fondo cm</label><input data-k="prof" type="number" step="0.1" value="${esc(r.prof)}"></div>
-        <div><label>Niveles</label><input data-k="niveles" type="number" min="1" step="1" value="${esc(r.niveles)}"></div></div>` : ""}
+        <div><label>Tipo</label><select data-k="tipoPers">${Object.keys(TIPOS_PERS).map((k) => `<option value="${k}" ${(r.tipoPers || "niveles") === k ? "selected" : ""}>${TIPOS_PERS[k].etiqueta.split(" /")[0].split(" (")[0]}</option>`).join("")}</select></div>
+        <div><label>${({ niveles: "Niveles", escalonado: "Escalones", separadores: "Separadores" })[r.tipoPers || "niveles"]}</label><input data-k="niveles" type="number" min="1" step="1" value="${esc(r.niveles)}"></div></div>` : ""}
     </div>`;
   }).join("");
 }
@@ -125,7 +126,7 @@ $("lista").addEventListener("change", (e) => {
   const fila = e.target.closest(".reng"); if(!fila || !e.target.dataset.k) return;
   const r = estado.renglones[+fila.dataset.i], k = e.target.dataset.k;
   r[k] = (k === "cantidad" || k === "niveles") ? Math.max(1, parseInt(e.target.value, 10) || 1) : e.target.value;
-  guardar(); if(k === "modelo") pintarLista(); calcular();
+  guardar(); if(k === "modelo" || k === "tipoPers") pintarLista(); calcular();
 });
 $("lista").addEventListener("click", (e) => {
   if(!e.target.closest("[data-quitar]")) return;

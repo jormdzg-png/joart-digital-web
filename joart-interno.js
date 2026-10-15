@@ -16,11 +16,7 @@ const LAMINAS_PIEZA = {
   "Floor stand con ganchos": 1, "Floor stand — 4 niveles": 1.3333, "Floor stand — 5 niveles": 2,
 };
 // Hojas por pieza de un personalizado (misma fórmula del agente: AE / 26,000, con merma de 0.8–0.99 → 1).
-function hpFormula(g){
-  if(!g) return null; const [A, B, C] = g.d, N = g.n || 1;
-  const AE = A * B + 2 * (A * C) + N * (B * C) + N * (B * 5) + (N >= 2 ? (N - 1) * 2 * (B * 3) : 0);
-  let HP = AE / 26000; if(HP >= 0.8 && HP < 1) HP = 1; return HP;
-}
+function hpFormula(g){ return hpExhibidor(g); }
 // Hojas por pieza según el método de siempre (catálogo o fórmula).
 function hojasPorPiezaMetodo(modelo, pers){ return modelo === PERSONALIZADO ? hpFormula(geomDe(modelo, pers)) : (LAMINAS_PIEZA[modelo] != null ? LAMINAS_PIEZA[modelo] : hpFormula(GEOM[modelo] ? GEOM[modelo] : null)); }
 // 2.5 -> "2 hojas y 1/2" · 0.25 -> "1/4 de hoja" · como lo escribes en la columna "% DE HOJA".
