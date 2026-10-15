@@ -629,7 +629,11 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.line(M, y - 2.5, R, y - 2.5);
   y += 4;
 
-  if(d.soloPrecios){ texto("Precios por pieza, IVA incluido. Cada renglón es una opción de volumen; no se suman entre sí.", M, y, { size: 9, color: MUTED }); y += 10; } else {
+  if(d.soloPrecios){
+    texto("Precios por pieza, IVA incluido. Cada renglón es una opción de volumen; no se suman entre sí.", M, y, { size: 9, color: MUTED }); y += 5;
+    if(d.items.some(it => it.cantidad > 100)){ texto("Pedidos de más de 100 piezas se evalúan de forma individual; el precio mostrado para esas cantidades es de referencia.", M, y, { size: 9, color: MUTED }); y += 5; }
+    y += 5;
+  } else {
   // --- Totales ---
   nuevaPagina(44);
   const xL = 122;

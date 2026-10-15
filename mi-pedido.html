@@ -267,15 +267,19 @@ setInterval(() => { if($("pedido").classList.contains("show")) $("upd").textCont
 // ===================== CONSULTA =====================
 async function consultar(esAuto){
   if(enCurso) return; enCurso = true;
+  const pedido = codigo;   // código con el que se hizo esta consulta
   try{
-    const resp = await fetch(`${BACKEND_URL}?codigo=${encodeURIComponent(codigo)}`);
+    const resp = await fetch(`${BACKEND_URL}?codigo=${encodeURIComponent(pedido)}`);
     const data = await resp.json();
+    if(pedido !== codigo) return false;   // el cliente cambió de código mientras respondía: se ignora
+    // Protección de privacidad: si el servidor devuelve otro código, no se muestra ese pedido.
+    if(data.ok && data.codigo && String(data.codigo).trim().toUpperCase() !== pedido) data.ok = false, data.error = "No pudimos encontrar tu pedido. Revisa el código.";
     if(!data.ok){
       if(!esAuto || !ultimo){ mostrarBuscador(data.error || "No pudimos encontrar tu pedido. Revisa el código."); try{ localStorage.removeItem(KEY); }catch(e){} detener(); }
       else setLive(false);
       return false;
     }
-    const avanzo = !!(ultimo && ultimo.estatus !== data.estatus);
+    const avanzo = !!(ultimo && ultimo.estatus !== data.estatus && etapaDe(data.estatus) > etapaDe(ultimo.estatus));   // solo avisa si realmente avanzó
     $("buscador").style.display = "none"; $("pedido").classList.add("show");
     pintar(data, avanzo);
     ultimo = data; ultimaActualizacion = Date.now(); $("upd").textContent = textoHace(); setLive(true);

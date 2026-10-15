@@ -115,6 +115,7 @@
   function mostrar(id){ ["cargando","invalido","revision","okAprobado","okCorreccion"].forEach(x => $(x).hidden = (x !== id)); }
 
   function pintarRender(url){
+    url = String(url || ""); if(!/^https:\/\//i.test(url)){ mostrar("invalido"); $("invalidoMsg").textContent = "El link de tu render no es válido. Pídenos por WhatsApp que te lo mandemos de nuevo."; return; }
     const v = $("viewer"); v.innerHTML = "";
     $("abrirLink").href = url;
     let drive = url.match(/drive\.google\.com\/file\/d\/([^/]+)/) || url.match(/drive\.google\.com\/open\?id=([^&]+)/);
@@ -140,6 +141,7 @@
       const d = await r.json();
       if(!d.ok){ $("invalidoMsg").textContent = d.error || "Pídenos por WhatsApp que te mandemos el link de nuevo."; mostrar("invalido"); return; }
       if(d.aprobado){ mostrar("okAprobado"); return; }
+      if(!/^https:\/\//i.test(String(d.renderUrl || ""))){ pintarRender(d.renderUrl); return; }
       pintarRender(d.renderUrl); pintarEstado(d); mostrar("revision");
     }catch(e){ console.error(e); $("invalidoMsg").textContent = "No pudimos conectar. Intenta de nuevo en un momento."; mostrar("invalido"); }
   }
