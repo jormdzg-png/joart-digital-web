@@ -313,6 +313,19 @@
       <button type="button" class="btn" id="ctGuardar">Guardar mi cuenta</button>
       <div class="hint" id="ctEstado" style="margin-top:10px"></div>
     </div>
+    <div class="hud">
+      <div class="lbl">Láminas</div>
+      <div class="hint" id="lamLista" style="margin-bottom:12px">Cargando…</div>
+      <div class="row">
+        <div class="field"><label for="lamGrosor">Grosor</label><select id="lamGrosor"><option>4 mm</option><option>5 mm</option><option>6 mm</option></select></div>
+        <div class="field"><label for="lamN">Cantidad de hojas</label><input id="lamN" type="number" step="any" inputmode="decimal" placeholder="Ej. 2.5"></div>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="lamUsar">− Usé estas hojas</button>
+        <button type="button" class="btn" id="lamAjustar">= Tengo exactamente</button>
+      </div>
+      <div class="hint" id="lamMov" style="margin-top:10px"></div>
+    </div>
     <div class="hud"><div class="lbl">Sesión</div><button type="button" class="btn" id="salirBtn">Cerrar sesión en este dispositivo</button></div>
   </section>
 </div>
@@ -328,10 +341,10 @@
 <script src="joart-core.js"></script>
 <script>
 const CONFIG = {
-  // CON factura → cuenta fiscal (Luz María). SIN factura → tu cuenta personal, que se captura en Más → "Cuenta sin factura"
-  // y se guarda solo en este dispositivo (no va en el código público).
+  // CON factura → cuenta fiscal (Luz María). SIN factura → cuenta de Jorge (se puede cambiar en Más → "Cuenta sin factura";
+  // lo que captures ahí se guarda solo en este dispositivo y tiene prioridad sobre esta).
   cuentaFiscal:   { titular: "Luz María Espinosa Aviña", banco: "BBVA", clabe: "012 180 00491220977 7", cuenta: "049 122 0977" },
-  cuentaPersonal: null,
+  cuentaPersonal: { titular: "Jorge Mendoza", banco: "BBVA", clabe: "012 180 01560003155 0", cuenta: "" },
   vigenciaDias: 30,
   whatsapp: "56 2473 3000",
   web: "joartdigital.com.mx",
@@ -479,7 +492,7 @@ function calcularLineas(arr, ctx){
 }
 
 // ===================== NUEVO PEDIDO (solo registro, sin cotizar) =====================
-let items = [nuevoItem()], archivos = [], listaCache = [], registrando = false;
+let items = [nuevoItem()], archivos = [], listaCache = [], todosProyectos = [], registrando = false, idemActual = null;
 const cambioNuevo = () => { actualizarDock(); };
 const pintarItems = enlazarItems($("itemsBox"), () => items, (a) => { items = a; }, false, cambioNuevo);
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); actualizarDock(); });
@@ -566,12 +579,14 @@ async function registrar(){
   if(sinCant) extras.push("Cantidad por confirmar");
   const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
   const lineas = items.map(it => ({ modelo: nombreDe(it), medidas: medidasDe(it), cantidad: parseInt(it.cantidad, 10) || 1, grosor: it.grosor, precioUnitario: 0, personalizado: esPers(it), hpPorPieza: esPers(it) ? hpDe(it) : null }));
-  const order = { cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: lineas };
+  if(!idemActual) idemActual = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
+  const order = { idem: idemActual, cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: lineas };
   registrando = true; $("regBtn").disabled = true; $("regBtn").textContent = "Registrando…";
   try{
     let logos = []; if(archivos.length){ try{ logos = await Promise.all(archivos.map(async f => ({ nombre: f.name, tipo: f.type, contenido: await fileToB64(f) }))); }catch(e){ console.error(e); } }
-    const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ order, logos, password: passwordActual }) })).json();
+    const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ accion: "crearPedido", order, logos, password: passwordActual }) })).json();
     if(!res.ok){ alert("No se pudo registrar: " + (res.error || "error desconocido")); return; }
+    idemActual = null;   // el siguiente pedido es otro
     mostrarRegistrado(res, order);
     cargarLista();
   }catch(e){ console.error(e); alert("No se pudo conectar. No se registró nada; intenta de nuevo."); }
@@ -595,9 +610,12 @@ $("againBtn").addEventListener("click", () => {
 async function cargarLista(){
   const box = $("pLista");
   try{
-    const r = await (await fetch(`${BACKEND_URL}?dashboard=1&password=${encodeURIComponent(passwordActual)}`)).json();
+    const r = await post("listarProyectos");
     if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return 0; }
-    listaCache = r.tareas || []; pintarLista(); return listaCache.length;
+    todosProyectos = r.proyectos || [];
+    // En la lista del panel solo van los pedidos con código (los que se pueden abrir); el Asistente busca en todos.
+    listaCache = todosProyectos.filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido }));
+    pintarLista(); return listaCache.length;
   }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; return 0; }
 }
 function pintarLista(){
@@ -605,7 +623,7 @@ function pintarLista(){
   const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
   const entregado = (t) => (t.estatus || "").trim().toLowerCase() === "entregado";
   const coincide = (t) => !q || normNom(t.nombre).includes(q) || normNom(t.codigo).includes(q);
-  const fila = (t) => `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="go-arrow">›</span></button>`;
+  const fila = (t) => `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.estatus ? " · " + esc(t.estatus) : ""}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="go-arrow">›</span></button>`;
   const activos = listaCache.filter(t => !entregado(t) && coincide(t)), viejos = listaCache.filter(t => entregado(t) && coincide(t));
   if(!listaCache.length){ box.textContent = "Aún no hay proyectos."; return; }
   box.innerHTML = (activos.length ? `<div class="col-h"><span>En curso · ${activos.length}</span><button type="button" class="link" id="pRefrescar">Actualizar</button></div>` + activos.map(fila).join("") : (q ? "" : `<div class="hint">No hay proyectos en curso.</div>`))
@@ -632,6 +650,8 @@ async function abrirProyecto(cod, nombreEsperado){
     if(p.codigo && String(p.codigo).trim().toUpperCase() !== cod){ falla(`El Sheets devolvió el código ${p.codigo} al pedir ${cod}. No se abrió para evitar mezclar proyectos.`); return; }
     let alerta = "";
     if(nombreEsperado && p.cliente){ const a = normNom(nombreEsperado), b = normNom(p.cliente); if(a && b && a !== b && !a.includes(b) && !b.includes(a)) alerta = `⚠ Tocaste «${nombreEsperado}» pero en el Sheets el código ${cod} es de «${p.cliente}». Revisa que el código no esté repetido o que no hayas movido filas.`; }
+    if(p.desfase) alerta += (alerta ? "\n" : "") + "⚠ " + p.desfase;
+    if(p.repetido) alerta += (alerta ? "\n" : "") + "⚠ Este código está en más de una fila del Sheets (se copió una fila). Borra la nota de la copia.";
     ped = { codigo: cod, cliente: p.cliente || nombreEsperado || "", contacto: p.contacto || "", notas: p.notas || "", items: (p.items || []).filter(i => i.modelo !== "Envío"), factura: !!p.requiereFactura, alerta };
     cot = null; pintarFicha();
   }catch(e){ console.error(e); falla("No se pudo conectar."); }
@@ -642,7 +662,7 @@ function pintarFicha(){
     <div class="hud">
       <div class="ficha-code">${esc(ped.codigo)}</div><h2 class="ficha-name">${esc(ped.cliente)}</h2>
       ${ped.contacto ? `<div class="hint">WhatsApp ${esc(ped.contacto)}</div>` : ""}
-      ${ped.alerta ? `<div class="box err">${esc(ped.alerta)}</div>` : ""}
+      ${ped.alerta ? `<div class="box err" style="white-space:pre-line">${esc(ped.alerta)}</div>` : ""}
       <div class="lbl" style="margin-top:16px">Lo que se registró</div>
       ${lista || `<div class="hint">Sin productos registrados.</div>`}
       ${ped.notas ? `<div class="hint" style="margin-top:8px">📝 ${esc(ped.notas)}</div>` : ""}
@@ -775,8 +795,32 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
 function abrirTab(t){
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
   document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
-  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); window.scrollTo(0, 0);
+  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); if(t === "mas") cargarLaminas(); window.scrollTo(0, 0);
 }
+
+// ===================== LÁMINAS (Más) =====================
+async function cargarLaminas(){
+  const box = $("lamLista");
+  try{
+    const r = await post("inventario");
+    if(!r.ok){ box.textContent = r.error || "No se pudo leer el inventario."; return; }
+    box.innerHTML = r.inventario.map(i => { const falta = i.enCola > i.laminas; return `<div class="linea"><b>${esc(i.grosor)}</b><span>${i.laminas} disponibles<small>${i.enCola} comprometidas en proyectos vivos${falta ? " · ⚠ faltarían " + (Math.round((i.enCola - i.laminas) * 100) / 100) : ""}</small></span></div>`; }).join("");
+    $("lamMov").innerHTML = (r.movimientos || []).slice(0, 6).map(m => `${esc(m.fecha)} · ${esc(m.tipo)} ${esc(m.grosor)} (${m.laminas > 0 ? "+" : ""}${m.laminas})${m.detalle ? " · " + esc(m.detalle) : ""}${m.faltante ? " · ⚠ faltaron " + m.faltante : ""}`).join("<br>");
+  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
+}
+$("lamUsar").addEventListener("click", async () => {
+  const n = parseFloat($("lamN").value); if(!n){ toast("Escribe cuántas hojas"); return; }
+  const r = await post("usarHojas", { grosor: $("lamGrosor").value, cantidad: n, nota: "Capturado en la plataforma" });
+  if(!r.ok){ alert(r.error || "No se pudo guardar"); return; }
+  $("lamN").value = ""; toast(r.falta ? "Guardado (te faltaban " + r.falta + " en el conteo)" : "Hojas descontadas"); cargarLaminas();
+});
+$("lamAjustar").addEventListener("click", async () => {
+  const n = parseFloat($("lamN").value); if(isNaN(n) || n < 0){ toast("Escribe cuántas hojas hay"); return; }
+  if(!confirm("Dejar " + $("lamGrosor").value + " en exactamente " + n + " hojas?")) return;
+  const r = await post("ajustarInventario", { grosor: $("lamGrosor").value, cantidad: n });
+  if(!r.ok){ alert(r.error || "No se pudo guardar"); return; }
+  $("lamN").value = ""; toast("Conteo actualizado"); cargarLaminas();
+});
 $("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 async function iniciarApp(){
@@ -786,6 +830,8 @@ async function iniciarApp(){
   const h = new Date().getHours(); $("saludo").textContent = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", Jorge";
   $("saludoSub").textContent = n ? `${listaCache.filter(t => (t.estatus || "").trim().toLowerCase() !== "entregado").length} proyectos en curso. Cuéntame el pedido nuevo o pega el chat.` : "Cuéntame el pedido o pega el chat. Yo lleno el formulario.";
   await dormir(Math.max(0, 900 - (Date.now() - t0))); boot.classList.add("off"); setTimeout(() => boot.classList.remove("on"), 550);
+  // Enlace directo desde el Asistente: panel.html?abrir=JD-XXXXX
+  try{ const ab = new URLSearchParams(location.search).get("abrir"); if(ab && /^JD-[A-Z0-9]+$/i.test(ab)){ abrirTab("proyectos"); abrirProyecto(ab, ""); history.replaceState(null, "", location.pathname); } }catch(e){}
 }
 const ZONAS = ["Aguascalientes","Baja California","Baja California Sur","Campeche","CDMX","Chiapas","Chihuahua","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Monterrey","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
 $("listaZonas").innerHTML = ZONAS.map(z => `<option value="${z}">`).join("");
