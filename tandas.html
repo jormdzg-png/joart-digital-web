@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#3D405B">
+<meta name="robots" content="noindex">
+<title>Tandas y hojas — Joart Digital</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+  :root{ --cream:#F4F1DE; --terracota:#E07A5F; --navy:#3D405B; --sage:#81B29A; --sand:#F2CC8F; --card:#fff; --line:#E3DFCB; --muted:#6E6C63; --red:#B3402A; }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  body{ margin:0; background:var(--cream); color:var(--navy); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:880px; margin:0 auto; padding:16px 16px 60px; }
+  .top{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .top img{ width:30px; height:30px; } .top a{ margin-left:auto; font-size:13px; font-weight:600; color:var(--navy); }
+  h1{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:21px; margin:8px 0 2px; }
+  .sub{ font-size:13px; color:var(--muted); margin:0 0 12px; line-height:1.45; }
+  .card{ background:var(--card); border:1px solid var(--line); padding:14px; margin-top:12px; }
+  .lbl{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  select, input, textarea{ border:1px solid var(--line); background:var(--cream); color:var(--navy); padding:10px 11px; font:500 14.5px 'Inter',sans-serif; width:100%; }
+  textarea{ resize:vertical; min-height:64px; }
+  select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--terracota); }
+  .btn{ border:none; padding:11px 14px; font:700 13.5px 'Inter',sans-serif; cursor:pointer; background:var(--navy); color:#fff; }
+  .btn.out{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
+  .btn.terra{ background:var(--terracota); } .btn.rec{ background:var(--red); }
+  .btn.mini{ padding:8px 10px; font-size:12.5px; }
+  .acciones{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .reng{ display:grid; grid-template-columns:1fr 78px 92px 38px; gap:8px; align-items:center; padding:10px 0; border-top:1px dashed var(--line); }
+  .reng:first-of-type{ border-top:none; }
+  .reng .pers{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .reng .pers label{ font-size:11px; color:var(--muted); font-weight:600; display:block; margin-bottom:2px; }
+  .reng .x{ background:transparent; border:1px solid var(--line); color:var(--muted); height:40px; cursor:pointer; font-size:16px; }
+  .ajustes{ display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); align-items:center; }
+  .ajustes input{ width:64px; padding:6px 8px; }
+  .res{ border:1px solid var(--line); background:#FDFCF7; padding:12px; margin-top:10px; }
+  .res h3{ margin:0 0 8px; font:800 15px 'Archivo Expanded',sans-serif; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .kpi{ background:#fff; border:1px solid var(--line); padding:9px 10px; } .kpi small{ display:block; font-size:11px; color:var(--muted); } .kpi b{ font-size:17px; }
+  .kpi.warn{ border-color:var(--terracota); background:#FFF3EE; }
+  .real{ display:grid; grid-template-columns:150px 1fr; gap:10px; align-items:center; margin-top:10px; }
+  .txt{ font-size:13px; line-height:1.5; }
+  .txt code{ background:var(--sand); padding:1px 6px; font-weight:700; }
+  .mapas{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; margin-top:10px; }
+  .mapa{ border:1px solid var(--line); background:#fff; padding:6px; } .mapa small{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px; }
+  .mapa svg{ width:100%; height:auto; display:block; background:#F7F3DD; }
+  .alerta{ background:#FFF3EE; border:1px solid var(--terracota); padding:9px 11px; font-size:13px; margin-top:8px; }
+  .vacio{ color:var(--muted); font-size:13.5px; padding:6px 0; }
+  .nota{ font-size:12px; color:var(--muted); line-height:1.5; margin-top:10px; }
+  @media(max-width:520px){ .reng{ grid-template-columns:1fr 70px 80px 36px; } .real{ grid-template-columns:1fr; } .reng .pers{ grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img src="logo-joart.png" alt=""><b>Tandas y hojas</b><a href="panel.html">← Panel</a></div>
+  <h1>¿Cuántas hojas voy a usar?</h1>
+  <p class="sub">Agrega lo que vas a producir (o dilo / pégalo) y te acomodo las piezas en hojas de 244 × 122 cm. Compara con tu método de siempre y te deja escribir las hojas reales usadas.</p>
+
+  <div class="card">
+    <div class="lbl">Dictar o pegar pedido <span id="micEstado" style="text-transform:none;letter-spacing:0;font-weight:500"></span></div>
+    <textarea id="dictado" placeholder="Ej: 20 pop display de dos niveles y 10 floor stand de tres niveles en 5 mm para Boticas Unión"></textarea>
+    <div class="acciones">
+      <button class="btn out" id="mic" type="button">🎤 Dictar</button>
+      <button class="btn terra" id="interpretar" type="button">Agregar a la lista</button>
+    </div>
+    <div id="dictadoMsg" class="nota" hidden></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Lista de producción</div>
+    <input id="cliente" type="text" placeholder="Cliente / referencia (opcional)" style="margin-bottom:6px">
+    <div id="lista"></div>
+    <div class="acciones">
+      <button class="btn" id="agregar" type="button">+ Agregar renglón</button>
+      <button class="btn out" id="limpiar" type="button">Vaciar</button>
+    </div>
+    <div class="ajustes" style="margin-top:12px">
+      <span>Separación entre piezas <input id="gap" type="number" min="0" step="0.5" value="1"> cm</span>
+      <span>Margen de la hoja <input id="margen" type="number" min="0" step="0.5" value="1"> cm</span>
+    </div>
+  </div>
+
+  <div id="resultado"></div>
+  <p class="nota">Es una <b>estimación</b>: los laterales triangulares se encajan como un rectángulo y las piezas no se giran (el sentido del corrugado manda). El suaje real puede aprovechar mejor la hoja; por eso aquí puedes capturar las hojas realmente usadas y ver la diferencia.</p>
+</div>
+
+<script src="joart-core.js"></script>
+<script>
+const LS = "joart_tandas_v1";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (n, d = 1) => (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toLocaleString("es-MX", { maximumFractionDigits: d });
+const money = (n) => "$" + Math.round(n).toLocaleString("es-MX");
+
+let estado = { cliente: "", gap: 1, margen: 1, renglones: [], reales: {} };
+try { const g = JSON.parse(localStorage.getItem(LS) || "null"); if(g && Array.isArray(g.renglones)) estado = Object.assign(estado, g); } catch(e){}
+function guardar(){ try { localStorage.setItem(LS, JSON.stringify(estado)); } catch(e){} }
+
+const nuevoReng = (o) => Object.assign({ modelo: MODELOS[5].nombre, cantidad: 1, grosor: "4 mm", alto: "", ancho: "", prof: "", niveles: 1 }, o || {});
+
+function pintarLista(){
+  const cont = $("lista");
+  if(!estado.renglones.length){ cont.innerHTML = '<div class="vacio">Aún no hay renglones. Agrega uno o dicta el pedido.</div>'; return; }
+  cont.innerHTML = estado.renglones.map((r, i) => {
+    const gros = r.modelo === PERSONALIZADO ? GROSORES : grosoresDeModelo(r.modelo);
+    if(!gros.includes(r.grosor)) r.grosor = gros[0];
+    return `<div class="reng" data-i="${i}">
+      <select data-k="modelo">${MODELOS.map((m) => `<option ${m.nombre === r.modelo ? "selected" : ""}>${esc(m.nombre)}</option>`).join("")}<option value="${PERSONALIZADO}" ${r.modelo === PERSONALIZADO ? "selected" : ""}>Personalizado…</option></select>
+      <input data-k="cantidad" type="number" min="1" step="1" inputmode="numeric" value="${r.cantidad}" aria-label="Cantidad">
+      <select data-k="grosor">${gros.map((g) => `<option ${g === r.grosor ? "selected" : ""}>${g}</option>`).join("")}</select>
+      <button class="x" data-quitar type="button" aria-label="Quitar">✕</button>
+      ${r.modelo === PERSONALIZADO ? `<div class="pers">
+        <div><label>Alto cm</label><input data-k="alto" type="number" step="0.1" value="${esc(r.alto)}"></div>
+        <div><label>Ancho cm</label><input data-k="ancho" type="number" step="0.1" value="${esc(r.ancho)}"></div>
+        <div><label>Fondo cm</label><input data-k="prof" type="number" step="0.1" value="${esc(r.prof)}"></div>
+        <div><label>Niveles</label><input data-k="niveles" type="number" min="1" step="1" value="${esc(r.niveles)}"></div></div>` : ""}
+    </div>`;
+  }).join("");
+}
+const GROSORES = ["4 mm", "5 mm", "6 mm"];
+
+$("lista").addEventListener("change", (e) => {
+  const fila = e.target.closest(".reng"); if(!fila || !e.target.dataset.k) return;
+  const r = estado.renglones[+fila.dataset.i], k = e.target.dataset.k;
+  r[k] = (k === "cantidad" || k === "niveles") ? Math.max(1, parseInt(e.target.value, 10) || 1) : e.target.value;
+  guardar(); if(k === "modelo") pintarLista(); calcular();
+});
+$("lista").addEventListener("click", (e) => {
+  if(!e.target.closest("[data-quitar]")) return;
+  estado.renglones.splice(+e.target.closest(".reng").dataset.i, 1); guardar(); pintarLista(); calcular();
+});
+$("agregar").onclick = () => { estado.renglones.push(nuevoReng()); guardar(); pintarLista(); calcular(); };
+$("limpiar").onclick = () => { if(estado.renglones.length && !confirm("¿Vaciar toda la lista?")) return; estado.renglones = []; estado.reales = {}; guardar(); pintarLista(); calcular(); };
+$("cliente").oninput = (e) => { estado.cliente = e.target.value; guardar(); };
+["gap", "margen"].forEach((id) => $(id).onchange = (e) => { estado[id] = Math.max(0, parseFloat(e.target.value) || 0); guardar(); calcular(); });
+
+// ---------- Dictado / pegado ----------
+function interpretar(){
+  const txt = $("dictado").value.trim(); if(!txt) return;
+  const p = parsearPedidoTexto(txt), msg = $("dictadoMsg");
+  if(!p.items.length){ msg.hidden = false; msg.textContent = "No encontré modelos en ese texto. Prueba con algo como: “20 pop display de dos niveles y 10 floor stand de tres niveles”."; return; }
+  if(estado.renglones.length === 1 && estado.renglones[0].modelo === MODELOS[5].nombre && estado.renglones[0].cantidad === 1 && estado.renglones[0].grosor === "4 mm") estado.renglones = [];   // renglón de ejemplo sin tocar
+  p.items.forEach((it) => {
+    const g = p.grosor || (it.modelo === PERSONALIZADO ? "4 mm" : grosoresDeModelo(it.modelo)[0]);
+    estado.renglones.push(nuevoReng(Object.assign({}, it, { grosor: it.modelo !== PERSONALIZADO && !grosoresDeModelo(it.modelo).includes(g) ? grosoresDeModelo(it.modelo)[0] : g })));
+  });
+  if(p.cliente && !estado.cliente){ estado.cliente = p.cliente; $("cliente").value = p.cliente; }
+  msg.hidden = false; msg.textContent = `Agregué ${p.items.length} renglón(es)${p.cliente ? " para " + p.cliente : ""}${p.grosor ? " en " + p.grosor : ""}. Revisa cantidades y grosor abajo.`;
+  $("dictado").value = ""; guardar(); pintarLista(); calcular();
+}
+$("interpretar").onclick = interpretar;
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, btn = $("mic");
+  if(!SR){ btn.hidden = true; return; }
+  let rec = null, activo = false, base = "";
+  btn.onclick = () => {
+    if(activo){ rec && rec.stop(); return; }
+    rec = new SR(); rec.lang = "es-MX"; rec.interimResults = true; rec.continuous = true; base = $("dictado").value ? $("dictado").value.trim() + " " : "";
+    rec.onresult = (ev) => { let t = ""; for(let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript; $("dictado").value = base + t; };
+    rec.onstart = () => { activo = true; btn.textContent = "⏹ Detener"; btn.classList.add("rec"); $("micEstado").textContent = "escuchando…"; };
+    rec.onend = () => { activo = false; btn.textContent = "🎤 Dictar"; btn.classList.remove("rec"); $("micEstado").textContent = ""; };
+    rec.onerror = () => { $("micEstado").textContent = "no pude usar el micrófono"; };
+    try { rec.start(); } catch(e){}
+  };
+})();
+
+// ---------- Cálculo y pintado ----------
+function mapaSVG(hoja, W, H, idx){
+  const COLORES = { respaldo: "#E07A5F", laterales: "#81B29A", base: "#F2CC8F", letrero: "#B8B5D6", soporte: "#9BC1D6", separadores: "#D6A7C3" };
+  const color = (n) => COLORES[Object.keys(COLORES).find((k) => n.startsWith(k))] || "#ccc";
+  const rects = hoja.puestas.map((p) => `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color(p.n)}" stroke="#3D405B" stroke-width="0.5"><title>${esc(p.n)} ${fmt(p.w)}×${fmt(p.h)}</title></rect>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Hoja ${idx + 1}"><rect width="${W}" height="${H}" fill="none" stroke="#3D405B" stroke-width="1"/>${rects}</svg>`;
+}
+
+function calcular(){
+  const out = $("resultado"), rens = estado.renglones;
+  if(!rens.length){ out.innerHTML = ""; return; }
+  const opt = { gap: estado.gap, margen: estado.margen };
+  const t0 = performance.now();
+  const plan = planDeHojas(rens, opt);
+  const faltan = rens.map((r, i) => (geomDe(r.modelo, r) ? null : i + 1)).filter(Boolean);
+  let html = "";
+  if(faltan.length) html += `<div class="alerta">Faltan medidas en el renglón ${faltan.join(", ")} (personalizado). No lo conté.</div>`;
+  const grosores = Object.keys(plan.porGrosor);
+  if(!grosores.length){ out.innerHTML = html; return; }
+  let totHojas = 0, totCosto = 0;
+  grosores.forEach((gr) => {
+    const p = plan.porGrosor[gr];
+    // método de siempre: catálogo / fórmula
+    let metodo = 0; const sinMetodo = [];
+    rens.forEach((r) => { if(r.grosor !== gr || !geomDe(r.modelo, r)) return; const hp = hojasPorPiezaMetodo(r.modelo, r); if(hp == null) sinMetodo.push(r.modelo); else metodo += hp * (parseInt(r.cantidad, 10) || 1); });
+    const real = estado.reales[gr];
+    const tieneReal = real !== undefined && real !== "" && !isNaN(parseFloat(real));
+    const merma = (1 - p.usoGlobal) * 100;
+    html += `<div class="res" data-gr="${gr}">
+      <h3><span>${gr}</span><span>${p.nHojas} hoja${p.nHojas === 1 ? "" : "s"} · ${money(p.costo)}</span></h3>
+      <div class="kpis">
+        <div class="kpi"><small>Hojas acomodadas</small><b>${p.nHojas}</b></div>
+        <div class="kpi"><small>Aprovechamiento</small><b>${fmt(p.usoGlobal * 100, 0)}%</b></div>
+        <div class="kpi ${merma > 45 ? "warn" : ""}"><small>Merma estimada</small><b>${fmt(merma, 0)}%</b></div>
+        <div class="kpi"><small>Costo (hoja + impresión)</small><b>${money(p.costo)}</b></div>
+        <div class="kpi"><small>Método de siempre</small><b>${fmt(metodo, 2)}</b></div>
+        <div class="kpi"><small>Última hoja llena al</small><b>${fmt((p.usoPorHoja[p.usoPorHoja.length - 1] || 0) * 100, 0)}%</b></div>
+      </div>
+      <div class="txt" style="margin-top:8px">En “% DE HOJA” de esta tanda: <code>${esc(hojasTexto(p.nHojas))}</code> <span style="color:var(--muted)">· por tu método: <code>${esc(hojasTexto(metodo))}</code></span></div>
+      <div class="real"><label for="real-${gr.replace(" ", "")}" style="font-size:13px;font-weight:600">Hojas realmente usadas</label>
+        <div><input id="real-${gr.replace(" ", "")}" data-real="${gr}" type="number" min="0" step="0.05" inputmode="decimal" placeholder="Ej. 3.5" value="${tieneReal ? esc(real) : ""}">
+        <div class="txt" style="margin-top:6px">${tieneReal ? `Real: <code>${esc(hojasTexto(parseFloat(real)))}</code> · ${diff(parseFloat(real), p.nHojas, "vs. acomodo")} · ${diff(parseFloat(real), metodo, "vs. tu método")}` : '<span style="color:var(--muted)">Escribe las hojas que de verdad gastaste y comparo.</span>'}</div></div></div>
+      ${p.sobran.length ? `<div class="alerta">${p.sobran.length} pieza(s) no caben en una hoja (${[...new Set(p.sobran.map((s) => s.n + " " + fmt(s.w) + "×" + fmt(s.h)))].join(", ")}). Se van a suaje especial o a dividir.</div>` : ""}
+      ${sinMetodo.length ? `<div class="nota">Sin dato de catálogo para: ${esc([...new Set(sinMetodo)].join(", "))}.</div>` : ""}
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px;font-weight:600">Ver mapas de corte (${p.nHojas})</summary>
+        <div class="mapas">${p.hojas.map((h, i) => `<div class="mapa"><small>Hoja ${i + 1} · ${fmt(p.usoPorHoja[i] * 100, 0)}% · ${h.puestas.length} piezas</small>${mapaSVG(h, HOJA.ancho, HOJA.alto, i)}</div>`).join("")}</div>
+      </details>
+    </div>`;
+    totHojas += p.nHojas; totCosto += p.costo;
+  });
+  if(grosores.length > 1) html += `<div class="res"><h3><span>Total</span><span>${totHojas} hojas · ${money(totCosto)}</span></h3></div>`;
+  out.innerHTML = html;
+  out.dataset.ms = Math.round(performance.now() - t0);
+}
+function diff(real, ref, etiqueta){
+  const d = real - ref; if(Math.abs(d) < 0.05) return `igual ${etiqueta}`;
+  return `${d > 0 ? "+" : "−"}${fmt(Math.abs(d), 2)} hojas ${etiqueta} (${d > 0 ? "gastaste más" : "ahorraste"})`;
+}
+$("resultado").addEventListener("change", (e) => {
+  const g = e.target.dataset && e.target.dataset.real; if(!g) return;
+  estado.reales[g] = e.target.value; guardar(); const y = window.scrollY; calcular(); window.scrollTo(0, y);
+});
+
+$("cliente").value = estado.cliente || ""; $("gap").value = estado.gap; $("margen").value = estado.margen;
+if(!estado.renglones.length) estado.renglones.push(nuevoReng());
+pintarLista(); calcular();
+</script>
+</body>
+</html>

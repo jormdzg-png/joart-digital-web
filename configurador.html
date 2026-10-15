@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#3D405B">
+<title>Diseña tu exhibidor — Joart Digital</title>
+<meta name="description" content="Elige tu exhibidor, sube tu logo y velo en 3D con tus colores. Cotiza por WhatsApp.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+  :root{ --cream:#F4F1DE; --terracota:#E07A5F; --terracota-dark:#C4603F; --navy:#3D405B; --sage:#81B29A; --sand:#F2CC8F; --card:#fff; --line:#E3DFCB; --muted:#6E6C63; }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  body{ margin:0; background:var(--cream); color:var(--navy); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:760px; margin:0 auto; padding:16px 16px 110px; }
+  .top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .top img{ width:34px; height:34px; }
+  .top b{ font-size:15px; } .top small{ display:block; font-size:11.5px; color:var(--muted); }
+  h1{ font-family:'Archivo Expanded',sans-serif; font-weight:800; font-size:22px; margin:8px 0 2px; }
+  .sub{ font-size:13px; color:var(--muted); margin:0 0 14px; }
+  #stage{ position:relative; width:100%; aspect-ratio:1/1; max-height:62vh; background:radial-gradient(ellipse at 50% 35%, #fff 0%, #FBF8EA 55%, #EFE9CC 100%); border:1px solid var(--line); touch-action:none; overflow:hidden; }
+  #gl{ width:100%; height:100%; display:block; }
+  .stage-tools{ position:absolute; right:8px; top:8px; display:flex; gap:6px; }
+  .stage-tools button{ background:rgba(255,255,255,.92); border:1px solid var(--line); padding:7px 10px; font:600 12px 'Inter',sans-serif; color:var(--navy); cursor:pointer; }
+  .hint3d{ position:absolute; left:10px; bottom:8px; font-size:11px; color:var(--muted); background:rgba(255,255,255,.8); padding:3px 7px; }
+  .card{ background:var(--card); border:1px solid var(--line); padding:16px; margin-top:12px; }
+  .lbl{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin-bottom:10px; }
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; } .field:last-child{ margin-bottom:0; }
+  .field label{ font-size:12px; font-weight:600; color:var(--muted); }
+  select, input[type=number], input[type=text]{ border:1px solid var(--line); background:var(--cream); color:var(--navy); padding:11px 12px; font:500 15px 'Inter',sans-serif; width:100%; }
+  select:focus, input:focus{ outline:none; border-color:var(--terracota); }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .row3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .qty{ display:grid; grid-template-columns:48px 1fr 48px; gap:0; }
+  .qty button{ background:var(--navy); color:#fff; border:none; font:700 20px 'Inter',sans-serif; cursor:pointer; }
+  .qty input{ text-align:center; border-left:none; border-right:none; }
+  .logo-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn{ border:none; padding:12px 14px; font:700 14px 'Inter',sans-serif; cursor:pointer; background:var(--navy); color:#fff; }
+  .btn.out{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
+  .btn.terra{ background:var(--terracota); } .btn.sage{ background:var(--sage); color:#1f3b2e; }
+  .sw{ display:flex; gap:10px; align-items:center; } .sw input[type=color]{ width:46px; height:40px; padding:0; border:1px solid var(--line); background:none; cursor:pointer; }
+  .sw span{ font-size:12px; color:var(--muted); }
+  .presets{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .presets button{ width:30px; height:30px; border:2px solid #fff; outline:1px solid var(--line); cursor:pointer; }
+  .tiers{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .tier{ border:1px solid var(--line); background:#FDFCF7; padding:10px 6px; text-align:center; }
+  .tier.on{ border-color:var(--terracota); background:#FFF3EE; }
+  .tier small{ display:block; font-size:11px; color:var(--muted); } .tier b{ font:800 16px 'Archivo Expanded',sans-serif; }
+  .note{ font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.45; }
+  .badges{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; } .badges span{ font-size:11.5px; font-weight:600; background:#fff; border:1px solid var(--line); padding:5px 9px; }
+  .cta{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; justify-content:center; z-index:5; }
+  .cta .in{ width:100%; max-width:728px; display:grid; grid-template-columns:1fr auto; gap:8px; }
+  .cta a.btn{ text-decoration:none; text-align:center; display:block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><img src="logo-joart.png" alt="Joart Digital"><div><b>Joart Digital</b><small>Exhibidores POP en Coroplast</small></div></div>
+  <h1>Diseña tu exhibidor</h1>
+  <p class="sub">Elige el modelo, sube tu logo y velo en 3D con tus colores. Sin compromiso.</p>
+
+  <div id="stage"><canvas id="gl"></canvas>
+    <div class="stage-tools"><button id="giraBtn" type="button">⏸ Girar</button><button id="resetBtn" type="button">⟲ Vista</button></div>
+    <div class="hint3d">Arrastra para girar · pellizca para acercar</div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">1 · Tu exhibidor</div>
+    <div class="field"><label for="modelo">Modelo</label><select id="modelo"></select></div>
+    <div id="medidasBox" class="row3" hidden>
+      <div class="field"><label>Alto (cm)</label><input id="pAlto" type="number" min="10" max="200" step="0.5" value="40"></div>
+      <div class="field"><label>Ancho (cm)</label><input id="pAncho" type="number" min="10" max="120" step="0.5" value="30"></div>
+      <div class="field"><label>Fondo (cm)</label><input id="pProf" type="number" min="8" max="80" step="0.5" value="20"></div>
+      <div class="field" style="grid-column:1/-1"><label>Niveles</label><select id="pNiv"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+    </div>
+    <div class="field"><label>Cantidad</label>
+      <div class="qty"><button type="button" id="qMenos">−</button><input id="cant" type="number" min="1" max="100" step="1" value="10" inputmode="numeric"><button type="button" id="qMas">+</button></div></div>
+    <div class="note" id="medNota"></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">2 · Tu marca</div>
+    <div class="logo-row">
+      <input id="logoFile" type="file" accept="image/*" hidden>
+      <button class="btn terra" id="logoBtn" type="button">📎 Subir mi logo</button>
+      <button class="btn out" id="logoQuitar" type="button" hidden>Quitar</button>
+      <span class="note" id="logoNota" style="margin:0">PNG o JPG. Tu logo no se guarda: se queda en tu teléfono.</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="field"><label>Color del copete y laterales</label><div class="sw"><input id="c1" type="color" value="#E07A5F"><span id="c1t">#E07A5F</span></div></div>
+      <div class="field"><label>Color de los letreros</label><div class="sw"><input id="c2" type="color" value="#3D405B"><span id="c2t">#3D405B</span></div></div>
+    </div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">3 · Precio por pieza</div>
+    <div class="tiers" id="tiers"></div>
+    <div class="note" id="precioNota"></div>
+    <div class="badges"><span>🎨 Render 3D gratis</span><span>🚚 Envío gratis en compras mayores a $1,000</span><span>📦 Sin mínimo de piezas</span><span>🧾 Precios con IVA</span></div>
+  </div>
+</div>
+
+<div class="cta"><div class="in">
+  <a class="btn terra" id="waBtn" href="#" target="_blank" rel="noopener">💬 Cotizar por WhatsApp</a>
+  <button class="btn out" id="shareBtn" type="button">📸 Mi diseño</button>
+</div></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="joart-core.js"></script>
+<script>
+const WHATSAPP_NUMBER = "5215624733000";
+const $ = (id) => document.getElementById(id);
+const PALETA = ["#E07A5F", "#3D405B", "#81B29A", "#F2CC8F", "#F4F1DE", "#C4603F", "#2F6690", "#B2294D", "#7FB5CC", "#F9D19B", "#222222", "#FFFFFF"];
+const state = { modelo: MODELOS[0].nombre, pers: { alto: 40, ancho: 30, prof: 20, niv: 1 }, cant: 10, c1: "#E07A5F", c2: "#3D405B", logo: null, colorTocado: false };
+
+// ---------- controles ----------
+(function(){
+  const grupos = [["Para mesa o mostrador", MODELOS.filter(m => !m.piso)], ["Para piso", MODELOS.filter(m => m.piso)]];
+  $("modelo").innerHTML = grupos.map(([t, l]) => `<optgroup label="${t}">${l.map(m => `<option value="${m.nombre}">${m.nombre}</option>`).join("")}</optgroup>`).join("") + `<optgroup label="A tu medida"><option value="${PERSONALIZADO}">Diseño personalizado (a la medida)</option></optgroup>`;
+  $("presets").innerHTML = PALETA.map(c => `<button type="button" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("");
+})();
+$("modelo").addEventListener("change", () => { state.modelo = $("modelo").value; refrescar(true); });
+["pAlto","pAncho","pProf","pNiv"].forEach(id => $(id).addEventListener("input", () => { state.pers = { alto: +$("pAlto").value || 0, ancho: +$("pAncho").value || 0, prof: +$("pProf").value || 0, niv: +$("pNiv").value || 1 }; refrescar(true); }));
+const setCant = (n) => { n = Math.max(1, Math.min(9999, Math.round(n) || 1)); state.cant = n; $("cant").value = n; refrescar(false); };
+$("cant").addEventListener("input", () => setCant(+$("cant").value));
+$("qMenos").addEventListener("click", () => setCant(state.cant - 1)); $("qMas").addEventListener("click", () => setCant(state.cant + 1));
+$("c1").addEventListener("input", () => { state.c1 = $("c1").value; state.colorTocado = true; $("c1t").textContent = state.c1.toUpperCase(); reconstruir(); });
+$("c2").addEventListener("input", () => { state.c2 = $("c2").value; state.colorTocado = true; $("c2t").textContent = state.c2.toUpperCase(); reconstruir(); });
+let ultimoSwatch = "c1";
+$("c1").addEventListener("focus", () => ultimoSwatch = "c1"); $("c2").addEventListener("focus", () => ultimoSwatch = "c2");
+$("presets").addEventListener("click", (e) => { const c = e.target.dataset && e.target.dataset.c; if(!c) return; const k = ultimoSwatch; state[k] = c; $(k).value = c; $(k + "t").textContent = c.toUpperCase(); state.colorTocado = true; reconstruir(); });
+$("logoBtn").addEventListener("click", () => $("logoFile").click());
+$("logoQuitar").addEventListener("click", () => { state.logo = null; $("logoFile").value = ""; $("logoQuitar").hidden = true; $("logoNota").textContent = "PNG o JPG. Tu logo no se guarda: se queda en tu teléfono."; reconstruir(); });
+$("logoFile").addEventListener("change", () => {
+  const f = $("logoFile").files[0]; if(!f) return;
+  const url = URL.createObjectURL(f), img = new Image();
+  img.onload = () => {
+    state.logo = img; $("logoQuitar").hidden = false; $("logoNota").textContent = "Logo cargado ✅ (al cotizar, mándanos el archivo por WhatsApp para tu render)";
+    if(!state.colorTocado){ const [a, b] = colorDeLogo(img); state.c1 = a; state.c2 = b; $("c1").value = a; $("c2").value = b; $("c1t").textContent = a.toUpperCase(); $("c2t").textContent = b.toUpperCase(); }
+    reconstruir();
+  };
+  img.onerror = () => { $("logoNota").textContent = "No pude leer ese archivo. Prueba con PNG o JPG."; };
+  img.src = url;
+});
+// Color dominante del logo (ignora blancos, grises y transparentes) y un color de letrero que contraste.
+function colorDeLogo(img){
+  const c = document.createElement("canvas"); c.width = c.height = 48; const x = c.getContext("2d", { willReadFrequently: true });
+  x.drawImage(img, 0, 0, 48, 48); const d = x.getImageData(0, 0, 48, 48).data; const bins = {};
+  for(let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3]; if(a < 100) continue;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0; if(sat < 0.22 || mx < 40 || mn > 235) continue;
+    const k = (r >> 5) + "," + (g >> 5) + "," + (b >> 5); const o = bins[k] || (bins[k] = { r: 0, g: 0, b: 0, c: 0, peso: 0 });
+    o.r += r; o.g += g; o.b += b; o.c += 1; o.peso += 1 + sat * 2;
+  }
+  const top = Object.values(bins).sort((p, q) => q.peso - p.peso)[0];
+  if(!top) return ["#E07A5F", "#3D405B"];
+  const hex = (r, g, b) => "#" + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+  const R = top.r / top.c, G = top.g / top.c, B = top.b / top.c, lum = 0.299 * R + 0.587 * G + 0.114 * B;
+  const fondo = hex(R, G, B), letrero = lum > 140 ? hex(R * 0.32, G * 0.32, B * 0.32) : hex(R + (255 - R) * 0.82, G + (255 - G) * 0.82, B + (255 - B) * 0.82);
+  return [fondo, letrero];
+}
+
+// ---------- precio ----------
+const esPers = () => state.modelo === PERSONALIZADO;
+const esPiso = () => esPers() ? state.pers.alto >= 100 : !!(MODELOS.find(m => m.nombre === state.modelo) || {}).piso;
+const grosorDefault = () => esPiso() ? "5 mm" : "4 mm";
+function geomActual(){ return geomDe(state.modelo, esPers() ? { alto: state.pers.alto, ancho: state.pers.ancho, prof: state.pers.prof, niveles: state.pers.niv } : null); }
+function pintarPrecios(){
+  const t = $("tiers"), nota = $("precioNota"), q = state.cant;
+  if(esPers()){ t.innerHTML = `<div class="tier" style="grid-column:1/-1"><small>A tu medida</small><b>Te cotizamos en minutos</b></div>`; nota.textContent = q > 100 ? "Nuestro máximo es de 100 piezas por pedido. Escríbenos y el responsable evalúa tu proyecto." : "Dinos cuántas piezas necesitas y te damos el precio exacto por WhatsApp. Tu render 3D es gratis."; return; }
+  const gr = grosoresDeModelo(state.modelo).includes(grosorDefault()) ? grosorDefault() : grosoresDeModelo(state.modelo)[0];
+  const pr = ESCALAS_WEB.map(e => ({ e, p: precioCatalogo(state.modelo, gr, e) }));
+  let on = 0; pr.forEach((x, i) => { if(q >= x.e) on = i; });
+  t.innerHTML = pr.map((x, i) => `<div class="tier${(q === x.e) ? " on" : ""}"><small>${x.e} pz${x.e === 1 ? "" : "s"}</small><b>$${x.p.toLocaleString("es-MX")}</b></div>`).join("");
+  const exacto = ESCALAS_WEB.includes(q);
+  if(q > 100) nota.textContent = "Nuestro máximo es de 100 piezas por pedido. Escríbenos y el responsable evalúa tu proyecto.";
+  else if(exacto) nota.textContent = `Con ${q} pieza${q === 1 ? "" : "s"}: $${pr.find(x => x.e === q).p.toLocaleString("es-MX")} por pieza (IVA incluido).`;
+  else { const lo = pr[on + 1] ? pr[on + 1].p : pr[on].p, hi = pr[on].p; nota.textContent = `Con ${q} piezas pagas entre $${lo.toLocaleString("es-MX")} y $${hi.toLocaleString("es-MX")} por pieza; por WhatsApp te confirmamos el precio exacto.`; }
+  const g = geomActual(); if(g && g.n >= 2) nota.textContent += ` Cada nivel soporta hasta ${CARGA_POR_NIVEL[gr]} kg.`;
+}
+function pintarMedidas(){
+  $("medidasBox").hidden = !esPers();
+  const m = MODELOS.find(x => x.nombre === state.modelo);
+  $("medNota").textContent = esPers() ? "Elige alto, ancho y fondo: el 3D se ajusta al instante." : (m ? "Medidas: " + m.medidas + " (alto × ancho × fondo)" : "");
+}
+function mensajeWA(){
+  const m = MODELOS.find(x => x.nombre === state.modelo);
+  const nombre = esPers() ? `Diseño personalizado ${state.pers.alto}×${state.pers.ancho}×${state.pers.prof} cm, ${state.pers.niv} nivel${state.pers.niv === 1 ? "" : "es"}` : state.modelo;
+  return `Hola 👋 Armé mi exhibidor en su configurador 3D:\n• ${state.cant} × ${nombre}\n• Colores: ${state.c1.toUpperCase()} y ${state.c2.toUpperCase()}\n• Logo: ${state.logo ? "ya lo tengo, te lo mando por aquí" : "te lo envío por aquí"}\n\n¿Me cotizas el precio exacto y me haces mi render 3D?`;
+}
+function refrescar(rehacer){
+  pintarMedidas(); pintarPrecios();
+  $("waBtn").href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(mensajeWA());
+  if(rehacer) reconstruir();
+}
+
+// ---------- 3D ----------
+const canvas = $("gl");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 1, 4000);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false; controls.autoRotate = true; controls.autoRotateSpeed = 1.6;
+controls.addEventListener("start", () => { controls.autoRotate = false; $("giraBtn").textContent = "▶ Girar"; });
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2b8, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.ShadowMaterial({ opacity: 0.18 })); piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; scene.add(piso);
+let grupo = null, dim = 60;
+
+function tex(w, h, dibuja){ const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); dibuja(x, w, h); const t = new THREE.CanvasTexture(c); t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; return t; }
+function dibujaLogo(x, cx, cy, maxW, maxH, fondoOscuro){
+  if(state.logo){ const r = Math.min(maxW / state.logo.width, maxH / state.logo.height); const w = state.logo.width * r, h = state.logo.height * r; x.drawImage(state.logo, cx - w / 2, cy - h / 2, w, h); return; }
+  x.save(); x.globalAlpha = 0.55; x.strokeStyle = fondoOscuro ? "#fff" : "#3D405B"; x.fillStyle = x.strokeStyle; x.lineWidth = Math.max(2, maxH * 0.04); x.setLineDash([maxH * 0.12, maxH * 0.08]);
+  const w = Math.min(maxW, maxH * 2.6), h = maxH * 0.8; x.strokeRect(cx - w / 2, cy - h / 2, w, h); x.setLineDash([]);
+  x.font = `700 ${Math.max(10, h * 0.34)}px Inter, sans-serif`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("TU LOGO", cx, cy); x.restore();
+}
+const luminancia = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255); };
+const mat = (map, extra) => new THREE.MeshStandardMaterial(Object.assign({ map, roughness: 0.62, metalness: 0 }, extra || {}));
+const blanco = () => new THREE.MeshStandardMaterial({ color: 0xfafaf5, roughness: 0.7 });
+function uvDeBBox(geo){ geo.computeBoundingBox(); const b = geo.boundingBox, p = geo.attributes.position, uv = new Float32Array(p.count * 2); for(let i = 0; i < p.count; i++){ uv[i * 2] = (p.getX(i) - b.min.x) / (b.max.x - b.min.x || 1); uv[i * 2 + 1] = (p.getY(i) - b.min.y) / (b.max.y - b.min.y || 1); } geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); return geo; }
+function sombrear(m){ m.castShadow = true; m.receiveShadow = true; return m; }
+
+function reconstruir(){
+  if(grupo){ scene.remove(grupo); grupo.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material){ (Array.isArray(o.material) ? o.material : [o.material]).forEach(mm => { if(mm.map) mm.map.dispose(); mm.dispose(); }); } }); }
+  const g = geomActual(); grupo = new THREE.Group(); scene.add(grupo);
+  if(!g){ return; }
+  const [A, B, C] = g.d, N = g.n, t = esPiso() ? 0.5 : 0.4, EPS = 0.03;
+  dim = Math.max(A, B, C);
+  const claro = luminancia(state.c1) > 150, claro2 = luminancia(state.c2) > 150;
+  const Hc = Math.max(Math.min(A * 0.2, 22), 6);                       // alto del copete
+  const rect = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+  const nivelesY = [];                                                  // alturas de cada nivel / escalón
+  if(g.tipo === "escalonado"){ for(let k = 0; k < N; k++) nivelesY.push((k + 1) * (A - Hc) / N); }
+  else if(g.tipo === "niveles"){ for(let i = 0; i < N; i++) nivelesY.push(i * (A - Hc) / Math.max(N, 1) + 0.0); }
+  else nivelesY.push(0);
+  const altoLetrero = 5;
+
+  // --- respaldo (cuerpo blanco con esquinas redondas) ---
+  const r = Math.min(1.6, B * 0.08), sh = new THREE.Shape();
+  sh.moveTo(-B / 2, 0); sh.lineTo(B / 2, 0); sh.lineTo(B / 2, A - r); sh.quadraticCurveTo(B / 2, A, B / 2 - r, A); sh.lineTo(-B / 2 + r, A); sh.quadraticCurveTo(-B / 2, A, -B / 2, A - r); sh.lineTo(-B / 2, 0);
+  const backBody = sombrear(new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false }), blanco())); backBody.position.z = -C / 2; grupo.add(backBody);
+  // decal frontal: solo el copete a color (el interior queda en blanco)
+  const backFront = new THREE.Mesh(uvDeBBox(new THREE.ShapeGeometry(sh)), mat(tex(1024, Math.round(1024 * A / B), (x, w, h) => {
+    x.clearRect(0, 0, w, h); const hc = h * (Hc / A); x.fillStyle = state.c1; x.fillRect(0, 0, w, hc + 2);
+    dibujaLogo(x, w / 2, hc / 2 + 1, w * 0.62, hc * 0.72, !claro);
+  }), { transparent: true }));
+  backFront.position.z = -C / 2 + t + EPS; grupo.add(backFront);
+  // cara exterior del respaldo (completa a color)
+  const backBack = new THREE.Mesh(uvDeBBox(new THREE.ShapeGeometry(sh)), mat(tex(1024, Math.round(1024 * A / B), (x, w, h) => {
+    x.fillStyle = state.c1; x.fillRect(0, 0, w, h); x.translate(w, 0); x.scale(-1, 1);     // espejo: se ve al derecho desde atrás
+    dibujaLogo(x, w / 2, h * 0.28, w * 0.5, h * 0.2, !claro);
+  })));
+  backBack.rotation.y = Math.PI; backBack.position.z = -C / 2 - EPS; grupo.add(backBack);
+
+  // --- perfil de laterales (triangulares / escalera) ---
+  const yFrente = g.tipo === "escalonado" ? nivelesY[0] : Math.max(nivelesY[nivelesY.length - 1] + altoLetrero, 8);
+  const perfil = new THREE.Shape(); perfil.moveTo(-C / 2, 0); perfil.lineTo(C / 2, 0);
+  if(g.tipo === "escalonado"){
+    const d = C / N; perfil.lineTo(C / 2, nivelesY[0]);
+    for(let k = 0; k < N - 1; k++){ perfil.lineTo(C / 2 - (k + 1) * d, nivelesY[k]); perfil.lineTo(C / 2 - (k + 1) * d, nivelesY[k + 1]); }
+    perfil.lineTo(-C / 2, A - Hc * 0.2); perfil.lineTo(-C / 2, 0);
+  }else{ perfil.lineTo(C / 2, yFrente); perfil.lineTo(-C / 2, A * 0.94); perfil.lineTo(-C / 2, 0); }
+  const espejo = (shape) => { const s2 = new THREE.Shape(); shape.getPoints().forEach((p, i) => i ? s2.lineTo(-p.x, p.y) : s2.moveTo(-p.x, p.y)); return s2; };
+  [-1, 1].forEach(lado => {
+    const body = sombrear(new THREE.Mesh(new THREE.ExtrudeGeometry(perfil, { depth: t, bevelEnabled: false }), blanco()));
+    body.rotation.y = -Math.PI / 2; body.position.x = lado < 0 ? -B / 2 + t : B / 2; grupo.add(body);
+    const sp = lado < 0 ? perfil : espejo(perfil);
+    const dec = new THREE.Mesh(uvDeBBox(new THREE.ShapeGeometry(sp)), mat(tex(1024, 700, (x, w, h) => {
+      x.fillStyle = state.c1; x.fillRect(0, 0, w, h); dibujaLogo(x, lado < 0 ? w * 0.28 : w * 0.72, h * 0.62, w * 0.3, h * 0.28, !claro);
+    })));
+    dec.rotation.y = lado < 0 ? -Math.PI / 2 : Math.PI / 2; dec.position.x = lado < 0 ? -B / 2 - EPS : B / 2 + EPS; grupo.add(dec);
+  });
+
+  // --- niveles / escalones, letreros ---
+  const letreroTex = () => tex(1024, 160, (x, w, h) => { x.fillStyle = state.c2; x.fillRect(0, 0, w, h); dibujaLogo(x, w / 2, h / 2, w * 0.5, h * 0.7, !claro2); });
+  if(g.tipo === "escalonado"){
+    const d = C / N, hStep = (A - Hc) / N;
+    for(let k = 0; k < N; k++){
+      const zc = C / 2 - k * d - d / 2;
+      const plat = sombrear(new THREE.Mesh(rect(B - 2 * t, t, d), blanco())); plat.position.set(0, nivelesY[k] - t / 2, zc); grupo.add(plat);
+      const riser = sombrear(new THREE.Mesh(rect(B - 2 * t, hStep, t), blanco())); riser.position.set(0, nivelesY[k] - hStep / 2, C / 2 - k * d - t / 2); grupo.add(riser);
+      const dec = new THREE.Mesh(new THREE.PlaneGeometry(B - 2 * t, Math.min(hStep, 14)), mat(letreroTex())); dec.position.set(0, nivelesY[k] - Math.min(hStep, 14) / 2 - (hStep - Math.min(hStep, 14)) * 0, C / 2 - k * d + EPS); grupo.add(dec);
+    }
+  }else{
+    const nl = g.tipo === "niveles" ? N : 1;
+    for(let i = 0; i < nl; i++){
+      const y = nivelesY[i];
+      const base = sombrear(new THREE.Mesh(rect(B - 2 * t, t, C - t), blanco())); base.position.set(0, y + t / 2, t / 2); grupo.add(base);
+      const front = sombrear(new THREE.Mesh(rect(B - 2 * t, altoLetrero, t), blanco())); front.position.set(0, y + altoLetrero / 2, C / 2 - t / 2); grupo.add(front);
+      const dec = new THREE.Mesh(new THREE.PlaneGeometry(B - 2 * t, altoLetrero), mat(letreroTex())); dec.position.set(0, y + altoLetrero / 2, C / 2 + EPS); grupo.add(dec);
+    }
+  }
+  // separadores triangulares
+  if(g.sep){ for(let i = 1; i <= g.sep; i++){
+    const sep = sombrear(new THREE.Mesh(new THREE.ExtrudeGeometry(perfil, { depth: t, bevelEnabled: false }), blanco())); sep.rotation.y = -Math.PI / 2; sep.position.x = -B / 2 + i * B / (g.sep + 1) + t / 2; grupo.add(sep);
+  } }
+  // ganchos de pegboard
+  if(g.tipo === "pegboard"){
+    const hm = new THREE.MeshStandardMaterial({ color: 0xcfcfc8, metalness: 0.5, roughness: 0.4 }), cols = Math.max(2, Math.round(B / 12)), filas = Math.max(2, Math.round((A - Hc) / 14));
+    for(let c = 0; c < cols; c++) for(let f = 0; f < filas; f++){
+      const h = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 6, 8), hm); h.rotation.x = Math.PI / 2;
+      h.position.set(-B / 2 + (c + 0.5) * B / cols, (f + 0.5) * (A - Hc - 6) / filas + 8, -C / 2 + t + 3); grupo.add(h);
+    }
+  }
+  // cámara y luz según tamaño
+  const cy = A * 0.5, dist = dim * 3.1;
+  controls.target.set(0, cy, 0); camera.position.set(dist * 0.62, cy + dist * 0.28, dist * 0.78); controls.minDistance = dim * 1.2; controls.maxDistance = dim * 6; controls.update();
+  sun.position.set(dim * 1.2, dim * 2.2, dim * 1.6); sun.shadow.camera.left = -dim * 1.5; sun.shadow.camera.right = dim * 1.5; sun.shadow.camera.top = dim * 2; sun.shadow.camera.bottom = -dim * 1.5; sun.shadow.camera.far = dim * 8; sun.shadow.camera.updateProjectionMatrix();
+  $("waBtn").href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(mensajeWA());
+}
+function ajustarTamano(){ const r = $("stage").getBoundingClientRect(), w = Math.max(200, r.width | 0), h = Math.max(200, r.height | 0); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+window.addEventListener("resize", ajustarTamano);
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+$("giraBtn").addEventListener("click", () => { controls.autoRotate = !controls.autoRotate; $("giraBtn").textContent = controls.autoRotate ? "⏸ Girar" : "▶ Girar"; });
+$("resetBtn").addEventListener("click", () => { const g = geomActual(); if(!g) return; const cy = g.d[0] * 0.5, dist = dim * 3.1; controls.target.set(0, cy, 0); camera.position.set(dist * 0.62, cy + dist * 0.28, dist * 0.78); controls.update(); });
+$("shareBtn").addEventListener("click", async () => {
+  renderer.render(scene, camera);
+  const blob = await new Promise(ok => canvas.toBlob(ok, "image/png")); if(!blob) return;
+  const file = new File([blob], "mi-exhibidor-joart.png", { type: "image/png" });
+  try{ if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], text: mensajeWA() }); return; } }catch(e){ if(e && e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+  window.open("https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(mensajeWA()), "_blank");
+});
+$("modelo").value = state.modelo; ajustarTamano(); refrescar(true);
+window.__cfg = { state, reconstruir, refrescar, renderer };
+</script>
+</body>
+</html>

@@ -142,6 +142,15 @@
     </div>
 
     <div id="formNuevo">
+      <div class="card" id="dictCard">
+        <div class="card-label">Dictar o escribir el pedido</div>
+        <div class="field"><textarea id="fDictado" rows="2" placeholder="Ej. cotiza 30 floor stand chico para Maya Solar en 5 mm"></textarea></div>
+        <div class="row" style="grid-template-columns:auto 1fr;">
+          <button type="button" class="a-btn a-terra" id="micBtn" style="margin:0;width:auto;padding:0 16px">🎤 Dictar</button>
+          <button type="button" class="a-btn a-dark" id="llenarBtn" style="margin:0">✨ Llenar el formulario</button>
+        </div>
+        <div class="field-hint" id="dictOut">Dices cliente, modelo, cantidad y grosor; el panel llena todo. Revisa antes de registrar.</div>
+      </div>
       <div class="card">
         <div class="card-label">Cliente</div>
         <div class="row">
@@ -213,6 +222,8 @@
     <div class="card">
       <div class="card-label">Herramientas</div>
       <a class="a-btn a-out" href="asistente.html">🤖 Asistente</a>
+      <a class="a-btn a-out" href="tandas.html">📐 Tandas y hojas (cuántas láminas usaré)</a>
+      <a class="a-btn a-out" href="configurador.html" target="_blank" rel="noopener">🧊 Configurador 3D (para mandar al cliente)</a>
       <a class="a-btn a-out" href="mi-pedido.html" target="_blank" rel="noopener">👁 Ver “Mi pedido” (lo que ve el cliente)</a>
     </div>
     <div class="card">
@@ -225,6 +236,7 @@
 
 <script src="jspdf.umd.min.js"></script>
 <script>if(!window.jspdf){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"><\/script>'); }</script>
+<script src="joart-core.js"></script>
 <script>
 // ====================================================================
 //  CONFIGURACIÓN — aquí se cambian datos de pago, vigencia y enlaces
@@ -278,118 +290,7 @@ $("lockBtn").addEventListener("click", () => intentarAcceso());
 $("lockInput").addEventListener("keydown", (e) => { if(e.key === "Enter") intentarAcceso(); });
 try{ const g = localStorage.getItem("joart_sheet_key"); if(g){ $("lockScreen").style.visibility = "hidden"; intentarAcceso(g); } }catch(e){}
 
-// ===================== PRECIOS (misma tabla de tu Sheets "Precios") =====================
-const QUIEBRES = [1, 3, 5, 10, 15, 20, 25, 30, 50, 75, 100];
-const TABLA_POR_MODELO = {
-  "Counter display compacto con organizador": "counter",
-  "Display con separadores": "separadores",
-  "Pegboard display con ganchos": "pegboard",
-  "Display escalonado — 2 escalones": "escalonado2",
-  "Display escalonado — 3 escalones": "escalonado3",
-  "Display box — 1 nivel": "displaybox",
-  "POP display — 2 niveles": "pop2",
-  "POP display chico — 2 niveles": "pop2",
-  "POP display — 3 niveles": "pop3repisas",
-  "Display con repisas": "pop3repisas",
-  "Floor stand — 3 niveles": "floor3",
-  "Floor stand — 4 niveles": "floor4",
-  "Floor stand — 5 niveles": "floor5",
-  "Floor stand chico — 3 niveles": "floor3",
-  "Floor stand con ganchos": "floor3",
-};
-const PRECIOS = {
-  counter: { "4 mm": [250,215,180,160,150,145,140,130,120,110,100] },
-  displaybox: {
-    "4 mm": [500,450,420,380,350,330,310,300,280,260,250],
-    "5 mm": [650,600,570,530,500,480,460,450,430,410,400],
-    "6 mm": [900,850,820,780,750,730,710,700,680,660,650],
-  },
-  pop2: {
-    "4 mm": [800,720,680,610,560,530,500,480,450,420,400],
-    "5 mm": [950,870,830,760,710,680,650,630,600,570,550],
-    "6 mm": [1200,1120,1080,1010,960,930,900,880,850,820,800],
-  },
-  pop3repisas: {
-    "4 mm": [1050,975,930,870,830,800,760,730,715,690,670],
-    "5 mm": [1200,1125,1080,1020,980,950,910,880,865,840,820],
-    "6 mm": [1450,1375,1330,1270,1230,1200,1160,1130,1115,1090,1070],
-  },
-  floor3: {
-    "4 mm": [1300,1200,1150,1050,1000,950,920,890,850,825,800],
-    "5 mm": [1450,1350,1300,1200,1150,1100,1070,1040,1000,975,950],
-    "6 mm": [1700,1600,1550,1450,1400,1350,1320,1290,1250,1225,1200],
-  },
-  floor4: {
-    "4 mm": [1700,1580,1500,1400,1350,1285,1230,1200,1150,1110,1070],
-    "5 mm": [1850,1730,1650,1550,1500,1435,1380,1350,1300,1260,1220],
-    "6 mm": [2100,1980,1900,1800,1750,1685,1630,1600,1550,1510,1470],
-  },
-  floor5: {
-    "4 mm": [2600,2500,2400,2300,2200,2100,2000,1900,1800,1700,1600],
-    "5 mm": [2750,2650,2550,2450,2350,2250,2150,2050,1950,1850,1750],
-    "6 mm": [3000,2900,2800,2700,2600,2500,2400,2300,2200,2100,2000],
-  },
-  separadores: { "4 mm": [250,240,228,220,205,195,185,170,160,150,140] },
-  pegboard: {
-    "4 mm": [400,380,360,340,320,300,280,260,240,220,200],
-    "5 mm": [550,530,510,490,470,450,430,410,390,370,350],
-    "6 mm": [800,780,760,740,720,700,680,660,640,620,600],
-  },
-  escalonado2: {
-    "4 mm": [665,630,595,560,525,490,455,420,385,350,315],
-    "5 mm": [815,780,745,710,675,640,605,570,535,500,465],
-    "6 mm": [1065,1030,995,960,925,890,855,820,785,750,715],
-  },
-  escalonado3: {
-    "4 mm": [570,545,515,485,455,430,400,370,345,315,285],
-    "5 mm": [720,695,665,635,605,580,550,520,495,465,435],
-    "6 mm": [970,945,915,885,855,830,800,770,745,715,685],
-  },
-};
-function grosoresDeModelo(modelo){ const t = PRECIOS[TABLA_POR_MODELO[modelo]]; return t ? Object.keys(t) : ["4 mm","5 mm","6 mm"]; }
-function escalonIdx(cantidad){ let idx = 0; for(let i = 0; i < QUIEBRES.length; i++) if(cantidad >= QUIEBRES[i]) idx = i; return idx; }
-function precioCatalogo(modelo, grosor, cantidad){
-  const tabla = PRECIOS[TABLA_POR_MODELO[modelo]];
-  if(!tabla || !tabla[grosor]) return null;
-  return tabla[grosor][escalonIdx(cantidad)];
-}
-
-// ===================== PERSONALIZADOS (mismo algoritmo del Agente / hoja "Cotización Personalizada") =====================
-const TARIFA_A = [[0,2050],[0.5,1950],[1,1850],[2,1700],[4,1550],[7,1400],[10,1300],[15,1200],[20,1100],[30,1050],[50,1000],[100,900]];
-const TARIFA_B = [[0,1300],[3,1250],[5,1200],[7,1150],[10,1100],[15,1050],[20,1000],[30,950],[50,900],[100,800]];
-const EXTRA_GROSOR = { "4 mm": 0, "5 mm": 150, "6 mm": 400 };
-function tarifaPara(tabla, ht){ let t = tabla[0][1]; for(const [min, precio] of tabla) if(ht >= min) t = precio; return t; }
-function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor){
-  const A = alto, B = ancho, C = prof, N = niveles, Q = cantidad;
-  const AE = A*B + 2*(A*C) + N*(B*C) + N*(B*5) + (N >= 2 ? (N-1)*2*(B*3) : 0);
-  let HP = AE / 26000;
-  if(HP >= 0.8 && HP < 1) HP = 1;
-  const HT = HP * Q;
-  const costoHoja = tarifaPara(HP < 0.8 ? TARIFA_A : TARIFA_B, HT);
-  const base = Math.ceil((Math.round(HT * costoHoja / Q * 100) / 100) / 5) * 5;
-  return base + (EXTRA_GROSOR[grosor] || 0);
-}
-// Redondeo hacia arriba al siguiente múltiplo de $5 (con protección contra errores de decimales)
-const up5 = (n) => Math.ceil(Math.round(n * 100) / 100 / 5) * 5;
-
-const MODELOS = [
-  { nombre: "Counter display compacto con organizador", medidas: "22 x 21 x 16 cm", piso: false },
-  { nombre: "Display con separadores", medidas: "28.5 x 34.5 x 19 cm", piso: false },
-  { nombre: "Pegboard display con ganchos", medidas: "50 x 35 x 18.5 cm", piso: false },
-  { nombre: "Display escalonado — 2 escalones", medidas: "50 x 42 x 31.5 cm", piso: false },
-  { nombre: "Display escalonado — 3 escalones", medidas: "50.5 x 31 x 31 cm", piso: false },
-  { nombre: "Display box — 1 nivel", medidas: "50 x 42 x 31.5 cm", piso: false },
-  { nombre: "POP display — 2 niveles", medidas: "60 x 42 x 36.5 cm", piso: false },
-  { nombre: "POP display chico — 2 niveles", medidas: "72 x 42 x 29.5 cm", piso: false },
-  { nombre: "POP display — 3 niveles", medidas: "90 x 41.5 x 36.5 cm", piso: false },
-  { nombre: "Display con repisas", medidas: "52.5 x 63 x 31.5 cm", piso: false },
-  { nombre: "Floor stand — 3 niveles", medidas: "140 x 50 x 36.5 cm", piso: true },
-  { nombre: "Floor stand — 4 niveles", medidas: "140 x 50 x 35.5 cm", piso: true },
-  { nombre: "Floor stand — 5 niveles", medidas: "160 x 51.5 x 41.5 cm", piso: true },
-  { nombre: "Floor stand chico — 3 niveles", medidas: "120 x 50 x 26.5 cm", piso: true },
-  { nombre: "Floor stand con ganchos", medidas: "140 x 52 x 42.5 cm", piso: true },
-];
-const PERSONALIZADO = "__personalizado__";
+// Precios, modelos, geometría, dictado y acomodo viven en joart-core.js (única fuente).
 
 // ===================== ESTADO =====================
 let items = [], nextId = 1;
@@ -840,7 +741,7 @@ $("pdfDone").addEventListener("click", () => { const d = registrado.datos; const
 $("againBtn").addEventListener("click", () => {
   ["fCliente","fContacto","fZona","fNotas","fEnvio"].forEach(id => $(id).value = "");
   $("fLogo").value = ""; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una"; $("fModo").value = "pedido";
-  folioActual = null; folioCot = null; registrado = null; items = [nuevoItem()]; pintarItems();
+  folioActual = null; folioCot = null; registrado = null; items = [nuevoItem()]; $("fDictado").value = ""; pintarItems();
   $("done").classList.remove("show"); $("formNuevo").style.display = ""; window.scrollTo(0, 0);
 });
 
@@ -1093,6 +994,41 @@ $("avLista").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-ok]"); if(!b) return; b.disabled = true;
   try{ const r = await post("marcarAvisoEnviado", { id: b.dataset.ok }); if(r.ok) cargarAvisos(); else { b.disabled = false; toast(r.error || "No se pudo marcar."); } }catch(err){ b.disabled = false; toast("No se pudo conectar."); }
 });
+
+// ===================== DICTADO (voz o texto → formulario) =====================
+function aplicarDictado(texto){
+  const r = parsearPedidoTexto(texto), out = $("dictOut");
+  if(!String(texto || "").trim()){ out.textContent = "Escribe o dicta algo primero."; return; }
+  if(r.cliente) $("fCliente").value = r.cliente;
+  if(r.entrega) $("fEntrega").value = r.entrega;
+  if(r.caras) $("fCaras").value = r.caras;
+  if(r.factura) $("fFactura").value = r.factura;
+  $("fModo").value = "pedido";
+  if(r.items.length){
+    items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
+      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; }
+      if(r.grosor){ it.grosor = r.grosor; it.grosorTocado = true; } return it; });
+    pintarItems();
+  }else actualizar();
+  const nom = (n) => n === PERSONALIZADO ? "Personalizado" : n;
+  const partes = [r.items.length ? r.items.map(x => `${x.cantidad} × ${nom(x.modelo)}${x.alto ? ` (${x.alto}×${x.ancho}×${x.prof})` : ""}`).join(" + ") : "⚠ no reconocí el modelo",
+    r.cliente ? "Cliente: " + r.cliente : "⚠ falta el cliente", r.grosor, r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta", r.factura && "con factura"].filter(Boolean);
+  out.textContent = "Entendí: " + partes.join(" · ") + ". Revisa el formulario.";
+}
+$("llenarBtn").addEventListener("click", () => aplicarDictado($("fDictado").value));
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $("micBtn");
+  if(!SR){ mic.style.display = "none"; $("dictOut").textContent = "Escribe el pedido (o usa el micrófono del teclado de tu teléfono) y toca “Llenar el formulario”."; return; }
+  let rec = null, oyendo = false;
+  mic.addEventListener("click", () => {
+    if(oyendo && rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = "es-MX"; rec.interimResults = true; rec.continuous = false; oyendo = true; mic.textContent = "⏹ Escuchando…";
+    rec.onresult = (e) => { $("fDictado").value = Array.from(e.results).map(x => x[0].transcript).join(" "); };
+    rec.onerror = (e) => { $("dictOut").textContent = e.error === "not-allowed" ? "Permite el micrófono en el navegador para dictar." : "No pude escuchar (" + e.error + ")."; };
+    rec.onend = () => { oyendo = false; mic.textContent = "🎤 Dictar"; if($("fDictado").value.trim()) aplicarDictado($("fDictado").value); };
+    try{ rec.start(); }catch(err){ oyendo = false; mic.textContent = "🎤 Dictar"; }
+  });
+})();
 
 // ===================== INICIO =====================
 $("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
