@@ -118,8 +118,6 @@ const PERSONALIZADO = "__personalizado__";
 
 // ===================== CONSTANTES DE PRODUCCIÓN =====================
 const HOJA = { ancho: 244, alto: 122, area: 244 * 122 };                       // cm (el lado largo va siempre horizontal)
-const COSTO_HOJA = { "4 mm": 138, "5 mm": 220, "6 mm": 289 };                   // material por hoja completa
-const COSTO_IMPRESION_M2 = 100;                                                  // se calcula sobre la hoja completa
 const CARGA_POR_NIVEL = { "4 mm": 2.5, "5 mm": 6, "6 mm": 9 };                  // kg por nivel (2+ niveles)
 const ESCALAS_WEB = [1, 10, 50, 100];                                            // escalas que muestra la web pública
 const GROSORES_VALIDOS = ["4 mm", "5 mm", "6 mm"];
@@ -227,14 +225,12 @@ function planDeHojas(renglones, opt){
     const base = piezasDe(g);
     for(let k = 0; k < q; k++) base.forEach((p, pi) => (porGrosor[gr] = porGrosor[gr] || []).push({ id: `${ri}-${k}-${pi}`, ren: ri, n: p.n, w: p.w, h: p.h }));
   });
-  const res = {}; let costo = 0, hojas = 0;
+  const res = {}; let hojas = 0;
   for(const gr of Object.keys(porGrosor)){
     const a = acomodar(porGrosor[gr], opt);
-    const cHoja = COSTO_HOJA[gr] + (HOJA.area / 10000) * COSTO_IMPRESION_M2;
-    res[gr] = Object.assign(a, { costoPorHoja: cHoja, costo: a.nHojas * cHoja });
-    costo += res[gr].costo; hojas += a.nHojas;
+    res[gr] = a; hojas += a.nHojas;
   }
-  return { porGrosor: res, hojas, costo };
+  return { porGrosor: res, hojas };
 }
 
 // ===================== DICTADO / TEXTO LIBRE → PEDIDO =====================
@@ -308,31 +304,4 @@ function parsearPedidoTexto(texto){
 }
 
 
-// ===================== HOJAS: referencia del catálogo y fórmula =====================
-// "Catálogo_Muebles" de tu Sheets: láminas por pieza (referencia práctica, ya con tus acomodos reales).
-const LAMINAS_PIEZA = {
-  "Counter display compacto con organizador": 0.0833, "Display con separadores": 0.125, "Pegboard display con ganchos": 0.2, "Display box — 1 nivel": 0.2,
-  "Display escalonado — 2 escalones": 0.3333, "Display escalonado — 3 escalones": 0.2857, "POP display chico — 2 niveles": 0.4, "POP display — 2 niveles": 0.4,
-  "POP display — 3 niveles": 0.6667, "Display con repisas": 0.6667, "Floor stand — 3 niveles": 1, "Floor stand chico — 3 niveles": 1,
-  "Floor stand con ganchos": 1, "Floor stand — 4 niveles": 1.3333, "Floor stand — 5 niveles": 2,
-};
-// Hojas por pieza de un personalizado (misma fórmula del agente: AE / 26,000, con merma de 0.8–0.99 → 1).
-function hpFormula(g){
-  if(!g) return null; const [A, B, C] = g.d, N = g.n || 1;
-  const AE = A * B + 2 * (A * C) + N * (B * C) + N * (B * 5) + (N >= 2 ? (N - 1) * 2 * (B * 3) : 0);
-  let HP = AE / 26000; if(HP >= 0.8 && HP < 1) HP = 1; return HP;
-}
-// Hojas por pieza según el método de siempre (catálogo o fórmula).
-function hojasPorPiezaMetodo(modelo, pers){ return modelo === PERSONALIZADO ? hpFormula(geomDe(modelo, pers)) : (LAMINAS_PIEZA[modelo] != null ? LAMINAS_PIEZA[modelo] : hpFormula(GEOM[modelo] ? GEOM[modelo] : null)); }
-// 2.5 -> "2 hojas y 1/2" · 0.25 -> "1/4 de hoja" · como lo escribes en la columna "% DE HOJA".
-function hojasTexto(x){
-  x = Number(x) || 0; const ent = Math.floor(x + 1e-9), f = x - ent;
-  const fr = [[1/2, "1/2"], [1/3, "1/3"], [2/3, "2/3"], [1/4, "1/4"], [3/4, "3/4"], [1/8, "1/8"], [1/15, "1/15"], [1/5, "1/5"]];
-  let mejor = null; for(const [v, t] of fr) if(Math.abs(f - v) < 0.025 && (!mejor || Math.abs(f - v) < Math.abs(f - mejor[0]))) mejor = [v, t];
-  if(f < 0.02) return ent === 1 ? "1 hoja" : ent + " hojas";
-  if(f > 0.98) return (ent + 1) === 1 ? "1 hoja" : (ent + 1) + " hojas";
-  if(!ent) return mejor ? mejor[1] + " de hoja" : (Math.round(x * 100) / 100) + " de hoja";
-  return ent + (ent === 1 ? " hoja" : " hojas") + (mejor ? " y " + mejor[1] : " y " + Math.round(f * 100) / 100);
-}
-
-if(typeof module !== "undefined") module.exports = { QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, COSTO_HOJA, COSTO_IMPRESION_M2, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras, LAMINAS_PIEZA, hpFormula, hojasPorPiezaMetodo, hojasTexto };
+if(typeof module !== "undefined") module.exports = { QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };

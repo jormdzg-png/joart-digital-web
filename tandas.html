@@ -86,6 +86,7 @@
 </div>
 
 <script src="joart-core.js"></script>
+<script src="joart-interno.js"></script>
 <script>
 const LS = "joart_tandas_v1";
 const $ = (id) => document.getElementById(id);
@@ -178,7 +179,7 @@ function calcular(){
   if(!rens.length){ out.innerHTML = ""; return; }
   const opt = { gap: estado.gap, margen: estado.margen };
   const t0 = performance.now();
-  const plan = planDeHojas(rens, opt);
+  const plan = costear(planDeHojas(rens, opt));
   const faltan = rens.map((r, i) => (geomDe(r.modelo, r) ? null : i + 1)).filter(Boolean);
   let html = "";
   if(faltan.length) html += `<div class="alerta">Faltan medidas en el renglón ${faltan.join(", ")} (personalizado). No lo conté.</div>`;
