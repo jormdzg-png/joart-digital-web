@@ -110,14 +110,13 @@
   // ---------- inventario ----------
   function inventarioHTML(datos) {
     const inv = datos.inventario || [];
-    if (!inv.length) return "No pude leer el inventario. Revisa que el script esté actualizado.";
+    if (!inv.length) return "No pude leer la pestaña «Láminas» del Sheets. Revisa que el script esté actualizado.";
     const filas = inv.map((i) => {
       const dif = Math.round((i.laminas - i.enCola) * 100) / 100;
       return `<tr><td><b>${esc(i.grosor)}</b></td><td>${i.laminas}</td><td>${i.enCola}</td><td>${dif >= 0 ? "sobran " + dif : "<b>faltan " + (-dif) + "</b>"}</td></tr>`;
     }).join("");
-    const mov = (datos.movimientos || []).slice(0, 4).map((m) => `${esc(m.fecha)} · ${esc(m.tipo)} ${esc(m.grosor)} (${m.laminas > 0 ? "+" : ""}${m.laminas})`).join("<br>");
-    return `<table><thead><tr><th>Grosor</th><th>Disponibles</th><th>Comprometidas</th><th>Balance</th></tr></thead><tbody>${filas}</tbody></table>` +
-      `<div class="mut">Comprometidas = hojas de proyectos que aún no están Enviados/Entregados.</div>` + (mov ? `<div class="mut" style="margin-top:6px">Últimos movimientos:<br>${mov}</div>` : "");
+    return `<table><thead><tr><th>Grosor</th><th>Tengo</th><th>Necesito</th><th>Balance</th></tr></thead><tbody>${filas}</tbody></table>` +
+      `<div class="mut">Necesito = láminas de los pedidos en Imprimir y Repetir. Sale de la pestaña «Láminas» del Sheets${datos.ultimoConteo ? " · último conteo: " + esc(datos.ultimoConteo) : ""}.</div>`;
   }
 
   // ---------- filtros ----------

@@ -468,7 +468,7 @@ function cargarDatos(forzar){
       const [p, i] = await Promise.all([llamar('listarProyectos'), llamar('inventario').catch(() => ({ ok:false }))]);
       if(!p.ok) throw new Error(p.error || 'error');
       datos.proyectos = p.proyectos || [];
-      if(i && i.ok){ datos.inventario = i.inventario || []; datos.movimientos = i.movimientos || []; }
+      if(i && i.ok){ datos.inventario = i.inventario || []; datos.movimientos = []; datos.ultimoConteo = i.ultimoConteo || ""; }
       cargadoEn = Date.now();
       estado(true, 'actualizado ' + new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' }));
       $('statusN').textContent = datos.proyectos.length;

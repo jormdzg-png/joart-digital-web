@@ -300,31 +300,9 @@
       <a class="btn" href="mi-pedido.html" target="_blank" rel="noopener">👁 Mi pedido · lo que ve el cliente</a>
     </div>
     <div class="hud">
-      <div class="lbl">Cuenta para pagos sin factura</div>
-      <div class="hint" style="margin-bottom:12px">Sale en la cotización cuando el cliente <b>no</b> pide factura. Con factura sale la de Luz María. Se guarda solo en este dispositivo.</div>
-      <div class="row">
-        <div class="field"><label for="ctTitular">Titular</label><input id="ctTitular" type="text" autocomplete="off"></div>
-        <div class="field"><label for="ctBanco">Banco</label><input id="ctBanco" type="text" autocomplete="off"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label for="ctClabe">CLABE</label><input id="ctClabe" type="text" inputmode="numeric" autocomplete="off"></div>
-        <div class="field"><label for="ctCuenta">Cuenta (opcional)</label><input id="ctCuenta" type="text" inputmode="numeric" autocomplete="off"></div>
-      </div>
-      <button type="button" class="btn" id="ctGuardar">Guardar mi cuenta</button>
-      <div class="hint" id="ctEstado" style="margin-top:10px"></div>
-    </div>
-    <div class="hud">
       <div class="lbl">Láminas</div>
       <div class="hint" id="lamLista" style="margin-bottom:12px">Cargando…</div>
-      <div class="row">
-        <div class="field"><label for="lamGrosor">Grosor</label><select id="lamGrosor"><option>4 mm</option><option>5 mm</option><option>6 mm</option></select></div>
-        <div class="field"><label for="lamN">Cantidad de hojas</label><input id="lamN" type="number" step="any" inputmode="decimal" placeholder="Ej. 2.5"></div>
-      </div>
-      <div class="row">
-        <button type="button" class="btn" id="lamUsar">− Usé estas hojas</button>
-        <button type="button" class="btn" id="lamAjustar">= Tengo exactamente</button>
-      </div>
-      <div class="hint" id="lamMov" style="margin-top:10px"></div>
+      <div class="hint" id="lamMov">Para cambiar el conteo, escribe en la pestaña «Láminas» del Sheets.</div>
     </div>
     <div class="hud"><div class="lbl">Sesión</div><button type="button" class="btn" id="salirBtn">Cerrar sesión en este dispositivo</button></div>
   </section>
@@ -341,8 +319,7 @@
 <script src="joart-core.js"></script>
 <script>
 const CONFIG = {
-  // CON factura → cuenta fiscal (Luz María). SIN factura → cuenta de Jorge (se puede cambiar en Más → "Cuenta sin factura";
-  // lo que captures ahí se guarda solo en este dispositivo y tiene prioridad sobre esta).
+  // CON factura → cuenta fiscal (Luz María). SIN factura → cuenta de Jorge. Se cambian solo aquí en el código.
   cuentaFiscal:   { titular: "Luz María Espinosa Aviña", banco: "BBVA", clabe: "012 180 00491220977 7", cuenta: "049 122 0977" },
   cuentaPersonal: { titular: "Jorge Mendoza", banco: "BBVA", clabe: "012 180 01560003155 0", cuenta: "" },
   vigenciaDias: 30,
@@ -389,22 +366,10 @@ $("lockInput").addEventListener("keydown", (e) => { if(e.key === "Enter") intent
 try{ const g = localStorage.getItem("joart_sheet_key"); if(g){ $("lockScreen").style.visibility = "hidden"; intentarAcceso(g); } }catch(e){}
 
 // ===================== CUENTAS (sin factura = tuya · con factura = Luz María) =====================
-const CUENTA_KEY = "joart_cuenta_personal";
-function cargarCuentaPersonal(){ try{ const c = JSON.parse(localStorage.getItem(CUENTA_KEY) || "null"); if(c && c.clabe) CONFIG.cuentaPersonal = c; }catch(e){} }
+// Las cuentas viven aquí en CONFIG (arriba); ya no se capturan en Más.
+try{ localStorage.removeItem("joart_cuenta_personal"); }catch(e){}
 const cuentaDe = (factura) => factura ? CONFIG.cuentaFiscal : CONFIG.cuentaPersonal;
-function cuentaListaParaPDF(d){ return !!(d && d.cuenta && d.cuenta.clabe) || confirm("Falta capturar tu cuenta para pagos SIN factura (Más → Cuenta sin factura).\n\n¿Generar el PDF sin datos bancarios?"); }
-function pintarCuenta(){
-  const c = CONFIG.cuentaPersonal || {};
-  $("ctTitular").value = c.titular || ""; $("ctBanco").value = c.banco || ""; $("ctClabe").value = c.clabe || ""; $("ctCuenta").value = c.cuenta || "";
-  $("ctEstado").textContent = c.clabe ? "✓ Cuenta guardada. Sin factura sale la tuya; con factura, la de " + CONFIG.cuentaFiscal.titular + "." : "⚠ Aún no hay cuenta para pagos sin factura: esas cotizaciones saldrían sin datos bancarios.";
-}
-$("ctGuardar").addEventListener("click", () => {
-  const c = { titular: $("ctTitular").value.trim(), banco: $("ctBanco").value.trim(), clabe: $("ctClabe").value.trim(), cuenta: $("ctCuenta").value.trim() };
-  if(!c.titular || !c.banco || c.clabe.replace(/\D/g, "").length !== 18){ alert("Revisa: titular, banco y CLABE (18 dígitos)."); return; }
-  try{ localStorage.setItem(CUENTA_KEY, JSON.stringify(c)); }catch(e){ alert("No pude guardar en este navegador."); return; }
-  CONFIG.cuentaPersonal = c; pintarCuenta(); toast("Cuenta guardada");
-});
-cargarCuentaPersonal(); pintarCuenta();
+function cuentaListaParaPDF(d){ return !!(d && d.cuenta && d.cuenta.clabe) || confirm("Esta cotización no tiene datos bancarios.\n\n¿Generar el PDF así?"); }
 
 // ===================== PRODUCTOS (mismo editor en Nuevo y en la cotización) =====================
 const esPers = (it) => it.modelo === PERSONALIZADO;
@@ -804,24 +769,11 @@ async function cargarLaminas(){
   const box = $("lamLista");
   try{
     const r = await post("inventario");
-    if(!r.ok){ box.textContent = r.error || "No se pudo leer el inventario."; return; }
-    box.innerHTML = r.inventario.map(i => { const falta = i.enCola > i.laminas; return `<div class="linea"><b>${esc(i.grosor)}</b><span>${i.laminas} disponibles<small>${i.enCola} comprometidas en proyectos vivos${falta ? " · ⚠ faltarían " + (Math.round((i.enCola - i.laminas) * 100) / 100) : ""}</small></span></div>`; }).join("");
-    $("lamMov").innerHTML = (r.movimientos || []).slice(0, 6).map(m => `${esc(m.fecha)} · ${esc(m.tipo)} ${esc(m.grosor)} (${m.laminas > 0 ? "+" : ""}${m.laminas})${m.detalle ? " · " + esc(m.detalle) : ""}${m.faltante ? " · ⚠ faltaron " + m.faltante : ""}`).join("<br>");
+    if(!r.ok){ box.textContent = r.error || "No se pudo leer la pestaña Láminas."; return; }
+    box.innerHTML = r.inventario.map(i => { const dif = Math.round((i.laminas - i.enCola) * 10) / 10; return `<div class="linea"><b>${esc(i.grosor)}</b><span>${i.laminas} tengo<small>necesito ${i.enCola} (Imprimir y Repetir) · ${dif >= 0 ? "sobran " + dif : "⚠ faltan " + (-dif)}</small></span></div>`; }).join("")
+      + (r.ultimoConteo ? `<div class="hint" style="margin-top:8px">Último conteo: ${esc(r.ultimoConteo)}</div>` : "");
   }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
 }
-$("lamUsar").addEventListener("click", async () => {
-  const n = parseFloat($("lamN").value); if(!n){ toast("Escribe cuántas hojas"); return; }
-  const r = await post("usarHojas", { grosor: $("lamGrosor").value, cantidad: n, nota: "Capturado en la plataforma" });
-  if(!r.ok){ alert(r.error || "No se pudo guardar"); return; }
-  $("lamN").value = ""; toast(r.falta ? "Guardado (te faltaban " + r.falta + " en el conteo)" : "Hojas descontadas"); cargarLaminas();
-});
-$("lamAjustar").addEventListener("click", async () => {
-  const n = parseFloat($("lamN").value); if(isNaN(n) || n < 0){ toast("Escribe cuántas hojas hay"); return; }
-  if(!confirm("Dejar " + $("lamGrosor").value + " en exactamente " + n + " hojas?")) return;
-  const r = await post("ajustarInventario", { grosor: $("lamGrosor").value, cantidad: n });
-  if(!r.ok){ alert(r.error || "No se pudo guardar"); return; }
-  $("lamN").value = ""; toast("Conteo actualizado"); cargarLaminas();
-});
 $("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 async function iniciarApp(){
