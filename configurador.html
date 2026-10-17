@@ -50,6 +50,57 @@
   .cta{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; justify-content:center; z-index:5; }
   .cta .in{ width:100%; max-width:728px; display:grid; grid-template-columns:1fr auto; gap:8px; }
   .cta a.btn{ text-decoration:none; text-align:center; display:block; }
+
+/* ================= ESTILO JOART CORE ================= */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{ --jc-bg:#070A14; --jc-panel:rgba(16,23,44,.78); --jc-panel2:rgba(255,255,255,.035); --jc-line:rgba(242,204,143,.20);
+  --jc-sand:#F2CC8F; --jc-terra:#E07A5F; --jc-terra-d:#C4603F; --jc-sage:#81B29A; --jc-ink:#ECE8D6; --jc-mute:#8E96B2;
+  --jc-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; --jc-disp:'Archivo Expanded','Inter',sans-serif; }
+html{ color-scheme:dark; }
+body{ color:var(--jc-ink) !important; -webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--jc-bg) !important; }
+body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+  background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+  background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+h1, h2{ color:var(--jc-ink) !important; }
+.sub, .hint, .note, .upd, small{ color:var(--jc-mute) !important; }
+input, select, textarea{ background:var(--jc-panel2) !important; border:1px solid rgba(242,204,143,.22) !important; color:var(--jc-ink) !important; border-radius:0 !important; }
+input:focus, select:focus, textarea:focus{ outline:none !important; border-color:var(--jc-terra) !important; box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18) !important; }
+select option{ background:#10172C; color:var(--jc-ink); }
+.jc-hud{ position:relative; background:var(--jc-panel) !important; border:1px solid var(--jc-line) !important; backdrop-filter:blur(6px); color:var(--jc-ink) !important; }
+.jc-hud::before, .jc-hud::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+.jc-hud::before{ top:-1px; left:-1px; border-top:2px solid var(--jc-terra); border-left:2px solid var(--jc-terra); }
+.jc-hud::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--jc-sand); border-right:2px solid var(--jc-sand); }
+.jc-lbl{ font:600 10.5px var(--jc-mono) !important; letter-spacing:.18em !important; text-transform:uppercase; color:var(--jc-sand) !important; }
+.jc-lbl::before{ content:"// "; color:var(--jc-terra); }
+
+.wrap{ position:relative; z-index:1; }
+.top b{ font:800 15px var(--jc-disp) !important; letter-spacing:.12em; color:var(--jc-ink) !important; }
+.top small{ font:400 10.5px var(--jc-mono) !important; letter-spacing:.14em; text-transform:uppercase; }
+#stage{ background:radial-gradient(ellipse at 50% 35%, #1E2A50 0%, #10172C 55%, #0A0F1E 100%) !important; border:1px solid var(--jc-line) !important; }
+#stage::before{ content:""; position:absolute; top:-1px; left:-1px; width:14px; height:14px; border-top:2px solid var(--jc-terra); border-left:2px solid var(--jc-terra); z-index:2; pointer-events:none; }
+#stage::after{ content:""; position:absolute; bottom:-1px; right:-1px; width:14px; height:14px; border-bottom:2px solid var(--jc-sand); border-right:2px solid var(--jc-sand); z-index:2; pointer-events:none; }
+.stage-tools button{ background:rgba(16,23,44,.85) !important; border:1px solid var(--jc-line) !important; color:var(--jc-sand) !important; font:600 11px var(--jc-mono) !important; }
+.hint3d{ background:rgba(7,10,20,.7) !important; color:var(--jc-mute) !important; font-family:var(--jc-mono) !important; }
+.card{ position:relative; background:var(--jc-panel) !important; border:1px solid var(--jc-line) !important; backdrop-filter:blur(6px); }
+.card::before, .card::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+.card::before{ top:-1px; left:-1px; border-top:2px solid var(--jc-terra); border-left:2px solid var(--jc-terra); }
+.card::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--jc-sand); border-right:2px solid var(--jc-sand); }
+.lbl{ font:600 10.5px var(--jc-mono) !important; letter-spacing:.18em !important; color:var(--jc-sand) !important; }
+.field label{ color:var(--jc-mute) !important; font:600 10.5px var(--jc-mono) !important; letter-spacing:.1em; text-transform:uppercase; }
+.qty button{ background:rgba(242,204,143,.12) !important; color:var(--jc-sand) !important; border:1px solid var(--jc-line) !important; }
+.btn{ background:var(--jc-panel2) !important; color:var(--jc-ink) !important; border:1px solid var(--jc-line) !important; font:700 12px var(--jc-mono) !important; letter-spacing:.12em; }
+.btn.terra{ background:linear-gradient(135deg, var(--jc-terra), var(--jc-terra-d)) !important; color:#fff !important; border:none !important; }
+.btn.sage{ background:var(--jc-sage) !important; color:#10221a !important; border:none !important; }
+.btn.out{ background:transparent !important; color:var(--jc-sand) !important; border:1px solid rgba(242,204,143,.45) !important; }
+.sw span{ color:var(--jc-mute) !important; font-family:var(--jc-mono) !important; }
+.sw input[type=color]{ border:1px solid var(--jc-line) !important; }
+.presets button{ border-color:#0C1222 !important; outline-color:var(--jc-line) !important; }
+.tier{ background:var(--jc-panel2) !important; border:1px solid var(--jc-line) !important; }
+.tier.on{ border-color:var(--jc-terra) !important; background:rgba(224,122,95,.12) !important; box-shadow:0 0 16px rgba(224,122,95,.25); }
+.tier small{ color:var(--jc-mute) !important; font-family:var(--jc-mono) !important; } .tier b{ color:var(--jc-sand) !important; }
+.badges span{ background:var(--jc-panel2) !important; border:1px solid var(--jc-line) !important; color:var(--jc-ink) !important; }
+.cta{ background:rgba(7,10,20,.88) !important; border-top:1px solid var(--jc-line) !important; backdrop-filter:blur(8px); }
 </style>
 </head>
 <body>

@@ -81,6 +81,62 @@
   .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(30px); background:var(--navy); color:var(--cream); padding:12px 18px; font-size:13.5px; font-weight:600; opacity:0; pointer-events:none; transition:all .35s; max-width:90vw; text-align:center; z-index:10; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   @media (prefers-reduced-motion: reduce){ .dot, .hero.flash{ animation:none; } }
+
+/* ================= ESTILO JOART CORE ================= */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{ --jc-bg:#070A14; --jc-panel:rgba(16,23,44,.78); --jc-panel2:rgba(255,255,255,.035); --jc-line:rgba(242,204,143,.20);
+  --jc-sand:#F2CC8F; --jc-terra:#E07A5F; --jc-terra-d:#C4603F; --jc-sage:#81B29A; --jc-ink:#ECE8D6; --jc-mute:#8E96B2;
+  --jc-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace; --jc-disp:'Archivo Expanded','Inter',sans-serif; }
+html{ color-scheme:dark; }
+body{ color:var(--jc-ink) !important; -webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--jc-bg) !important; }
+body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+  background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+  background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+h1, h2{ color:var(--jc-ink) !important; }
+.sub, .hint, .note, .upd, small{ color:var(--jc-mute) !important; }
+input, select, textarea{ background:var(--jc-panel2) !important; border:1px solid rgba(242,204,143,.22) !important; color:var(--jc-ink) !important; border-radius:0 !important; }
+input:focus, select:focus, textarea:focus{ outline:none !important; border-color:var(--jc-terra) !important; box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18) !important; }
+select option{ background:#10172C; color:var(--jc-ink); }
+.jc-hud{ position:relative; background:var(--jc-panel) !important; border:1px solid var(--jc-line) !important; backdrop-filter:blur(6px); color:var(--jc-ink) !important; }
+.jc-hud::before, .jc-hud::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+.jc-hud::before{ top:-1px; left:-1px; border-top:2px solid var(--jc-terra); border-left:2px solid var(--jc-terra); }
+.jc-hud::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--jc-sand); border-right:2px solid var(--jc-sand); }
+.jc-lbl{ font:600 10.5px var(--jc-mono) !important; letter-spacing:.18em !important; text-transform:uppercase; color:var(--jc-sand) !important; }
+.jc-lbl::before{ content:"// "; color:var(--jc-terra); }
+
+header{ position:relative; z-index:1; background:transparent !important; border-bottom:1px solid var(--jc-line); color:var(--jc-ink) !important; }
+.brand-name{ font:800 15px var(--jc-disp) !important; letter-spacing:.12em; color:var(--jc-ink) !important; }
+.brand-tag{ font:400 10.5px var(--jc-mono) !important; letter-spacing:.14em; text-transform:uppercase; color:var(--jc-mute) !important; }
+main{ position:relative; z-index:1; }
+.box, .hero{ position:relative; background:var(--jc-panel) !important; border:1px solid var(--jc-line) !important; backdrop-filter:blur(6px); color:var(--jc-ink) !important; }
+.box::before, .hero::before, .box::after, .hero::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+.box::before, .hero::before{ top:-1px; left:-1px; border-top:2px solid var(--jc-terra); border-left:2px solid var(--jc-terra); }
+.box::after, .hero::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--jc-sand); border-right:2px solid var(--jc-sand); }
+.box label, .meta .lbl{ font:600 10.5px var(--jc-mono) !important; letter-spacing:.18em !important; color:var(--jc-sand) !important; }
+.row input{ font-family:var(--jc-mono) !important; }
+.btn{ background:linear-gradient(135deg, var(--jc-terra), var(--jc-terra-d)) !important; color:#fff !important; font:700 12px var(--jc-mono) !important; letter-spacing:.14em; text-transform:uppercase; }
+.error{ color:#FF8272 !important; }
+.meta .cli{ color:var(--jc-ink) !important; }
+.folio{ background:transparent !important; border:1px solid var(--jc-line); color:var(--jc-sand) !important; font-family:var(--jc-mono) !important; }
+.live{ font-family:var(--jc-mono) !important; letter-spacing:.14em !important; color:var(--jc-sage) !important; }
+.hero h2{ color:var(--jc-sand) !important; }
+.hero p{ color:rgba(236,232,214,.88) !important; }
+.hero .det{ color:var(--jc-mute) !important; }
+.eta{ background:rgba(242,204,143,.10) !important; border:1px solid rgba(242,204,143,.35); color:var(--jc-sand) !important; }
+.eta strong{ color:var(--jc-sand) !important; }
+.actions a{ background:linear-gradient(135deg, var(--jc-terra), var(--jc-terra-d)) !important; color:#fff !important; }
+.actions a.alt{ background:var(--jc-sage) !important; color:#10221a !important; }
+.tl li::before{ background:var(--jc-line) !important; }
+.tl li.done::before{ background:var(--jc-sage) !important; }
+.mk{ background:#0C1222 !important; border-color:var(--jc-line) !important; color:var(--jc-mute) !important; font-family:var(--jc-mono) !important; }
+.tl li.done .mk{ background:var(--jc-sage) !important; border-color:var(--jc-sage) !important; color:#0C1222 !important; }
+.tl li.cur .mk{ background:var(--jc-terra) !important; border-color:var(--jc-terra) !important; color:#fff !important; box-shadow:0 0 0 5px rgba(224,122,95,.2), 0 0 18px rgba(224,122,95,.45) !important; }
+.tx .t{ color:var(--jc-ink) !important; } .tx .d{ color:var(--jc-mute) !important; } .tl li.pend .t{ color:var(--jc-mute) !important; }
+.link{ background:var(--jc-panel2) !important; border:1px solid var(--jc-line) !important; color:var(--jc-ink) !important; }
+.link.wa{ background:#25D366 !important; border-color:#25D366 !important; color:#fff !important; }
+.cambiar{ color:var(--jc-mute) !important; }
+.toast{ background:#0C1222 !important; border:1px solid var(--jc-line); color:var(--jc-ink) !important; }
 </style>
 </head>
 <body>
