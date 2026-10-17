@@ -359,21 +359,75 @@ form#composer{
 .card .cr{display:flex;gap:10px;padding:6px 10px;border-top:1px dashed var(--line);font-size:13px;}
 .card .cr span:first-child{min-width:78px;color:var(--muted);font-family:var(--mono);font-size:11px;padding-top:2px;}
 
+
+/* ================= ESTILO JOART CORE ================= */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root, :root[data-theme], :root:not([data-theme="light"]){
+  --bg:#070A14; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
+  --hline:rgba(242,204,143,.20); --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A;
+  --ink:#ECE8D6; --paper:#070A14; --paper-2:rgba(16,23,44,.78); --line:rgba(242,204,143,.20); --white:rgba(16,23,44,.78);
+  --muted:#8E96B2; --coroplast:#81B29A; --coroplast-dark:#5f9479; --signal:#E07A5F; --signal-dark:#C4603F;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --sans:'Inter',system-ui,sans-serif;
+  --disp:'Archivo Expanded','Inter',sans-serif;
+}
+html{ color-scheme:dark; }
+body{ font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); }
+body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+  background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+  background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+header, main{ position:relative; z-index:1; }
+header{ background:transparent !important; border-bottom:1px solid var(--hline) !important; }
+.brand-text h1{ font:800 15px var(--disp) !important; letter-spacing:.12em !important; color:var(--ink) !important; }
+.brand-text p{ font:400 10.5px var(--mono) !important; letter-spacing:.14em !important; text-transform:uppercase; color:var(--muted) !important; }
+#themeBtn{ display:none !important; }
+.pill-btn{ background:var(--panel2) !important; border:1px solid var(--hline) !important; color:var(--sand) !important; border-radius:0 !important; font:600 11px var(--mono) !important; letter-spacing:.12em; }
+.sidebar{ background:transparent !important; border-color:var(--hline) !important; }
+.sidebar h2{ font:600 10.5px var(--mono) !important; letter-spacing:.18em !important; text-transform:uppercase; color:var(--sand) !important; }
+.sidebar h2::before{ content:"// "; color:var(--terra); }
+.quick-btn, .mobile-quick button{ background:var(--panel) !important; border:1px solid var(--hline) !important; color:var(--ink) !important; border-radius:0 !important; font:500 13px var(--sans) !important; }
+.quick-btn:hover, .mobile-quick button:hover{ border-color:var(--terra) !important; color:var(--sand) !important; }
+.status-box{ background:var(--panel) !important; border:1px solid var(--hline) !important; border-radius:0 !important; font-family:var(--mono) !important; }
+.dot-on{ background:var(--sage) !important; box-shadow:0 0 10px var(--sage); }
+.msg-label{ font:600 10px var(--mono) !important; letter-spacing:.16em !important; color:var(--muted) !important; }
+.bubble{ position:relative; border-radius:0 !important; font:400 14.5px/1.55 var(--sans) !important; }
+.msg.assistant .bubble{ background:var(--panel) !important; border:1px solid var(--hline) !important; color:var(--ink) !important; backdrop-filter:blur(6px); }
+.msg.assistant .bubble::before{ content:""; position:absolute; top:-1px; left:-1px; width:12px; height:12px; border-top:2px solid var(--terra); border-left:2px solid var(--terra); }
+.msg.assistant .bubble::after{ content:""; position:absolute; bottom:-1px; right:-1px; width:12px; height:12px; border-bottom:2px solid var(--sand); border-right:2px solid var(--sand); }
+.msg.user .bubble{ background:linear-gradient(135deg, var(--terra), var(--terra-d)) !important; color:#fff !important; border:none !important; }
+.msg.assistant .bubble strong, .msg.assistant .bubble b{ color:var(--sand); }
+.msg.assistant .bubble table{ border-color:var(--hline) !important; }
+.msg.assistant .bubble th{ background:rgba(242,204,143,.08) !important; color:var(--sand) !important; font:600 10.5px var(--mono) !important; letter-spacing:.1em; text-transform:uppercase; }
+.msg.assistant .bubble th, .msg.assistant .bubble td{ border-color:var(--hline) !important; }
+.msg.assistant .bubble code{ background:rgba(242,204,143,.10) !important; color:var(--sand) !important; font-family:var(--mono) !important; }
+.msg.assistant .bubble details summary{ color:var(--muted) !important; font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+.card{ background:var(--panel2) !important; border:1px solid var(--hline) !important; border-radius:0 !important; }
+.mut{ color:var(--muted) !important; }
+.mini{ color:var(--terra) !important; }
+form#composer{ background:rgba(7,10,20,.85) !important; border-top:1px solid var(--hline) !important; backdrop-filter:blur(8px); }
+#input{ background:var(--panel2) !important; border:1px solid rgba(242,204,143,.22) !important; color:var(--ink) !important; border-radius:0 !important; font:500 14.5px var(--sans) !important; }
+#input::placeholder{ color:rgba(142,150,178,.7); }
+#input:focus{ outline:none; border-color:var(--terra) !important; box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18) !important; }
+#sendBtn, .btn-primary{ background:linear-gradient(135deg, var(--terra), var(--terra-d)) !important; color:#fff !important; border:none !important; border-radius:0 !important; font:700 12px var(--mono) !important; letter-spacing:.16em; }
+.btn-ghost{ background:transparent !important; border:1px solid var(--hline) !important; color:var(--ink) !important; border-radius:0 !important; }
+.modal{ background:#0C1222 !important; border:1px solid var(--hline) !important; border-radius:0 !important; color:var(--ink) !important; }
+.modal input{ background:var(--panel2) !important; border:1px solid rgba(242,204,143,.22) !important; color:var(--ink) !important; border-radius:0 !important; }
+.thinking .dot{ background:var(--terra) !important; }
 </style>
 </head>
 <body>
-<a href="panel.html" style="position:fixed;top:8px;right:10px;z-index:40;background:#3D405B;color:#F4F1DE;padding:6px 10px;font:700 12px Inter,sans-serif;text-decoration:none;opacity:.92">← Panel</a>
 
 <header>
   <div class="brand">
     <div class="brand-text">
-      <h1>JOART DIGITAL</h1>
-      <p>Asistente interno · sin IA · búsqueda directa</p>
+      <h1>JOART CORE</h1>
+      <p>asistente · lee el sheets</p>
     </div>
   </div>
   <div class="header-actions">
     <button class="pill-btn" id="themeBtn" title="Cambiar tema">☾/☀</button>
     <button class="pill-btn" id="setupBtn">Conexión</button>
+    <a class="pill-btn" href="panel.html" style="text-decoration:none">← Panel</a>
   </div>
 </header>
 
@@ -415,8 +469,8 @@ form#composer{
       <button data-q="ayuda">Ayuda</button>
     </div>
     <form id="composer">
-      <textarea id="input" rows="1" placeholder="Escribe un cliente, un código JD-…, un estatus o «ayuda»…"></textarea>
-      <button type="submit" id="sendBtn">BUSCAR</button>
+      <textarea id="input" rows="1" placeholder="Pregúntame algo… ej. «¿qué hay en imprimir?»"></textarea>
+      <button type="submit" id="sendBtn">ENVIAR</button>
     </form>
   </div>
 </main>
@@ -519,7 +573,7 @@ $('input').addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shift
 $('input').addEventListener('input', () => { const el = $('input'); el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
 document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => preguntar(b.getAttribute('data-q'))));
 
-msg('assistant', '<b>Asistente interno de Joart Digital — sin IA.</b><br>Busco directo en tus proyectos, al instante y sin depender de ningún servicio externo. Escribe un cliente, un código, un estatus… o toca un botón. Escribe <b>ayuda</b> para ver ejemplos.');
+msg('assistant', (function(){ const h = new Date().getHours(); return (h < 12 ? '¡Buenos días' : h < 19 ? '¡Buenas tardes' : '¡Buenas noches') + ', Jorge!'; })() + ' ¿Qué necesitas saber? Pregúntame como a alguien del equipo, o toca un botón.');
 if(sheetKey){ cargarDatos(true); } else { estado(false, 'sin clave'); setTimeout(abrir, 400); }
 })();
 </script>
