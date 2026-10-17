@@ -10,7 +10,11 @@
   const MESES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const STOP = new Set(("de la el los las un una unos unas y o a e en con por para que cual cuales cuanto cuantos cuanta cuantas es son esta estan " +
     "tiene tienen hay del al me mi mis tu su sus lo le se si no como donde cuando quien dame dime muestrame muestra ver lista listame todos todas todo " +
-    "proyecto proyectos pedido pedidos cliente clientes negocio negocios hay tengo tenemos hacer hace dame quiero ya").split(" "));
+    "proyecto proyectos pedido pedidos cliente clientes negocio negocios hay tengo tenemos hacer hace dame quiero ya " +
+    "enero febrero marzo abril mayo junio julio agosto septiembre setiembre octubre noviembre diciembre semana mes meses").split(" "));
+  // Filas separadoras del Sheets ("OCTUBRE", "Octubre - Semana 2", "ENERO A MARZO"): no son proyectos.
+  const RE_SEPARADOR = /^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b|\bsemana\s*\d/;
+  const esProyectoReal = (p) => !(RE_SEPARADOR.test(norm(p.cliente)) && !String(p.tipo || "").trim() && !String(p.estatus || "").trim());
   const MODELOS_CLAVE = ["floor stand", "pop display", "display box", "escalonado", "repisas", "separadores", "pegboard", "counter", "personalizado", "ganchos"];
 
   const norm = (s) => String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9$%.\-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -45,7 +49,10 @@
     let t = elige(["Son ", "Tienes ", "Hay "]) + `<b>${plural(n, "proyecto", "proyectos")}</b>`;
     if (n <= 3) t += ": " + lista.map((p) => `<b>${esc(p.cliente)}</b>`).join(", ").replace(/, ([^,]*)$/, " y $1");
     t += ".";
-    if (conFecha.length) t += ` El más próximo es <b>${esc(conFecha[0].p.cliente)}</b> (${esc(conFecha[0].p.fechaLimite)}).`;
+    const hoy0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const atras = conFecha.filter((x) => x.f < hoy0), prox = conFecha.filter((x) => x.f >= hoy0);
+    if (atras.length) t += ` ⚠ ${atras.length === 1 ? `<b>${esc(atras[0].p.cliente)}</b> ya pasó su fecha (${esc(atras[0].p.fechaLimite)})` : `${atras.length} ya pasaron su fecha (el más atrasado: <b>${esc(atras[0].p.cliente)}</b>, ${esc(atras[0].p.fechaLimite)})`}.`;
+    if (prox.length) t += ` El siguiente en entregarse es <b>${esc(prox[0].p.cliente)}</b> (${esc(prox[0].p.fechaLimite)}).`;
     if (porCobrar > 0) t += ` Falta cobrar <b>${fmt(porCobrar)}</b>.`;
     return t;
   }
@@ -244,7 +251,7 @@
   function responder(pregunta, datos, opts) {
     opts = opts || {};
     const hoy = opts.hoy || new Date();
-    const proyectos = (datos && datos.proyectos) || [];
+    const proyectos = ((datos && datos.proyectos) || []).filter(esProyectoReal);
     const q = String(pregunta || "").trim();
     const qn = norm(q);
     if (!qn) return { html: AYUDA };
