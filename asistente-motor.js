@@ -31,6 +31,34 @@
     return d;
   }
 
+  // ---------- tono conversacional ----------
+  const elige = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const plural = (n, uno, varios) => n + " " + (n === 1 ? uno : varios);
+  const detalle = (html, etiqueta) => `<details style="margin-top:8px"><summary style="cursor:pointer;color:#888">${etiqueta || "Ver detalle"}</summary>${html}</details>`;
+  function saludo(hoy) { const h = hoy.getHours(); return h < 12 ? "¡Buenos días!" : h < 19 ? "¡Buenas tardes!" : "¡Buenas noches!"; }
+  // Frase corta con lo más importante de una lista de proyectos.
+  function frase(lista, hoy) {
+    if (!lista.length) return "";
+    const n = lista.length;
+    const porCobrar = lista.reduce((s, p) => s + saldoDe(p), 0);
+    const conFecha = lista.map((p) => ({ p, f: fechaDe(p.fechaLimite, hoy) })).filter((x) => x.f && esVivo(x.p)).sort((a, b) => a.f - b.f);
+    let t = elige(["Son ", "Tienes ", "Hay "]) + `<b>${plural(n, "proyecto", "proyectos")}</b>`;
+    if (n <= 3) t += ": " + lista.map((p) => `<b>${esc(p.cliente)}</b>`).join(", ").replace(/, ([^,]*)$/, " y $1");
+    t += ".";
+    if (conFecha.length) t += ` El más próximo es <b>${esc(conFecha[0].p.cliente)}</b> (${esc(conFecha[0].p.fechaLimite)}).`;
+    if (porCobrar > 0) t += ` Falta cobrar <b>${fmt(porCobrar)}</b>.`;
+    return t;
+  }
+  // Una línea humana sobre un solo proyecto.
+  function fraseProyecto(p) {
+    let t = `<b>${esc(p.cliente)}</b> va en <b>${esc(p.estatus || "sin estatus")}</b>`;
+    if (p.fechaLimite) t += `, entrega el ${esc(p.fechaLimite)}`;
+    t += ".";
+    if (p.precio) t += pct(p.pagado) >= 100 ? " Ya pagó todo ✓" : ` Pagó ${esc(p.pagado || "0%")} y debe <b>${fmt(saldoDe(p))}</b>.`;
+    else t += " Aún no está cotizado.";
+    return t;
+  }
+
   // ---------- presentación ----------
   function filaProyecto(p) {
     const abre = p.codigo ? ` <a href="panel.html?abrir=${esc(p.codigo)}" class="mini">abrir ›</a>` : "";
@@ -115,8 +143,12 @@
       const dif = Math.round((i.laminas - i.enCola) * 100) / 100;
       return `<tr><td><b>${esc(i.grosor)}</b></td><td>${i.laminas}</td><td>${i.enCola}</td><td>${dif >= 0 ? "sobran " + dif : "<b>faltan " + (-dif) + "</b>"}</td></tr>`;
     }).join("");
-    return `<table><thead><tr><th>Grosor</th><th>Tengo</th><th>Necesito</th><th>Balance</th></tr></thead><tbody>${filas}</tbody></table>` +
-      `<div class="mut">Necesito = láminas de los pedidos en Imprimir y Repetir. Sale de la pestaña «Láminas» del Sheets${datos.ultimoConteo ? " · último conteo: " + esc(datos.ultimoConteo) : ""}.</div>`;
+    const faltan = inv.filter((i) => i.enCola > i.laminas);
+    const corto = faltan.length
+      ? `⚠ Ojo: no alcanza de ${faltan.map((i) => `<b>${esc(i.grosor)}</b> (faltan ${Math.round((i.enCola - i.laminas) * 10) / 10})`).join(" y ")}. Lo demás sí alcanza.`
+      : `Todo bien: con lo que hay en Imprimir te alcanzan las láminas de todos los grosores.` + (inv[0] ? ` De ${esc(inv[0].grosor)} tienes <b>${inv[0].laminas}</b> y ocupas <b>${inv[0].enCola}</b>.` : "");
+    return corto + detalle(`<table><thead><tr><th>Grosor</th><th>Tengo</th><th>Necesito</th><th>Balance</th></tr></thead><tbody>${filas}</tbody></table>` +
+      `<div class="mut">Necesito = láminas de los pedidos en Imprimir y Repetir. Sale de la pestaña «Láminas» del Sheets${datos.ultimoConteo ? " · último conteo: " + esc(datos.ultimoConteo) : ""}.</div>`, "Ver todas");
   }
 
   // ---------- filtros ----------
@@ -206,15 +238,8 @@
   }
 
   // ---------- respuesta principal ----------
-  const AYUDA = `Puedo buscar directo en tus proyectos (sin IA, al instante). Prueba así:<br>
-• <b>Un cliente</b>: «Tienda Uno», «cuánto debe Tienda Uno», «teléfono de Dulces López»<br>
-• <b>Un código</b>: «JD-4X7K2»<br>
-• <b>Por estatus</b>: «proyectos en imprimir», «qué falta por hacer render», «entregados»<br>
-• <b>Dinero</b>: «por cobrar», «sin anticipo», «ventas de octubre», «con factura»<br>
-• <b>Fechas</b>: «atrasados», «próximos a vencer», «entregas de noviembre»<br>
-• <b>Modelos</b>: «floor stand en imprimir», «modelos más pedidos»<br>
-• <b>Láminas</b>: «inventario», «cuántas hojas necesitan los de imprimir»<br>
-• <b>Precios</b>: «precio de 15 floor stand 3 niveles», «cotiza personalizado 120x50x30 3 niveles 10 piezas»`;
+  const AYUDA = `Pregúntame como le preguntarías a alguien del equipo. Por ejemplo:<br>
+«¿Qué hay en imprimir?» · «¿Cuánto debe Café Myrna?» · «¿Cómo va Rocky One?» · «¿Qué está atrasado?» · «¿Alcanzan las láminas?» · «Precio de 15 floor stand 3 niveles»`;
 
   function responder(pregunta, datos, opts) {
     opts = opts || {};
@@ -223,13 +248,18 @@
     const q = String(pregunta || "").trim();
     const qn = norm(q);
     if (!qn) return { html: AYUDA };
-    if (/^(ayuda|help|que puedes hacer|como funcionas|que sabes hacer|hola|buenas?)\b/.test(qn)) return { html: AYUDA };
+    if (/^(ayuda|help|que puedes hacer|como funcionas|que sabes hacer)\b/.test(qn)) return { html: AYUDA };
+    if (/^(hola|buen[oa]s?|que onda|que tal|hey|ey)\b/.test(qn) && tokens(qn).length <= 4) {
+      const vivos = proyectos.filter(esVivo).length, imp = proyectos.filter((p) => estatusDe(p) === "imprimir").length;
+      return { html: `${saludo(hoy)} ${vivos ? `Hay ${plural(vivos, "proyecto", "proyectos")} en curso${imp ? `, ${imp} en Imprimir` : ""}.` : ""} ¿En qué te ayudo?` };
+    }
+    if (/^(gracias|grax|thx|ok|okay|va|vale|perfecto|listo|chido|sale)\b/.test(qn) && tokens(qn).length <= 4) return { html: elige(["¡De nada! ¿Algo más?", "Para eso estoy. ¿Qué más necesitas?", "¡Listo! Aquí sigo si necesitas algo."]) };
 
     // 1) código de seguimiento
     const cm = q.toUpperCase().match(/JD-[A-Z0-9]{3,6}/);
     if (cm) {
       const hallados = proyectos.filter((p) => p.codigo === cm[0]);
-      return { html: hallados.length ? hallados.map(ficha).join("") : `No hay ningún proyecto con el código <code>${esc(cm[0])}</code> en el Sheets.` };
+      return { html: hallados.length ? hallados.map((p) => fraseProyecto(p) + detalle(ficha(p))).join("<br>") : `No encuentro ningún proyecto con el código <code>${esc(cm[0])}</code>. ¿Lo escribiste bien?` };
     }
 
     // 2) precios / cotizaciones (usa el motor de precios real)
@@ -247,7 +277,7 @@
       if (hayFiltros(filtros) && /(necesit|requier|ocupan|llevan|comprometid|usan|gastan|cuantas)/.test(qn) && !/(disponible|quedan|tenemos|hay)/.test(qn)) {
         const lista = aplicar(proyectos, filtros, hoy);
         const total = lista.reduce((s, p) => s + (p.hojas || 0), 0);
-        return { html: `Los proyectos (${esc(filtros.descr.join(", "))}) suman <b>${total.toFixed(2)}</b> hojas.<br>${resumen(lista)}${lista.length ? tabla(lista, 15) : ""}` };
+        return { html: `Esos ${plural(lista.length, "proyecto", "proyectos")} ocupan unas <b>${total.toFixed(1)}</b> láminas.${lista.length ? detalle(tabla(lista, 15), "Ver proyectos") : ""}` };
       }
       return { html: inventarioHTML(datos || {}) };
     }
@@ -272,46 +302,47 @@
         return { html: lista.map((p) => `<b>${esc(p.cliente)}</b>: ${p.contacto ? esc(p.contacto) : "no tiene contacto registrado"}`).join("<br>") };
       }
       if (/(\bdebe\b|\bdeben\b|saldo|adeudo|cuanto falta|por cobrar|restante)/.test(qn)) {
-        const filas = lista.map((p) => `<b>${esc(p.cliente)}</b>${p.codigo ? " <code>" + esc(p.codigo) + "</code>" : ""}: ${p.precio ? (pct(p.pagado) >= 100 ? "pagado completo ✓" : "debe <b>" + fmt(saldoDe(p)) + "</b> de " + fmt(p.precio) + " (pagado " + esc(p.pagado || "0%") + ")") : "aún sin cotizar"}`);
+        const filas = lista.map((p) => !p.precio ? `<b>${esc(p.cliente)}</b> todavía no está cotizado.` : pct(p.pagado) >= 100 ? `<b>${esc(p.cliente)}</b> ya pagó todo ✓` : `<b>${esc(p.cliente)}</b> te debe <b>${fmt(saldoDe(p))}</b> de ${fmt(p.precio)} (lleva ${esc(p.pagado || "0%")}).`);
         return { html: filas.join("<br>") };
       }
       if (/(cuando|fecha|entrega|para cuando)/.test(qn) && unico) {
-        return { html: `<b>${esc(p0.cliente)}</b>: entrega ${esc(p0.fechaLimite || "sin fecha")} · estatus ${esc(p0.estatus || "—")}.` };
+        return { html: p0.fechaLimite ? `<b>${esc(p0.cliente)}</b> se entrega el <b>${esc(p0.fechaLimite)}</b>; ahorita va en ${esc(p0.estatus || "—")}.` : `<b>${esc(p0.cliente)}</b> todavía no tiene fecha de entrega; va en ${esc(p0.estatus || "—")}.` };
       }
       if (/(estatus|status|como va|en que va|etapa|en que esta)/.test(qn)) {
-        return { html: lista.map((p) => `<b>${esc(p.cliente)}</b>${p.codigo ? " <code>" + esc(p.codigo) + "</code>" : ""}: <b>${esc(p.estatus || "—")}</b>${p.fechaLimite ? " · entrega " + esc(p.fechaLimite) : ""}`).join("<br>") };
+        return { html: lista.map((p) => `<b>${esc(p.cliente)}</b> va en <b>${esc(p.estatus || "—")}</b>${p.fechaLimite ? `, entrega el ${esc(p.fechaLimite)}` : ""}.`).join("<br>") };
       }
-      if (unico) return { html: ficha(p0) };
-      return { html: `${resumen(lista)}${tabla(lista)}` };
+      if (unico) return { html: fraseProyecto(p0) + detalle(ficha(p0)) };
+      const vivosC = lista.filter(esVivo);
+      return { html: `Encontré ${plural(lista.length, "pedido", "pedidos")} de <b>${esc(p0.cliente)}</b>${vivosC.length ? `; ${vivosC.length} en curso` : ", todos ya entregados"}.` + (vivosC.length ? "<br>" + vivosC.slice(0, 3).map(fraseProyecto).join("<br>") : "") + detalle(tabla(lista), "Ver todos") };
     }
 
     // 6) filtros (estatus, dinero, fechas, modelo…)
     if (hayFiltros(filtros)) {
       const lista = aplicar(proyectos, filtros, hoy);
       const encab = esc(filtros.descr.join(" · "));
-      if (!lista.length) return { html: `No hay proyectos con: ${encab}.` };
+      if (!lista.length) return { html: elige(["Nada por ahí", "No hay ninguno", "Cero"]) + ` (${encab}). 👌` };
       const nota = filtros.mes !== null ? `<div class="mut">El mes se toma de la <b>fecha de entrega</b> (el Sheets no guarda la fecha en que se hizo el pedido).</div>` : "";
-      if (/(cuantos|cuantas|numero de)/.test(qn) && !/(debe|cobrar|vendimos|ventas|total)/.test(qn)) return { html: `${resumen(lista)}<div class="mut">${encab}</div>${nota}${tabla(lista, 8)}` };
-      return { html: `<div class="mut">${encab}</div>${resumen(lista)}${tabla(lista)}${nota}` };
+      return { html: frase(lista, hoy) + detalle(`<div class="mut">${encab}</div>${resumen(lista)}${tabla(lista)}${nota}`, "Ver lista") };
     }
 
     // 7) totales generales
     if (/(cuanto vendimos|ventas|facturado|ingresos|total vendido|cuanto llevamos)/.test(qn)) {
-      return { html: `${resumen(proyectos)}<div class="mut">Suma de todos los proyectos del Sheets. Para un mes pregunta «ventas de octubre» (se toma por fecha de entrega).</div>` };
+      const tot = proyectos.reduce((s, p) => s + (p.precio || 0), 0);
+      return { html: `En total llevas <b>${fmt(tot)}</b> en ${plural(proyectos.length, "proyecto", "proyectos")}. Si quieres un mes, pregúntame «ventas de octubre».` };
     }
     if (/(cuantos proyectos|cuantos pedidos|cuantos hay)/.test(qn)) {
-      return { html: `${resumen(proyectos)}<br>En curso: <b>${proyectos.filter(esVivo).length}</b>` };
+      return { html: `Hay ${plural(proyectos.length, "proyecto", "proyectos")} en el Sheets; <b>${proyectos.filter(esVivo).length}</b> siguen en curso.` };
     }
 
     // 8) búsqueda libre en todo el texto
     const palabras = tokens(qn).filter((t) => !STOP.has(t) && t.length >= 3);
     if (palabras.length) {
       const lista = proyectos.filter((p) => { const tb = textoBusqueda(p); return palabras.every((w) => tb.indexOf(w) > -1); });
-      if (lista.length) return { html: `${resumen(lista)}${tabla(lista)}` };
+      if (lista.length) return { html: (lista.length === 1 ? fraseProyecto(lista[0]) + detalle(ficha(lista[0])) : frase(lista, hoy) + detalle(tabla(lista), "Ver lista")) };
       const alguna = proyectos.filter((p) => { const tb = textoBusqueda(p); return palabras.some((w) => w.length >= 4 && tb.indexOf(w) > -1); });
-      if (alguna.length && alguna.length <= 12) return { html: `No encontré una coincidencia exacta; esto se parece:${tabla(alguna)}` };
+      if (alguna.length && alguna.length <= 12) return { html: `No encontré exactamente eso, pero ¿te refieres a ${alguna.slice(0, 3).map((p) => `<b>${esc(p.cliente)}</b>`).join(", ")}?` + detalle(tabla(alguna), "Ver opciones") };
     }
-    return { html: `No encontré nada con «${esc(q)}». Prueba con el nombre del cliente, un código JD-…, un estatus o escribe «ayuda».` };
+    return { html: elige(["Mmm, no encontré nada con eso.", "No me suena, la verdad.", "No encontré nada así."]) + ` Prueba con el nombre del cliente, un estatus («qué hay en imprimir») o «ayuda».` };
   }
 
   const Motor = { responder, norm, AYUDA };
