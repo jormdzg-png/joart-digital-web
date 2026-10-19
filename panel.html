@@ -635,6 +635,7 @@ function pintarFicha(){
       ${ped.notas ? `<div class="hint" style="margin-top:8px">📝 ${esc(ped.notas)}</div>` : ""}
       <button type="button" class="btn go" id="armarCot">${cot ? "Cotización abierta ↓" : "📄 Generar cotización"}</button>
       <a class="btn" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, `Hola ${ped.cliente} 👋 Aquí puedes ver el estatus de tu pedido en vivo: ${PORTAL_URL}?codigo=${ped.codigo}`))}">🔗 Mandar enlace de seguimiento</a>
+      <button type="button" class="btn" id="cartaPdf">💌 Carta de agradecimiento (para el empaque)</button>
     </div>
     <div id="cotBox"></div>`;
   if(cot) pintarCot();
@@ -642,6 +643,11 @@ function pintarFicha(){
 $("fichaVista").addEventListener("click", (e) => {
   if(e.target.id === "volver"){ abrirTok++; $("fichaVista").hidden = true; $("listaVista").hidden = false; ped = null; cot = null; window.scrollTo(0, 0); return; }
   if(e.target.id === "armarCot"){ armarCot(); }
+  if(e.target.id === "cartaPdf"){
+    if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga la página."); return; }
+    const nom = `Carta-${String(ped.cliente || "cliente").replace(/[^\wÀ-ſ]+/g, "-").replace(/^-|-$/g, "")}-${ped.codigo}.pdf`;
+    construirCartaPDF(window.jspdf.jsPDF, { cliente: ped.cliente || "", folio: ped.codigo }, LOGO_DATA_URL).save(nom);
+  }
 });
 
 // ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
@@ -792,6 +798,40 @@ $("listaZonas").innerHTML = ZONAS.map(z => `<option value="${z}">`).join("");
 pintarItems(); actualizarDock();
 
 // ===================== COTIZACIÓN EN PDF =====================
+// Carta de agradecimiento: media carta, va impresa dentro del empaque y se firma a mano.
+function construirCartaPDF(jsPDF, d, logoDataUrl){
+  const doc = new jsPDF({ unit: "mm", format: [139.7, 215.9] });
+  const W = 139.7, H = 215.9, M = 16, ancho = W - 2 * M;
+  const NAVY = [61, 64, 91], TERRA = [224, 122, 95], MUTED = [110, 108, 99], LINE = [227, 223, 203];
+  doc.setFillColor(...TERRA); doc.rect(0, 0, W, 4.5, "F");
+  doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.rect(6, 10, W - 12, H - 16);
+  let y = 22;
+  if(logoDataUrl){ try{ doc.addImage(logoDataUrl, "PNG", M, y - 6, 9, 9); }catch(e){} }
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...MUTED);
+  doc.text("JOART DIGITAL", M + 11, y); doc.text("Pedido " + d.folio, W - M, y, { align: "right" });
+  y += 20;
+  doc.setFont("times", "italic"); doc.setFontSize(15); doc.setTextColor(...TERRA); doc.text("Gracias,", M, y);
+  y += 10;
+  let tam = 22; doc.setFont("helvetica", "bold");
+  while(tam > 13){ doc.setFontSize(tam); if(doc.getTextWidth(d.cliente) <= ancho) break; tam--; }
+  doc.setTextColor(...NAVY);
+  const nombre = doc.splitTextToSize(d.cliente, ancho); doc.text(nombre, M, y); y += (nombre.length - 1) * tam * 0.42;
+  y += 9; doc.setDrawColor(...TERRA); doc.setLineWidth(0.8); doc.line(M, y, M + 14, y); y += 10;
+  const parrafos = [
+    "Tu exhibidor empezó como un render en pantalla y hoy ya está listo para tu punto de venta. Lo diseñamos, imprimimos, cortamos y revisamos pieza por pieza para que tus productos se vean como se merecen.",
+    "En la caja va un regalo: un mini exhibidor con tu logo, para tu escritorio o tu mostrador, y un sticker de vinil con tu marca.",
+    "Si algo no llegó como esperabas, escríbenos dentro de las primeras 48 horas con tu folio " + d.folio + " y unas fotos, y lo resolvemos.",
+    "Cuando quieras más piezas o una nueva campaña, aquí estamos."
+  ];
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(...NAVY);
+  parrafos.forEach(t => { const l = doc.splitTextToSize(t, ancho); doc.text(l, M, y, { lineHeightFactor: 1.5 }); y += l.length * 10.5 * 0.3528 * 1.5 + 3.5; });
+  const yf = H - 46;
+  doc.setDrawColor(...LINE); doc.setLineWidth(0.4); doc.line(M, yf, M + 55, yf);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(...NAVY); doc.text("Jorge Gama", M, yf + 5.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...MUTED); doc.text("Joart Digital - Exhibidores para punto de venta", M, yf + 10);
+  doc.setFontSize(7.5); doc.text("joartdigital.com.mx", W / 2, H - 11, { align: "center" });
+  return doc;
+}
 function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210, M = 16, R = W - M;
