@@ -7,7 +7,7 @@
 
 **Asistente (`asistente.html`):** sin IA. Busca directo en los proyectos del Sheets (`asistente-motor.js`) y usa el motor de precios real para cotizar. Es instantáneo y no depende de ningún servicio externo.
 
-**Video del render (`video-render.html`):** subes el render aprobado, escribes negocio y folio, y genera en el navegador un video vertical de 8 s (MP4 en Chrome/Edge/Safari) para mandarlo por WhatsApp. No usa servidor.
+**Video del render (`video-render.html`):** subes el render aprobado, escribes negocio y folio, y genera en el navegador un video vertical de 8 s armado cuadro por cuadro a 30 fps fijos (MP4 H.264 + AAC con WebCodecs y `vendor/mp4-muxer.js`; si el navegador no puede, graba en tiempo real) para mandarlo por WhatsApp. No usa servidor.
 
 **Para el cliente:** `configurador.html` (exhibidor en 3D con su logo), `mi-pedido.html?codigo=JD-XXXXX` (estatus en vivo) y `aprobar-render.html`. `seguimiento.html` redirige a Mi pedido.
 

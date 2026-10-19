@@ -127,6 +127,7 @@
     <p class="cap" id="cap">1080 × 1920 · 9:16 · 8 s</p>
   </aside>
 </div>
+<script src="vendor/mp4-muxer.js"></script>
 <script>
 const MUESTRA = "video-render-muestra.jpg";
 const W=1080,H=1920,SEG=8;
@@ -201,6 +202,14 @@ function fondo(c1){
 const tmp=document.createElement('canvas'),tx=tmp.getContext('2d');
 function fitText(t,peso,max,tam,min){let s=tam;do{ctx.font=`${peso} ${s}px Poppins`;if(ctx.measureText(t).width<=max)break;s-=4}while(s>min);return s}
 
+let shC=null,shFor=null;
+function sombra(){
+  if(shC&&shFor===ren) return shC;
+  const rx=ren.width*0.52,ry=ren.width*0.09,pad=70;
+  shC=document.createElement('canvas');shC.width=Math.ceil(rx*2+pad*2);shC.height=Math.ceil(ry*2+pad*2);
+  const x=shC.getContext('2d');x.filter='blur(28px)';x.fillStyle='#000';
+  x.beginPath();x.ellipse(shC.width/2,shC.height/2,rx,ry,0,0,Math.PI*2);x.fill();shFor=ren;return shC;
+}
 function cuadro(s){
   const neg=$('negocio').value.trim()||'Tu negocio', fol=$('folio').value.trim()||'JD-00000', c1=color;
   ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;fondo(c1);
@@ -212,10 +221,10 @@ function cuadro(s){
   if(ren){
     const w2=ren.width*esc,h2=ren.height*esc;
     // sombra en el piso
-    ctx.save();ctx.globalAlpha=alfa*0.6;ctx.filter='blur(28px)';ctx.fillStyle='#000';
-    ctx.beginPath();ctx.ellipse(W/2,cy+h2/2-10,w2*0.52,w2*0.09,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    const sh=sombra();ctx.save();ctx.globalAlpha=alfa*0.6;
+    ctx.drawImage(sh,W/2-sh.width*esc/2,cy+h2/2-10-sh.height*esc/2,sh.width*esc,sh.height*esc);ctx.restore();
     // capa con la "impresión" que baja de arriba a abajo
-    tmp.width=ren.width;tmp.height=ren.height;tx.clearRect(0,0,tmp.width,tmp.height);
+    if(tmp.width!==ren.width||tmp.height!==ren.height){tmp.width=ren.width;tmp.height=ren.height}tx.clearRect(0,0,tmp.width,tmp.height);
     if(imp>=1){tx.drawImage(ren,0,0)}
     else{tx.drawImage(ren,0,0);
       if(imp<=0){tx.clearRect(0,0,tmp.width,tmp.height)}
@@ -286,23 +295,72 @@ function tipoVideo(){
   return [null,null];
 }
 
+/* Video cuadro por cuadro a 30 fps fijos (WebCodecs + MP4). No depende de la velocidad de la computadora. */
+async function codecVideo(){
+  for(const c of ['avc1.640033','avc1.4d0033','avc1.640028','avc1.42003e']){
+    const cfg={codec:c,width:W,height:H,bitrate:6e6,framerate:30,avc:{format:'avc'}};
+    try{if((await VideoEncoder.isConfigSupported(cfg)).supported) return cfg}catch(e){}}
+  return null;
+}
+async function codecAudio(){
+  if(!window.AudioEncoder) return null;const cfg={codec:'mp4a.40.2',sampleRate:48000,numberOfChannels:2,bitrate:160000};
+  try{return (await AudioEncoder.isConfigSupported(cfg)).supported?cfg:null}catch(e){return null}
+}
+async function generarCuadroPorCuadro(vcfg,acfg){
+  const target=new Mp4Muxer.ArrayBufferTarget();
+  const vc=vcfg.codec.startsWith('avc')?'avc':vcfg.codec.startsWith('vp09')?'vp9':'av1',ac=acfg&&(acfg.codec==='opus'?'opus':'aac');
+  const muxer=new Mp4Muxer.Muxer({target,video:{codec:vc,width:W,height:H,frameRate:30},
+    audio:acfg?{codec:ac,numberOfChannels:2,sampleRate:48000}:undefined,fastStart:'in-memory',firstTimestampBehavior:'offset'});
+  let fallo=null;const FPS=30,N=SEG*FPS,dur=Math.round(1e6/FPS);
+  const ve=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{fallo=e}});ve.configure(vcfg);
+  for(let i=0;i<N;i++){
+    if(fallo) throw fallo;
+    cuadro(i/FPS);const fr=new VideoFrame(cv,{timestamp:i*dur,duration:dur});ve.encode(fr,{keyFrame:i%30===0});fr.close();
+    $('prog').style.width=(i/N*92)+'%';
+    while(ve.encodeQueueSize>4) await new Promise(r=>setTimeout(r,4));
+    if(i%8===0) await new Promise(r=>setTimeout(r,0));
+  }
+  await ve.flush();ve.close();
+  if(acfg){
+    const oac=new OfflineAudioContext(2,48000*SEG,48000);musica(oac,oac.destination,0);const buf=await oac.startRendering();
+    const ae=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:e=>{fallo=e}});ae.configure(acfg);
+    const L=buf.getChannelData(0),R=buf.getChannelData(1);
+    for(let o=0;o<buf.length;o+=1024){const n=Math.min(1024,buf.length-o),d=new Float32Array(n*2);d.set(L.subarray(o,o+n),0);d.set(R.subarray(o,o+n),n);
+      const ad=new AudioData({format:'f32-planar',sampleRate:48000,numberOfFrames:n,numberOfChannels:2,timestamp:Math.round(o*1e6/48000),data:d});ae.encode(ad);ad.close()}
+    await ae.flush();ae.close();
+  }
+  if(fallo) throw fallo;
+  muxer.finalize();return new Blob([target.buffer],{type:'video/mp4'});
+}
 $('gen').onclick=async()=>{
-  if(playing)return;const [mime,ext]=tipoVideo();
-  if(!mime||!cv.captureStream){setStatus('Este navegador no puede grabar video. Ábrelo en Chrome o Edge en computadora.','err');return}
-  await fuentes;mostrarLienzo();bloquear(true);$('save').hidden=true;
+  if(playing)return;await fuentes;mostrarLienzo();bloquear(true);$('save').hidden=true;
+  const vcfg=(window.VideoEncoder&&window.VideoFrame&&window.Mp4Muxer)?await codecVideo():null;
+  if(vcfg){
+    playing=true;setStatus('Armando el video cuadro por cuadro…');
+    try{const acfg=await codecAudio();const blob=await generarCuadroPorCuadro(vcfg,acfg);playing=false;terminar(blob,'mp4');
+      if(!acfg) setStatus('Video listo, pero sin música: este navegador no puede agregar audio. Usa Chrome o Edge actualizado.','ok');
+      return}
+    catch(e){console.error(e);playing=false}
+  }
+  grabarTiempoReal();
+};
+async function grabarTiempoReal(){
+  const [mime,ext]=tipoVideo();
+  if(!mime||!cv.captureStream){bloquear(false);setStatus('Este navegador no puede crear el video. Ábrelo en Chrome o Edge en computadora.','err');return}
   setStatus('Grabando el video (8 segundos). No cambies de pestaña.');
   const vs=cv.captureStream(30),ac=new AudioContext(),dest=ac.createMediaStreamDestination();
   const t0=ac.currentTime+0.15;musica(ac,dest,t0);
   const rec=new MediaRecorder(new MediaStream([...vs.getVideoTracks(),...dest.stream.getAudioTracks()]),{mimeType:mime,videoBitsPerSecond:8e6,audioBitsPerSecond:160e3});
   const partes=[];rec.ondataavailable=e=>e.data.size&&partes.push(e.data);
-  rec.onstop=()=>{ac.close();lastBlob=new Blob(partes,{type:mime.split(';')[0]});lastExt=ext;
-    const v=$('out');v.src=URL.createObjectURL(lastBlob);v.hidden=false;$('cv').hidden=true;
-    $('cap').textContent=`Video listo · ${(lastBlob.size/1048576).toFixed(1)} MB · ${ext.toUpperCase()}`;
-    bloquear(false);$('save').hidden=false;
-    setStatus(ext==='mp4'?'Video listo. Guárdalo y mándalo por WhatsApp.':'Video listo en WebM. Para WhatsApp conviene MP4: usa Chrome actualizado o Safari.','ok')};
+  rec.onstop=()=>{ac.close();terminar(new Blob(partes,{type:mime.split(';')[0]}),ext)};
   cuadro(0);rec.start();
   setTimeout(()=>animar(()=>setTimeout(()=>rec.stop(),150),p=>$('prog').style.width=(p*100)+'%'),150);
-};
+}
+function terminar(blob,ext){lastBlob=blob;lastExt=ext;
+    const v=$('out');v.src=URL.createObjectURL(lastBlob);v.hidden=false;$('cv').hidden=true;
+    $('cap').textContent=`Video listo · ${(lastBlob.size/1048576).toFixed(1)} MB · ${ext.toUpperCase()}`;$('prog').style.width='100%';
+    bloquear(false);$('save').hidden=false;
+    setStatus(ext==='mp4'?'Video listo. Guárdalo y mándalo por WhatsApp.':'Video listo en WebM. Para WhatsApp conviene MP4: usa Chrome actualizado o Safari.','ok')};
 
 $('save').onclick=()=>{
   if(!lastBlob)return;
