@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#070A14">
+<title>Joart Core — Video del render</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Poppins:wght@300;500;700&display=swap');
+  :root{
+    --bg:#070A14; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
+    --line:rgba(242,204,143,.20); --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --disp:'Archivo Expanded','Inter',sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none !important; }
+  html{ color-scheme:dark; }
+  body{ margin:0; min-height:100vh; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); }
+  body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+    background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+    background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+  .wrap{ position:relative; z-index:1; width:100%; max-width:980px; margin:0 auto; padding:14px max(16px,env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,380px); gap:18px; align-items:start; }
+  @media (max-width:800px){ .wrap{ grid-template-columns:minmax(0,1fr); max-width:640px; } }
+  .top{ grid-column:1/-1; display:flex; align-items:center; gap:12px; padding:6px 0 4px; }
+  .top a.back{ color:var(--mute); text-decoration:none; font:600 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; margin-left:auto; }
+  .top a.back:hover{ color:var(--sand); }
+  .top b{ display:block; font:800 15px var(--disp); letter-spacing:.12em; }
+  .top small{ display:block; font:400 10.5px var(--mono); color:var(--mute); letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
+  .hud{ position:relative; background:var(--panel); border:1px solid var(--line); padding:18px 16px 16px; backdrop-filter:blur(6px); min-width:0; }
+  .hud::before, .hud::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+  .hud::before{ top:-1px; left:-1px; border-top:2px solid var(--terra); border-left:2px solid var(--terra); }
+  .hud::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--sand); border-right:2px solid var(--sand); }
+  .lbl{ display:flex; align-items:center; gap:10px; font:600 10.5px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--sand); margin:0 0 14px; }
+  .lbl::before{ content:"//"; color:var(--terra); }
+  .lbl::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--line), transparent); }
+  .controls{ display:flex; flex-direction:column; gap:14px; }
+  .controls .lbl{ margin:0; }
+  .drop{ display:flex; gap:14px; align-items:center; border:1px dashed rgba(242,204,143,.35); background:var(--panel2); padding:14px; cursor:pointer; position:relative; transition:border-color .2s, background .2s; }
+  .drop:hover,.drop.over,.drop:focus-visible{ border-color:var(--terra); background:rgba(224,122,95,.06); outline:none; }
+  .drop img{ width:78px; height:78px; object-fit:contain; background:#fff; flex:none; }
+  .drop strong{ display:block; font-weight:600; font-size:14px; }
+  .drop small{ color:var(--mute); font-size:12px; line-height:1.45; }
+  .drop input{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+  .row{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,150px); gap:10px; }
+  @media (max-width:420px){ .row{ grid-template-columns:minmax(0,1fr); } }
+  .field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .field label,.field .cap{ font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
+  input[type=text]{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:11px 12px; font:500 14.5px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s; }
+  input[type=text]:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18); }
+  #folio{ font-family:var(--mono); }
+  .colorrow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .colorrow input[type=color]{ width:44px; height:36px; border:1px solid rgba(242,204,143,.3); background:var(--panel2); padding:2px; cursor:pointer; }
+  .colorrow span{ font:600 12.5px var(--mono); }
+  .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0; }
+  .acts{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:13px 14px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; text-align:center; transition:all .2s;
+    clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .btn:hover{ background:rgba(242,204,143,.1); box-shadow:0 0 18px rgba(242,204,143,.2); }
+  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(224,122,95,.35); }
+  .btn.ok{ grid-column:1/-1; background:rgba(129,178,154,.14); border-color:rgba(129,178,154,.6); color:#B5DEC9; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
+  .btn:focus-visible,.link:focus-visible,input[type=color]:focus-visible{ outline:2px solid var(--sand); outline-offset:2px; }
+  .bar{ height:3px; background:rgba(242,204,143,.12); overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0; background:var(--terra); box-shadow:0 0 10px var(--terra); }
+  .status{ font-size:13px; color:var(--mute); min-height:1.5em; margin:0; }
+  .status.ok{ color:var(--sage); } .status.err{ color:var(--danger); }
+  .steps{ list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:12.5px; color:var(--mute); }
+  .steps b{ font:600 11px var(--mono); color:var(--sand); letter-spacing:.06em; margin-right:8px; }
+  .stage{ position:sticky; top:14px; }
+  .stage canvas,.stage video{ display:block; width:100%; max-width:100%; aspect-ratio:9/16; height:auto; background:#000; }
+  .stage .cap{ font:400 10.5px var(--mono); color:var(--mute); letter-spacing:.12em; text-transform:uppercase; text-align:center; margin:10px 0 0; }
+  @media (max-width:800px){ .stage{ position:static; max-width:380px; width:100%; margin:0 auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><b>VIDEO DEL RENDER</b><small>Joart Core · para mandar por WhatsApp</small></div>
+    <a class="back" href="panel.html">← Panel</a>
+  </header>
+
+  <section class="hud controls" aria-label="Datos del video">
+    <div class="lbl">Render y cliente</div>
+    <label class="drop" id="drop" for="file" tabindex="0">
+      <img id="thumb" alt="Render cargado">
+      <div>
+        <strong id="fileName">Render de ejemplo cargado</strong>
+        <small>Arrastra aquí el render (PNG o JPG con fondo blanco) o toca para elegirlo.</small>
+      </div>
+      <input type="file" id="file" accept="image/png,image/jpeg,image/webp">
+    </label>
+    <div class="row">
+      <div class="field"><label for="negocio">Negocio del cliente</label><input type="text" id="negocio" value="Café La Esquina" autocomplete="off"></div>
+      <div class="field"><label for="folio">Folio</label><input type="text" id="folio" value="JD-00123" autocomplete="off"></div>
+    </div>
+    <div class="field">
+      <span class="cap">Color de marca</span>
+      <div class="colorrow">
+        <input type="color" id="color" value="#7a3e22" aria-label="Color de marca">
+        <span id="colorHex">#7A3E22</span>
+        <button type="button" class="link" id="autoColor">Tomar del render</button>
+      </div>
+    </div>
+    <div class="acts">
+      <button type="button" class="btn" id="play">Vista previa</button>
+      <button type="button" class="btn go" id="gen">Generar video</button>
+      <button type="button" class="btn ok" id="save" hidden>Guardar video</button>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+    <p class="status" id="status" role="status">Listo. La vista previa muestra un render de ejemplo.</p>
+    <ul class="steps">
+      <li><b>0–1 s</b>El exhibidor aparece sin imprimir.</li>
+      <li><b>1–3 s</b>El diseño se imprime de arriba hacia abajo.</li>
+      <li><b>3–6 s</b>Giro suave para mostrarlo.</li>
+      <li><b>6–8 s</b>Cierre con negocio, folio y “Tu exhibidor, listo para aprobar”.</li>
+    </ul>
+  </section>
+
+  <aside class="hud stage" aria-label="Vista del video">
+    <div class="lbl">Video 9:16</div>
+    <canvas id="cv" width="1080" height="1920"></canvas>
+    <video id="out" controls playsinline hidden></video>
+    <p class="cap" id="cap">1080 × 1920 · 9:16 · 8 s</p>
+  </aside>
+</div>
+<script>
+const MUESTRA = "video-render-muestra.jpg";
+const W=1080,H=1920,SEG=8;
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let ren=null, blanca=null, color=[122,62,34], playing=false, lastBlob=null, lastExt='mp4';
+
+/* ---------- utilidades ---------- */
+const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
+const hex=c=>'#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');
+const fromHex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const lum=c=>0.299*c[0]+0.587*c[1]+0.114*c[2];
+function setStatus(t,cls=''){const s=$('status');s.textContent=t;s.className='status '+cls}
+
+/* Quita el fondo blanco liso que toca los bordes (relleno desde las esquinas) */
+function prepararRender(img){
+  const sc=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.round(img.naturalWidth*sc),h=Math.round(img.naturalHeight*sc);
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const x=c.getContext('2d');x.drawImage(img,0,0,w,h);
+  const d=x.getImageData(0,0,w,h),p=d.data;
+  const claro=i=>Math.min(p[i],p[i+1],p[i+2])>242&&p[i+3]>200;
+  const esq=[0,(w-1)*4,(h-1)*w*4,((h-1)*w+w-1)*4];
+  if(esq.every(claro)){
+    const fondo=new Uint8Array(w*h),q=new Int32Array(w*h);let a=0,b=0;
+    for(const [yy,xx] of [[0,0],[0,w-1],[h-1,0],[h-1,w-1]]){const k=yy*w+xx;fondo[k]=1;q[b++]=k}
+    while(a<b){const k=q[a++],y=(k/w)|0,xx=k-y*w;
+      for(const n of [xx>0?k-1:-1,xx<w-1?k+1:-1,y>0?k-w:-1,y<h-1?k+w:-1]){
+        if(n>=0&&!fondo[n]&&claro(n*4)){fondo[n]=1;q[b++]=n}}}
+    for(let k=0;k<w*h;k++) if(fondo[k]) p[k*4+3]=0;
+    x.putImageData(d,0,0);
+    // suaviza el borde recortado
+    const s=document.createElement('canvas');s.width=w;s.height=h;const sx=s.getContext('2d');
+    sx.filter='blur(1px)';sx.drawImage(c,0,0);sx.filter='none';sx.globalCompositeOperation='source-atop';sx.drawImage(c,0,0);
+    x.clearRect(0,0,w,h);x.drawImage(s,0,0);
+  }
+  // recorta al contenido
+  const dd=x.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=0,y1=0;
+  for(let y=0;y<h;y++)for(let xx=0;xx<w;xx++){if(dd[(y*w+xx)*4+3]>10){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(y<y0)y0=y;if(y>y1)y1=y}}
+  if(x1<=x0||y1<=y0){x0=0;y0=0;x1=w-1;y1=h-1}
+  const cw=x1-x0+1,ch=y1-y0+1,f=Math.min(900/cw,1150/ch);
+  const r=document.createElement('canvas');r.width=Math.round(cw*f);r.height=Math.round(ch*f);
+  const rx=r.getContext('2d');rx.imageSmoothingQuality='high';rx.drawImage(c,x0,y0,cw,ch,0,0,r.width,r.height);
+  // versión "sin imprimir": blanca con el sombreado del render
+  const bl=document.createElement('canvas');bl.width=r.width;bl.height=r.height;const bx=bl.getContext('2d');
+  const id=rx.getImageData(0,0,r.width,r.height),bd=bx.createImageData(r.width,r.height);
+  for(let i=0;i<id.data.length;i+=4){const v=0.299*id.data[i]+0.587*id.data[i+1]+0.114*id.data[i+2],g=205+v*0.2;
+    bd.data[i]=bd.data[i+1]=bd.data[i+2]=g;bd.data[i+3]=id.data[i+3]}
+  bx.putImageData(bd,0,0);
+  return {ren:r,blanca:bl};
+}
+
+/* Color de marca: el color vivo más frecuente del render */
+function colorDe(c){
+  const s=document.createElement('canvas');s.width=s.height=96;const x=s.getContext('2d');x.drawImage(c,0,0,96,96);
+  const p=x.getImageData(0,0,96,96).data,cub=new Map();
+  for(let i=0;i<p.length;i+=4){if(p[i+3]<200)continue;const r=p[i],g=p[i+1],b=p[i+2];
+    if(Math.max(r,g,b)-Math.min(r,g,b)<=70)continue;
+    const k=(r>>5)<<6|(g>>5)<<3|(b>>5);const e=cub.get(k)||[0,0,0,0];e[0]+=r;e[1]+=g;e[2]+=b;e[3]++;cub.set(k,e)}
+  let best=null;for(const e of cub.values()) if(!best||e[3]>best[3]) best=e;
+  return best&&best[3]>20?[0,1,2].map(i=>Math.round(best[i]/best[3])):[200,85,31];
+}
+
+/* ---------- dibujo de un cuadro ---------- */
+function fondo(c1){
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#18181c');
+  g.addColorStop(1,`rgb(${c1.map(v=>Math.round(v*0.35+18)).join(',')})`);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const v=ctx.createRadialGradient(W/2,H*0.45,H*0.15,W/2,H*0.45,H*0.85);
+  v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,0.45)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+}
+const tmp=document.createElement('canvas'),tx=tmp.getContext('2d');
+function fitText(t,peso,max,tam,min){let s=tam;do{ctx.font=`${peso} ${s}px Poppins`;if(ctx.measureText(t).width<=max)break;s-=4}while(s>min);return s}
+
+function cuadro(s){
+  const neg=$('negocio').value.trim()||'Tu negocio', fol=$('folio').value.trim()||'JD-00000', c1=color;
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;fondo(c1);
+  let esc,alfa,imp,giro,cy;
+  if(s<1){const k=ease(s);esc=0.88+0.07*k;alfa=k;imp=0;giro=-0.10;cy=1000}
+  else if(s<3){esc=0.95;alfa=1;imp=ease((s-1)/1.8);giro=-0.10;cy=1000}
+  else if(s<6){const k=ease((s-3)/3);esc=0.95+0.05*k;alfa=1;imp=1;cy=1000;giro=-0.10+0.20*k+0.06*Math.sin((s-3)*Math.PI*2/3)}
+  else{const k=ease((s-6)/0.7);esc=1-0.32*k;alfa=1;imp=1;giro=0.10*(1-k);cy=1000-250*k}
+  if(ren){
+    const w2=ren.width*esc,h2=ren.height*esc;
+    // sombra en el piso
+    ctx.save();ctx.globalAlpha=alfa*0.6;ctx.filter='blur(28px)';ctx.fillStyle='#000';
+    ctx.beginPath();ctx.ellipse(W/2,cy+h2/2-10,w2*0.52,w2*0.09,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    // capa con la "impresión" que baja de arriba a abajo
+    tmp.width=ren.width;tmp.height=ren.height;tx.clearRect(0,0,tmp.width,tmp.height);
+    if(imp>=1){tx.drawImage(ren,0,0)}
+    else{tx.drawImage(ren,0,0);
+      if(imp<=0){tx.clearRect(0,0,tmp.width,tmp.height)}
+      else{const corte=tmp.height*imp,g=tx.createLinearGradient(0,corte-30,0,corte+30);
+        g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');
+        tx.globalCompositeOperation='destination-in';tx.fillStyle=g;tx.fillRect(0,0,tmp.width,tmp.height);tx.globalCompositeOperation='source-over'}
+      tx.globalCompositeOperation='destination-over';tx.drawImage(blanca,0,0);tx.globalCompositeOperation='source-over'}
+    // giro simulado: estrecha el ancho y sesga un poco
+    const sx=Math.cos(giro)*(1-0.5*(1-Math.cos(giro))),ky=0.12*Math.sin(giro);
+    ctx.save();ctx.globalAlpha=alfa;ctx.setTransform(sx*esc,ky*esc,0,esc,W/2,cy);
+    ctx.imageSmoothingQuality='high';ctx.drawImage(tmp,-ren.width/2,-ren.height/2);ctx.restore();
+  }
+  ctx.setTransform(1,0,0,1,0,0);ctx.textAlign='center';ctx.textBaseline='middle';
+  if(s>0.3&&s<6){const op=Math.min(1,(s-0.3)/0.5)*Math.min(1,(6-s)/0.4);
+    ctx.globalAlpha=op;ctx.fillStyle='#fff';ctx.font='500 44px Poppins';
+    ctx.fillText(s>=1?'Así se ve tu exhibidor':'Preparando tu exhibidor',W/2,300)}
+  if(s>=6){const k=ease((s-6.2)/0.6),dy=40*(1-k);ctx.globalAlpha=k;ctx.fillStyle='#fff';
+    const fs=fitText(neg,700,W-140,104,54);ctx.font=`700 ${fs}px Poppins`;ctx.fillText(neg,W/2,1430+dy);
+    ctx.globalAlpha=k*0.9;ctx.font='500 44px Poppins';ctx.fillText('Tu exhibidor, listo para aprobar',W/2,1535+dy);
+    ctx.globalAlpha=k;const fw=ctx.measureText(fol).width+70;ctx.fillStyle=hex(c1);
+    ctx.beginPath();ctx.roundRect(W/2-fw/2,1610+dy,fw,80,40);ctx.fill();
+    ctx.fillStyle=lum(c1)<160?'#fff':'#191919';ctx.fillText(fol,W/2,1652+dy)}
+  ctx.globalAlpha=0.67;ctx.fillStyle='#fff';ctx.font='300 36px Poppins';
+  if('letterSpacing' in ctx) ctx.letterSpacing='4px';
+  ctx.fillText('JOART DIGITAL',W/2,H-110);if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+  ctx.globalAlpha=1;
+}
+
+/* ---------- audio generado (sin derechos de terceros) ---------- */
+function musica(ac,out,t0){
+  const master=ac.createGain();master.gain.value=0.55;master.connect(out);
+  const nota=(f,ini,dur,vol)=>{const g=ac.createGain();g.gain.setValueAtTime(0,t0+ini);
+    g.gain.linearRampToValueAtTime(vol,t0+ini+0.016);g.gain.setTargetAtTime(0,t0+ini+0.02,1/3.2);g.connect(master);
+    for(const [m,a] of [[1,1],[2,0.35],[3,0.12]]){const o=ac.createOscillator(),og=ac.createGain();o.frequency.value=f*m;og.gain.value=a;
+      o.connect(og).connect(g);o.start(t0+ini);o.stop(t0+ini+dur+0.5)}};
+  const pad=ac.createGain();pad.gain.setValueAtTime(0,t0);pad.gain.linearRampToValueAtTime(0.06,t0+1.5);
+  pad.gain.setValueAtTime(0.06,t0+SEG-1.2);pad.gain.linearRampToValueAtTime(0,t0+SEG);pad.connect(master);
+  for(const [f,a] of [[130.8,1],[196,1],[261.6,0.7]]){const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=a;o.connect(g).connect(pad);o.start(t0);o.stop(t0+SEG)}
+  [523.3,659.3,784,1046.5].forEach((f,i)=>nota(f,1+i*0.45,1.2,0.16));
+  [392,523.3,659.3].forEach(f=>nota(f,3,2.8,0.10));
+  [1046.5,1318.5,1568].forEach((f,i)=>nota(f,6.05+i*0.12,1.8,0.13));
+  const n=ac.sampleRate*2,buf=ac.createBuffer(1,n,ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const src=ac.createBufferSource();src.buffer=buf;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;
+  const wg=ac.createGain();wg.gain.setValueAtTime(0,t0+3.3);wg.gain.linearRampToValueAtTime(0.12,t0+4.3);wg.gain.linearRampToValueAtTime(0,t0+5.3);
+  src.connect(lp).connect(wg).connect(master);src.start(t0+3.3);src.stop(t0+5.4);
+}
+
+/* ---------- reproducción ---------- */
+function animar(onFin,onProg){
+  playing=true;const ini=performance.now();
+  const loop=()=>{const s=(performance.now()-ini)/1000;
+    cuadro(Math.min(s,SEG-0.001));onProg&&onProg(Math.min(1,s/SEG));
+    if(s<SEG) requestAnimationFrame(loop); else {playing=false;onFin&&onFin()}};
+  requestAnimationFrame(loop);
+}
+function mostrarLienzo(){$('out').hidden=true;$('cv').hidden=false;$('cap').textContent='1080 × 1920 · 9:16 · 8 s'}
+function bloquear(b){$('play').disabled=b;$('gen').disabled=b;$('file').disabled=b}
+
+$('play').onclick=async()=>{if(playing)return;await fuentes;mostrarLienzo();bloquear(true);
+  let ac=null;try{ac=new AudioContext();musica(ac,ac.destination,ac.currentTime+0.05)}catch(e){}
+  setStatus('Reproduciendo vista previa…');
+  animar(()=>{bloquear(false);setStatus('Vista previa terminada. Si te gusta, genera el video.');ac&&setTimeout(()=>ac.close(),600)},p=>$('prog').style.width=(p*100)+'%')};
+
+function tipoVideo(){
+  const op=[['video/mp4;codecs=avc1.42E01E,mp4a.40.2','mp4'],['video/mp4;codecs=avc1,mp4a','mp4'],['video/mp4','mp4'],
+    ['video/webm;codecs=vp9,opus','webm'],['video/webm;codecs=vp8,opus','webm'],['video/webm','webm']];
+  for(const [m,e] of op) if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m)) return [m,e];
+  return [null,null];
+}
+
+$('gen').onclick=async()=>{
+  if(playing)return;const [mime,ext]=tipoVideo();
+  if(!mime||!cv.captureStream){setStatus('Este navegador no puede grabar video. Ábrelo en Chrome o Edge en computadora.','err');return}
+  await fuentes;mostrarLienzo();bloquear(true);$('save').hidden=true;
+  setStatus('Grabando el video (8 segundos). No cambies de pestaña.');
+  const vs=cv.captureStream(30),ac=new AudioContext(),dest=ac.createMediaStreamDestination();
+  const t0=ac.currentTime+0.15;musica(ac,dest,t0);
+  const rec=new MediaRecorder(new MediaStream([...vs.getVideoTracks(),...dest.stream.getAudioTracks()]),{mimeType:mime,videoBitsPerSecond:8e6,audioBitsPerSecond:160e3});
+  const partes=[];rec.ondataavailable=e=>e.data.size&&partes.push(e.data);
+  rec.onstop=()=>{ac.close();lastBlob=new Blob(partes,{type:mime.split(';')[0]});lastExt=ext;
+    const v=$('out');v.src=URL.createObjectURL(lastBlob);v.hidden=false;$('cv').hidden=true;
+    $('cap').textContent=`Video listo · ${(lastBlob.size/1048576).toFixed(1)} MB · ${ext.toUpperCase()}`;
+    bloquear(false);$('save').hidden=false;
+    setStatus(ext==='mp4'?'Video listo. Guárdalo y mándalo por WhatsApp.':'Video listo en WebM. Para WhatsApp conviene MP4: usa Chrome actualizado o Safari.','ok')};
+  cuadro(0);rec.start();
+  setTimeout(()=>animar(()=>setTimeout(()=>rec.stop(),150),p=>$('prog').style.width=(p*100)+'%'),150);
+};
+
+$('save').onclick=()=>{
+  if(!lastBlob)return;
+  const base=($('folio').value.trim()+'_'+$('negocio').value.trim()).replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g,'_').replace(/_+/g,'_').slice(0,80)||'video_render';
+  const a=document.createElement('a');a.href=URL.createObjectURL(lastBlob);a.download=`${base}.${lastExt}`;
+  document.body.appendChild(a);a.click();a.remove();setStatus('Video guardado en tus descargas.','ok');
+};
+
+/* ---------- carga de render y color ---------- */
+function cargar(src,nombre){
+  const img=new Image();img.onload=()=>{const r=prepararRender(img);ren=r.ren;blanca=r.blanca;
+    color=colorDe(ren);$('color').value=hex(color);$('colorHex').textContent=hex(color).toUpperCase();
+    $('thumb').src=ren.toDataURL();$('fileName').textContent=nombre;mostrarLienzo();cuadro(4.6);
+    if(nombre!=='Render de ejemplo cargado') setStatus('Render cargado. Revisa el nombre, el folio y el color.')};
+  img.onerror=()=>setStatus('No pude abrir esa imagen. Usa un PNG o JPG.','err');img.src=src;
+}
+function leer(f){if(!f)return;if(!/^image\//.test(f.type)){setStatus('Ese archivo no es una imagen. Sube el render en PNG o JPG.','err');return}
+  const r=new FileReader();r.onload=()=>cargar(r.result,f.name);r.readAsDataURL(f)}
+$('file').onchange=e=>leer(e.target.files[0]);
+const dr=$('drop');
+['dragenter','dragover'].forEach(t=>dr.addEventListener(t,e=>{e.preventDefault();dr.classList.add('over')}));
+['dragleave','drop'].forEach(t=>dr.addEventListener(t,e=>{e.preventDefault();dr.classList.remove('over')}));
+dr.addEventListener('drop',e=>leer(e.dataTransfer.files[0]));
+dr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}});
+$('color').oninput=e=>{color=fromHex(e.target.value);$('colorHex').textContent=e.target.value.toUpperCase();if(!playing)cuadro(7.5)};
+$('autoColor').onclick=()=>{if(!ren)return;color=colorDe(ren);$('color').value=hex(color);$('colorHex').textContent=hex(color).toUpperCase();if(!playing)cuadro(7.5)};
+['negocio','folio'].forEach(id=>$(id).addEventListener('input',()=>{if(!playing){mostrarLienzo();cuadro(7.5)}}));
+
+const fuentes=Promise.all(['300 36px Poppins','500 44px Poppins','700 100px Poppins'].map(f=>document.fonts.load(f))).catch(()=>{});
+fuentes.then(()=>cargar(MUESTRA,'Render de ejemplo cargado'));
+</script>
+</body>
+</html>
