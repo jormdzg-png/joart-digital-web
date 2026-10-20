@@ -56,6 +56,9 @@
   .colorrow input[type=color]{ width:44px; height:36px; border:1px solid rgba(242,204,143,.3); background:var(--panel2); padding:2px; cursor:pointer; }
   .colorrow span{ font:600 12.5px var(--mono); }
   .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0; }
+  .chk{ display:flex; align-items:flex-start; gap:10px; font:500 13px 'Inter',sans-serif; color:var(--ink); line-height:1.4; cursor:pointer; text-transform:none; letter-spacing:0; }
+  .chk input{ margin-top:3px; accent-color:var(--terra); width:16px; height:16px; flex:none; }
+  .chk small{ display:block; color:var(--mute); font-size:11.5px; margin-top:2px; }
   .acts{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:13px 14px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; text-align:center; transition:all .2s;
     clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
@@ -104,6 +107,10 @@
         <span id="colorHex">#7A3E22</span>
         <button type="button" class="link" id="autoColor">Tomar del render</button>
       </div>
+    </div>
+    <div class="field">
+      <label class="chk" for="marca"><input type="checkbox" id="marca" checked>
+        <span>Marca de agua con el logo de Joart<small>Logo en la esquina y uno tenue sobre el exhibidor, para que se sepa que el diseño es nuestro si el video circula.</small></span></label>
     </div>
     <div class="acts">
       <button type="button" class="btn" id="play">Vista previa</button>
@@ -210,6 +217,22 @@ function sombra(){
   const x=shC.getContext('2d');x.filter='blur(28px)';x.fillStyle='#000';
   x.beginPath();x.ellipse(shC.width/2,shC.height/2,rx,ry,0,0,Math.PI*2);x.fill();shFor=ren;return shC;
 }
+const LOGO=new Image();
+const logoListo=new Promise(r=>{LOGO.onload=()=>r(true);LOGO.onerror=()=>r(false);LOGO.src='logo-joart.png'});
+/* Marca de agua: logo nítido en la esquina + logo tenue e inclinado sobre el exhibidor (difícil de recortar). */
+function marcaAgua(s,cy,esc){
+  if(!$('marca').checked||!LOGO.complete||!LOGO.naturalWidth) return;
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);
+  // tenue, centrado sobre el exhibidor, con una deriva lenta para que no se pueda tapar con un recuadro fijo
+  const d=Math.sin(s*0.5)*24*esc,t=520*esc;
+  ctx.globalAlpha=0.13;ctx.translate(W/2+d,cy-d);ctx.rotate(-0.30);
+  ctx.drawImage(LOGO,-t/2,-t/2,t,t);
+  ctx.restore();
+  // esquina superior derecha
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=0.92;
+  ctx.drawImage(LOGO,W-70-150,70,150,150);
+  ctx.restore();
+}
 function cuadro(s){
   const neg=$('negocio').value.trim()||'Tu negocio', fol=$('folio').value.trim()||'JD-00000', c1=color;
   ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;fondo(c1);
@@ -247,6 +270,7 @@ function cuadro(s){
     ctx.globalAlpha=k;const fw=ctx.measureText(fol).width+70;ctx.fillStyle=hex(c1);
     ctx.beginPath();ctx.roundRect(W/2-fw/2,1610+dy,fw,80,40);ctx.fill();
     ctx.fillStyle=lum(c1)<160?'#fff':'#191919';ctx.fillText(fol,W/2,1652+dy)}
+  marcaAgua(s,cy,esc);
   ctx.globalAlpha=0.67;ctx.fillStyle='#fff';ctx.font='300 36px Poppins';
   if('letterSpacing' in ctx) ctx.letterSpacing='4px';
   ctx.fillText('JOART DIGITAL',W/2,H-110);if('letterSpacing' in ctx) ctx.letterSpacing='0px';
@@ -387,9 +411,10 @@ dr.addEventListener('drop',e=>leer(e.dataTransfer.files[0]));
 dr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}});
 $('color').oninput=e=>{color=fromHex(e.target.value);$('colorHex').textContent=e.target.value.toUpperCase();if(!playing)cuadro(7.5)};
 $('autoColor').onclick=()=>{if(!ren)return;color=colorDe(ren);$('color').value=hex(color);$('colorHex').textContent=hex(color).toUpperCase();if(!playing)cuadro(7.5)};
+$('marca').onchange=()=>{if(!playing){mostrarLienzo();cuadro(7.5)}};
 ['negocio','folio'].forEach(id=>$(id).addEventListener('input',()=>{if(!playing){mostrarLienzo();cuadro(7.5)}}));
 
-const fuentes=Promise.all(['300 36px Poppins','500 44px Poppins','700 100px Poppins'].map(f=>document.fonts.load(f))).catch(()=>{});
+const fuentes=Promise.all([...['300 36px Poppins','500 44px Poppins','700 100px Poppins'].map(f=>document.fonts.load(f)),logoListo]).catch(()=>{});
 fuentes.then(()=>cargar(MUESTRA,'Render de ejemplo cargado'));
 </script>
 </body>
