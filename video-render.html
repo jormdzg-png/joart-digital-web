@@ -110,7 +110,7 @@
     </div>
     <div class="field">
       <label class="chk" for="marca"><input type="checkbox" id="marca" checked>
-        <span>Marca de agua con el logo de Joart<small>Logo en la esquina y uno tenue sobre el exhibidor, para que se sepa que el diseño es nuestro si el video circula.</small></span></label>
+        <span>Logo de Joart en la esquina<small>Logo fijo arriba a la derecha, sin tapar el exhibidor, para que se sepa que el video es de Joart si circula.</small></span></label>
     </div>
     <div class="acts">
       <button type="button" class="btn" id="play">Vista previa</button>
@@ -219,16 +219,9 @@ function sombra(){
 }
 const LOGO=new Image();
 const logoListo=new Promise(r=>{LOGO.onload=()=>r(true);LOGO.onerror=()=>r(false);LOGO.src='logo-joart.png'});
-/* Marca de agua: logo nítido en la esquina + logo tenue e inclinado sobre el exhibidor (difícil de recortar). */
-function marcaAgua(s,cy,esc){
+/* Marca de agua: solo el logo en la esquina superior derecha, fuera del exhibidor para que el diseño se aprecie limpio. */
+function marcaAgua(){
   if(!$('marca').checked||!LOGO.complete||!LOGO.naturalWidth) return;
-  ctx.save();ctx.setTransform(1,0,0,1,0,0);
-  // tenue, centrado sobre el exhibidor, con una deriva lenta para que no se pueda tapar con un recuadro fijo
-  const d=Math.sin(s*0.5)*24*esc,t=520*esc;
-  ctx.globalAlpha=0.13;ctx.translate(W/2+d,cy-d);ctx.rotate(-0.30);
-  ctx.drawImage(LOGO,-t/2,-t/2,t,t);
-  ctx.restore();
-  // esquina superior derecha
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=0.92;
   ctx.drawImage(LOGO,W-70-150,70,150,150);
   ctx.restore();
@@ -270,7 +263,7 @@ function cuadro(s){
     ctx.globalAlpha=k;const fw=ctx.measureText(fol).width+70;ctx.fillStyle=hex(c1);
     ctx.beginPath();ctx.roundRect(W/2-fw/2,1610+dy,fw,80,40);ctx.fill();
     ctx.fillStyle=lum(c1)<160?'#fff':'#191919';ctx.fillText(fol,W/2,1652+dy)}
-  marcaAgua(s,cy,esc);
+  marcaAgua();
   ctx.globalAlpha=0.67;ctx.fillStyle='#fff';ctx.font='300 36px Poppins';
   if('letterSpacing' in ctx) ctx.letterSpacing='4px';
   ctx.fillText('JOART DIGITAL',W/2,H-110);if('letterSpacing' in ctx) ctx.letterSpacing='0px';
