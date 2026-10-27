@@ -413,6 +413,11 @@ form#composer{ background:rgba(7,10,20,.85) !important; border-top:1px solid var
 .modal{ background:#0C1222 !important; border:1px solid var(--hline) !important; border-radius:0 !important; color:var(--ink) !important; }
 .modal input{ background:var(--panel2) !important; border:1px solid rgba(242,204,143,.22) !important; color:var(--ink) !important; border-radius:0 !important; }
 .thinking .dot{ background:var(--terra) !important; }
+/* botones de sugerencia dentro de las respuestas */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.chip{font:500 12px var(--mono, monospace);padding:5px 10px;border:1px solid var(--terra, #E07A5F);background:transparent;color:var(--sand, #F2CC8F);cursor:pointer;border-radius:0;}
+.chip:hover{background:var(--terra, #E07A5F);color:#fff;}
+
 </style>
 </head>
 <body>
@@ -469,7 +474,7 @@ form#composer{ background:rgba(7,10,20,.85) !important; border-top:1px solid var
       <button data-q="ayuda">Ayuda</button>
     </div>
     <form id="composer">
-      <textarea id="input" rows="1" placeholder="Pregúntame algo… ej. «¿qué hay en imprimir?»"></textarea>
+      <textarea id="input" rows="1" placeholder="Pregúntame algo… ej. «¿cuánto debe Aviador?» y luego «¿y su teléfono?»"></textarea>
       <button type="submit" id="sendBtn">ENVIAR</button>
     </form>
   </div>
@@ -572,6 +577,7 @@ $('composer').addEventListener('submit', (e) => { e.preventDefault(); preguntar(
 $('input').addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); $('composer').requestSubmit(); } });
 $('input').addEventListener('input', () => { const el = $('input'); el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
 document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => preguntar(b.getAttribute('data-q'))));
+log.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if(b){ preguntar(b.getAttribute('data-q')); } });
 
 msg('assistant', (function(){ const h = new Date().getHours(); return (h < 12 ? '¡Buenos días' : h < 19 ? '¡Buenas tardes' : '¡Buenas noches') + ', Jorge!'; })() + ' ¿Qué necesitas saber? Pregúntame como a alguien del equipo, o toca un botón.');
 if(sheetKey){ cargarDatos(true); } else { estado(false, 'sin clave'); setTimeout(abrir, 400); }

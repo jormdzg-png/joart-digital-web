@@ -5,7 +5,7 @@
 - **Proyectos:** buscas al cliente, abres su ficha y generas la cotización o la carta de agradecimiento (media carta, firmada por Jorge Gama, para el empaque; menciona el mini exhibidor y el sticker de vinil de regalo) con lo registrado (cambias cantidades o detalles). PDF + mensaje de WhatsApp con enlace.
 - **Más:** configurador, asistente, video del render, láminas (solo lectura: lo que dice la pestaña «Láminas» del Sheets). Las cuentas bancarias de las cotizaciones están en CONFIG dentro de panel.html.
 
-**Asistente (`asistente.html`):** sin IA. Busca directo en los proyectos del Sheets (`asistente-motor.js`) y usa el motor de precios real para cotizar. Es instantáneo y no depende de ningún servicio externo.
+**Asistente (`asistente.html`):** sin IA. Busca directo en los proyectos del Sheets (`asistente-motor.js`) y usa el motor de precios real para cotizar. Es instantáneo y no depende de ningún servicio externo. Corrige errores de dedo, se acuerda de lo que se hablaba («¿y su teléfono?», «de esos, los atrasados»), dice «Entendí: …» en cada respuesta y, si no está seguro, pregunta con botones en vez de adivinar.
 
 **Video del render (`video-render.html`):** subes el render aprobado, escribes negocio y folio, y genera en el navegador un video vertical de 8 s armado cuadro por cuadro a 30 fps fijos (MP4 H.264 + AAC con WebCodecs y `vendor/mp4-muxer.js`; si el navegador no puede, graba en tiempo real) para mandarlo por WhatsApp. No usa servidor.
 
