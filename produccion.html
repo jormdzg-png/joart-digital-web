@@ -4,60 +4,143 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#14201e">
-<title>Producción Joart</title>
+<meta name="theme-color" content="#070A14">
+<title>Joart Producción</title>
 <style>
-:root{--bg:#f3f3f0;--card:#fff;--tx:#161a19;--mut:#6a706e;--bd:#e1e2dd;--ac:#0f766e;--ac-tx:#fff;--rojo:#b42318;--rojo-bg:#fde8e6;--amb:#a15c07;--amb-bg:#fdf0d5;--ok-bg:#dcf3ec;--gris-bg:#ecece8}
-@media (prefers-color-scheme:dark){:root{--bg:#121514;--card:#1b1f1e;--tx:#ecefee;--mut:#9aa19f;--bd:#2b312f;--ac:#2dd4bf;--ac-tx:#06231f;--rojo:#ff8a80;--rojo-bg:#3a1b18;--amb:#f5b94a;--amb-bg:#392a0c;--ok-bg:#12332d;--gris-bg:#262b2a}}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-#app{max-width:640px;margin:0 auto;padding:0 16px calc(32px + env(safe-area-inset-bottom))}
-header.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(14px + env(safe-area-inset-top)) 0 10px}
-header.top h1{font-size:20px;margin:0;letter-spacing:-.2px}
-header.top small{display:block;color:var(--mut);font-weight:400;font-size:13px}
-.ibtn{min-height:44px;min-width:44px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font:inherit;padding:0 14px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px}
-.tab{min-height:48px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font:inherit;font-weight:600}
-.tab[aria-selected=true]{background:var(--ac);color:var(--ac-tx);border-color:var(--ac)}
-.chips{display:flex;gap:8px;margin-bottom:10px}
-.chip{min-height:38px;border:1px solid var(--bd);background:transparent;color:var(--mut);border-radius:999px;padding:0 14px;font:inherit;font-size:14px}
-.chip[aria-pressed=true]{color:var(--tx);background:var(--card);border-color:var(--tx)}
-.card{width:100%;text-align:left;display:block;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px;color:inherit;font:inherit}
-.card .r1{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.card b{font-size:17px}
-.card .sub{color:var(--mut);font-size:14px;margin-top:2px}
-.badge{white-space:nowrap;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px}
-.b-rojo{background:var(--rojo-bg);color:var(--rojo)}.b-ambar{background:var(--amb-bg);color:var(--amb)}.b-gris{background:var(--gris-bg);color:var(--mut)}.b-ok{background:var(--ok-bg);color:var(--ac)}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.vacio{text-align:center;color:var(--mut);padding:40px 10px}
-.bloque{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px}
-.bloque h3{margin:0 0 8px;font-size:15px}
-.ayuda{margin:0 0 8px;color:var(--mut);font-size:14px}
-input[type=text],input[type=number],input[type=password],textarea{width:100%;min-height:50px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit;font-size:18px;padding:10px 12px}
-textarea{min-height:80px;font-size:16px;margin-top:8px}
-.grid4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.grid4 label{font-size:13px;color:var(--mut);display:block;margin-bottom:4px}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.seg button{min-height:52px;border:2px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:12px;font:inherit;font-weight:700}
-.seg button[data-v=OK][aria-pressed=true]{background:var(--ok-bg);border-color:var(--ac);color:var(--ac)}
-.seg button[data-v=FALLA][aria-pressed=true]{background:var(--rojo-bg);border-color:var(--rojo);color:var(--rojo)}
-.foto{display:flex;align-items:center;gap:12px}
-.foto img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid var(--bd)}
-.btn{width:100%;min-height:54px;border:0;border-radius:14px;background:var(--ac);color:var(--ac-tx);font:inherit;font-weight:700;font-size:17px}
-.btn.sec{background:var(--card);color:var(--tx);border:1px solid var(--bd);font-weight:600;font-size:15px;min-height:48px}
-.btn[disabled]{opacity:.4}
-.faltan{font-size:14px;color:var(--mut);margin:8px 2px 12px}
-.aviso{border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
-.guardado{font-size:13px;color:var(--mut);text-align:right;min-height:18px}
-.toast{position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));max-width:608px;margin:0 auto;background:#161a19;color:#fff;border-radius:14px;padding:14px 16px;z-index:9;box-shadow:0 6px 24px rgba(0,0,0,.3)}
-.toast.err{background:#b42318}
-.login{padding-top:18vh;text-align:center}
-.login h1{font-size:26px;margin:0 0 6px}.login p{color:var(--mut);margin:0 0 20px}
-[hidden]{display:none!important}
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+  :root{
+    --bg:#070A14; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
+    --line:rgba(242,204,143,.20); --line-hi:rgba(224,122,95,.65);
+    --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --disp:'Archivo Expanded','Inter',sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden]{ display:none !important; }
+  html{ color-scheme:dark; }
+  body{ margin:0; min-height:100vh; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
+    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); background-attachment:fixed; }
+  body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+    background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+    background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
+  .wrap{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; padding:14px 16px calc(150px + env(safe-area-inset-bottom)); }
+
+  /* ---------- encabezado ---------- */
+  .top{ display:flex; align-items:center; gap:12px; padding:6px 0 10px; }
+  .core-logo{ width:42px; height:42px; flex:none; }
+  .top b{ display:block; font:800 15px var(--disp); letter-spacing:.12em; }
+  .top small{ display:block; font:400 10.5px var(--mono); color:var(--mute); letter-spacing:.14em; text-transform:uppercase; margin-top:2px; }
+  .online{ margin-left:auto; display:flex; align-items:center; gap:7px; font:600 10px var(--mono); letter-spacing:.14em; color:var(--sage); }
+  .online i{ width:7px; height:7px; border-radius:50%; background:var(--sage); box-shadow:0 0 10px var(--sage); animation:pulso 2.2s ease-in-out infinite; }
+  .online.off{ color:var(--danger); } .online.off i{ background:var(--danger); box-shadow:0 0 10px var(--danger); animation:none; }
+  @keyframes pulso{ 50%{ opacity:.35; transform:scale(.8); } }
+  @keyframes gira{ to{ transform:rotate(360deg); } }
+  .saludo{ font:800 21px var(--disp); margin:6px 0 4px; }
+  .hint{ font-size:12px; color:var(--mute); line-height:1.45; }
+  .tools{ display:flex; justify-content:flex-end; gap:6px; margin:-4px 0 4px; }
+  .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:12px 8px; min-height:44px; }
+
+  .tabs{ display:flex; position:sticky; top:0; z-index:20; margin:8px -16px 14px; padding:0 8px; background:linear-gradient(var(--bg) 70%, transparent); backdrop-filter:blur(8px); }
+  .tab{ flex:1; background:none; border:none; color:var(--mute); padding:15px 6px; font:600 11.5px var(--mono); letter-spacing:.16em; cursor:pointer; position:relative; text-transform:uppercase; min-height:48px; }
+  .tab::after{ content:""; position:absolute; left:18%; right:18%; bottom:4px; height:2px; background:var(--terra); box-shadow:0 0 12px var(--terra); transform:scaleX(0); transition:transform .25s; }
+  .tab.on{ color:var(--sand); } .tab.on::after{ transform:scaleX(1); }
+  .pane{ animation:entra .35s ease both; }
+  @keyframes entra{ from{ opacity:0; transform:translateY(8px); } }
+
+  .chips{ display:flex; gap:8px; margin-bottom:12px; }
+  .chip{ min-height:40px; border:1px solid var(--line); background:transparent; color:var(--mute); padding:0 14px; font:600 10.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+  .chip.on{ color:var(--sand); border-color:var(--sand); background:rgba(242,204,143,.08); }
+
+  /* ---------- lista de pedidos ---------- */
+  .proj{ display:block; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:13px 14px; margin-bottom:8px; cursor:pointer; font:inherit; transition:all .2s; }
+  .proj:hover, .proj:active{ border-color:var(--line-hi); box-shadow:-3px 0 0 var(--terra); }
+  .proj .r1{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .proj b{ font:700 15px 'Inter',sans-serif; }
+  .proj .sub{ color:var(--mute); font-size:13px; margin-top:3px; line-height:1.35; }
+  .proj small{ display:block; font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); margin-top:6px; text-transform:uppercase; }
+  .tags{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .badge{ white-space:nowrap; font:600 10px var(--mono); letter-spacing:.12em; text-transform:uppercase; padding:4px 8px; border:1px solid; }
+  .b-rojo{ color:var(--danger); border-color:rgba(255,130,114,.5); background:rgba(255,130,114,.10); }
+  .b-ambar{ color:var(--sand); border-color:rgba(242,204,143,.45); background:rgba(242,204,143,.08); }
+  .b-gris{ color:var(--mute); border-color:rgba(142,150,178,.35); background:rgba(142,150,178,.07); }
+  .b-ok{ color:#B5DEC9; border-color:rgba(129,178,154,.6); background:rgba(129,178,154,.14); }
+  .vacio{ text-align:center; color:var(--mute); padding:44px 10px; font:400 12px var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+
+  /* ---------- paneles HUD ---------- */
+  .bloque{ position:relative; background:var(--panel); border:1px solid var(--line); padding:18px 16px 16px; margin-bottom:14px; backdrop-filter:blur(6px); }
+  .bloque::before, .bloque::after{ content:""; position:absolute; width:14px; height:14px; pointer-events:none; }
+  .bloque::before{ top:-1px; left:-1px; border-top:2px solid var(--terra); border-left:2px solid var(--terra); }
+  .bloque::after{ bottom:-1px; right:-1px; border-bottom:2px solid var(--sand); border-right:2px solid var(--sand); }
+  .bloque h3{ display:flex; align-items:center; gap:10px; font:600 10.5px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--sand); margin:0 0 14px; }
+  .bloque h3::before{ content:"//"; color:var(--terra); }
+  .bloque h3::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--line), transparent); }
+  .ayuda{ margin:0 0 10px; color:var(--mute); font-size:12.5px; line-height:1.45; }
+  .ayuda b{ color:var(--sand); }
+  input[type=text], input[type=number], input[type=password], textarea{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:12px; min-height:52px; font:500 18px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s, background .2s; }
+  textarea{ font-size:16px; min-height:84px; margin-top:8px; resize:vertical; }
+  input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
+  input:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18); background:rgba(255,255,255,.06); }
+  .grid4{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid4 label{ display:block; margin-bottom:5px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
+  .seg{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .seg button{ min-height:54px; border:1px solid rgba(242,204,143,.3); background:var(--panel2); color:var(--mute); font:600 12.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .seg button[data-v=OK][aria-pressed=true]{ background:rgba(129,178,154,.18); border-color:rgba(129,178,154,.8); color:#B5DEC9; box-shadow:0 0 18px rgba(129,178,154,.25); }
+  .seg button[data-v=FALLA][aria-pressed=true]{ background:rgba(255,130,114,.14); border-color:rgba(255,130,114,.7); color:var(--danger); box-shadow:0 0 18px rgba(255,130,114,.2); }
+  .foto{ display:flex; align-items:center; gap:12px; }
+  .foto img{ width:72px; height:72px; object-fit:cover; border:1px solid var(--line); }
+
+  /* ---------- botones ---------- */
+  .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:15px 14px; min-height:52px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; transition:all .2s;
+    clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .btn:hover{ background:rgba(242,204,143,.1); box-shadow:0 0 18px rgba(242,204,143,.2); }
+  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(224,122,95,.35); }
+  .btn.go:hover{ filter:brightness(1.1); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
+  .back{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:12px 0; min-height:44px; }
+  .ficha{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin:0 0 16px; }
+  .ficha-name{ font:800 20px var(--disp); margin:0 0 4px; }
+  .ficha-code{ font:600 11px var(--mono); letter-spacing:.16em; color:var(--sand); }
+  .ficha p{ margin:6px 0 0; color:var(--mute); font-size:13px; line-height:1.4; }
+  .guardado{ font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); text-align:right; min-height:16px; text-transform:uppercase; margin-bottom:6px; }
+  .aviso{ padding:10px 12px; font-size:12.5px; margin:0 0 14px; line-height:1.45; border:1px solid; }
+  .aviso.b-ok{ background:rgba(129,178,154,.10); border-color:rgba(129,178,154,.5); color:#B5DEC9; }
+  .aviso.b-ambar{ background:rgba(242,204,143,.08); border-color:rgba(242,204,143,.4); color:var(--sand); }
+
+  /* ---------- barra inferior ---------- */
+  .dock{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, rgba(7,10,20,.94) 38%); }
+  .dock .in{ max-width:640px; margin:0 auto; }
+  .dock .btn{ margin:0; padding:16px 14px; font-size:13.5px; }
+  .dock .estado{ font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--sage); text-align:center; margin-bottom:6px; text-transform:uppercase; }
+  .dock .estado.falta{ color:var(--danger); }
+
+  /* ---------- candado ---------- */
+  .lock{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:radial-gradient(700px 500px at 50% 30%, #1B2547, var(--bg) 70%); }
+  .lock .core-logo{ width:78px; height:78px; }
+  .lock h2{ font:800 18px var(--disp); letter-spacing:.14em; margin:0; }
+  .lock p{ font:400 12px var(--mono); letter-spacing:.08em; color:var(--mute); margin:10px 0 0; max-width:34ch; line-height:1.6; }
+  .lock-form{ display:flex; gap:8px; width:100%; max-width:320px; } .lock-form input{ flex:1; text-align:center; letter-spacing:.3em; }
+  .lock-form .btn{ width:auto; margin:0; padding:0 18px; }
+  .lock-err{ font:400 12px var(--mono); color:var(--danger); min-height:16px; }
+
+  .toast{ position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(100% - 32px); max-width:608px; background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:12px 16px; font:500 13px 'Inter',sans-serif; z-index:95; box-shadow:0 6px 24px rgba(0,0,0,.45); }
+  .toast.err{ border-color:rgba(255,130,114,.7); color:#FFB4A9; }
+  @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gCore" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF6DC"/><stop offset=".45" stop-color="#F2CC8F"/><stop offset="1" stop-color="#E07A5F" stop-opacity=".15"/></radialGradient>
+    <symbol id="reactor" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#F2CC8F" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 5"/>
+      <g class="rot" style="transform-origin:32px 32px;animation:gira 22s linear infinite"><path d="M32 6 A26 26 0 0 1 58 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/><path d="M32 58 A26 26 0 0 1 6 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/></g>
+      <circle cx="32" cy="32" r="19" fill="none" stroke="#F2CC8F" stroke-width="1.4" stroke-opacity=".8"/>
+      <g stroke="#F2CC8F" stroke-width="2" stroke-linecap="round" stroke-opacity=".9"><path d="M32 17v6M32 41v6M17 32h6M41 32h6"/></g>
+      <circle cx="32" cy="32" r="9" fill="url(#gCore)"/>
+    </symbol>
+  </defs>
+</svg>
+<div class="wrap" id="app"></div>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbw2wvTODLwGZ07v7XcyWJ9Eyf5L8xZMwiFjed0qN3iAXWGVJ27KWb48ju5oWsGyXJwXbA/exec'; // Apps Script → Implementar → URL de la aplicación web
 
@@ -68,8 +151,9 @@ const store = {
   set(k,v){ try { localStorage.setItem(k,v); } catch(_) {} },
   del(k){ try { localStorage.removeItem(k); } catch(_) {} }
 };
-const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, abierto: null, form: {}, preview: {} };
+const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, online: null, abierto: null, form: {}, preview: {}, errPin: '' };
 let saveTimer = null;
+const REACTOR = '<svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>';
 
 /* ───────── API ───────── */
 async function api(accion, extra){
@@ -94,10 +178,10 @@ async function cargar(){
   S.cargando = true; render();
   try {
     const j = await api('lista');
-    S.items = j.items; S.sinFolio = j.sinFolio || 0;
+    S.items = j.items; S.sinFolio = j.sinFolio || 0; S.online = true; S.errPin = '';
   } catch (e) {
-    if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; }
-    toast(e.message, true);
+    if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = e.message; }
+    else { S.online = false; toast(e.message, true); }
   }
   S.cargando = false; render();
 }
@@ -111,9 +195,10 @@ function render(){
 }
 
 function vistaLogin(app){
-  app.innerHTML = `<div class="login"><h1>Producción</h1><p>Escribe tu PIN para entrar</p>
-    <input id="pin" type="password" autocomplete="current-password" placeholder="PIN" style="text-align:center">
-    <div style="height:12px"></div><button class="btn" data-act="entrar">Entrar</button></div>`;
+  app.innerHTML = `<div class="lock">${REACTOR}
+    <div><h2>JOART PRODUCCIÓN</h2><p>Acceso restringido. Escribe tu PIN para entrar.</p></div>
+    <div class="lock-form"><input id="pin" type="password" autocomplete="current-password" placeholder="••••••"><button type="button" class="btn go" data-act="entrar">Entrar</button></div>
+    <div class="lock-err">${esc(S.errPin)}</div></div>`;
 }
 
 function badge(it){
@@ -122,6 +207,11 @@ function badge(it){
   if (it.dias === 0) return ['Hoy', 'ambar'];
   if (it.dias === 1) return ['Mañana', 'ambar'];
   return [it.fechaTxt, 'gris'];
+}
+
+function onlineHtml(){
+  if (S.online === false) return '<div class="online off"><i></i>SIN CONEXIÓN</div>';
+  return '<div class="online"><i></i>' + (S.cargando ? 'SINCRONIZANDO' : 'EN LÍNEA') + '</div>';
 }
 
 function vistaLista(app){
@@ -137,21 +227,25 @@ function vistaLista(app){
     if (it.nuevo) tags.push('<span class="badge b-gris">Nuevo / personalizado</span>');
     if (d.alerta) tags.push('<span class="badge b-rojo">Incidencia abierta</span>');
     if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">Esperando pago</span>');
-    return `<button class="card" data-act="abrir" data-folio="${esc(it.folio)}">
+    return `<button class="proj" data-act="abrir" data-folio="${esc(it.folio)}">
       <div class="r1"><div><b>${esc(it.negocio)}</b><div class="sub">${esc(it.tipo)}</div></div><span class="badge b-${cls}">${esc(txt)}</span></div>
-      <div class="sub">${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.grosor)}</div>
+      <small>${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.grosor)}</small>
       ${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}</button>`;
   }).join('');
+  const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
   app.innerHTML = `
-    <header class="top"><h1>Producción<small>${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</small></h1>
-      <div><button class="ibtn" data-act="recargar" aria-label="Actualizar">↻</button> <button class="ibtn" data-act="salir">Salir</button></div></header>
-    <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="${S.tab==='producir'}" data-act="tab" data-v="producir">Producir (${nP})</button>
-      <button class="tab" role="tab" aria-selected="${S.tab==='entregar'}" data-act="tab" data-v="entregar">Entregar (${nE})</button></div>
+    <div class="top">${REACTOR}<div><b>JOART PRODUCCIÓN</b><small>centro de piso</small></div>${onlineHtml()}</div>
+    <div class="saludo">Hola, Daniela</div><div class="hint">${esc(fecha)}</div>
+    <div class="tools"><button class="link" data-act="recargar">↻ Actualizar</button><button class="link" data-act="salir">Salir</button></div>
+    <div class="tabs">
+      <button class="tab ${S.tab==='producir'?'on':''}" data-act="tab" data-v="producir">Producir (${nP})</button>
+      <button class="tab ${S.tab==='entregar'?'on':''}" data-act="tab" data-v="entregar">Entregar (${nE})</button></div>
+    <div class="pane">
     ${S.tab === 'producir' ? `<div class="chips">
-      <button class="chip" aria-pressed="${S.filtro==='semana'}" data-act="filtro" data-v="semana">Esta semana</button>
-      <button class="chip" aria-pressed="${S.filtro==='todas'}" data-act="filtro" data-v="todas">Todas</button></div>` : ''}
-    ${S.cargando ? '<div class="vacio">Cargando…</div>' : (cards || '<div class="vacio">Nada pendiente aquí 🎉</div>')}`;
+      <button class="chip ${S.filtro==='semana'?'on':''}" data-act="filtro" data-v="semana">Esta semana</button>
+      <button class="chip ${S.filtro==='todas'?'on':''}" data-act="filtro" data-v="todas">Todas</button></div>` : ''}
+    ${S.cargando && !S.items.length ? '<div class="vacio">Cargando…</div>' : (cards || '<div class="vacio">Nada pendiente aquí</div>')}
+    </div>`;
 }
 
 /* ───────── Detalle ───────── */
@@ -182,8 +276,8 @@ function seg(k, f){
 function fotoBloque(tipo, f, flag, titulo){
   return `<div class="foto">
     ${S.preview[tipo] ? `<img src="${S.preview[tipo]}" alt="">` : ''}
-    <div style="flex:1"><button class="btn sec" data-act="foto" data-tipo="${tipo}">${f[flag] ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
-    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:6px 0 0">${f[flag] ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
+    <div style="flex:1"><button class="btn" data-act="foto" data-tipo="${tipo}">${f[flag] ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
+    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:8px 0 0">${f[flag] ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
     <input type="file" id="file-${tipo}" accept="image/*" capture="environment" hidden></div>`;
 }
 
@@ -192,12 +286,12 @@ function vistaDetalle(app){
   if (!it) { S.abierto = null; return render(); }
   const f = S.form;
   const [txt, cls] = badge(it);
-  const cab = `<header class="top"><button class="ibtn" data-act="volver">‹ Volver</button><span class="badge b-${cls}">${esc(txt)}</span></header>
-    <div style="margin:0 2px 12px"><b style="font-size:20px">${esc(it.negocio)}</b>
-    <div class="sub" style="color:var(--mut)">${esc(it.folio)} · ${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}</div></div>`;
+  const cab = `<button class="back" data-act="volver">‹ Volver</button>
+    <div class="ficha"><div><div class="ficha-name">${esc(it.negocio)}</div><div class="ficha-code">${esc(it.folio)}</div>
+    <p>${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}</p></div><span class="badge b-${cls}">${esc(txt)}</span></div>`;
 
   if (it.etapa === 'producir') {
-    app.innerHTML = cab + `
+    app.innerHTML = `<div class="pane">` + cab + `
       <div class="guardado" id="guardado"></div>
       <section class="bloque"><h3>1 · Conteo</h3><p class="ayuda">Según el pedido: <b>${it.esperado}</b> piezas</p>
         <input id="contadas" type="number" inputmode="numeric" min="0" placeholder="Piezas contadas" value="${esc(f.contadas)}">
@@ -211,45 +305,47 @@ function vistaDetalle(app){
         <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
         <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div>
         <div><label for="peso">Peso (kg)</label><input id="peso" type="number" inputmode="decimal" min="0" value="${esc(f.peso)}"></div></div></section>
-      <div class="faltan" id="faltan"></div>
-      <button class="btn" id="btnCompletar" data-act="completar" disabled>Completar producción</button>
-      <div style="height:10px"></div>${bloqueProblema(it)}`;
+      ${bloqueProblema(it)}</div>
+      <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
+        <button class="btn go" id="btnCompletar" data-act="completar" disabled>Completar producción</button></div></div>`;
   } else {
-    app.innerHTML = cab + `
+    app.innerHTML = `<div class="pane">` + cab + `
       <div class="guardado" id="guardado"></div>
       ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
                     : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado.</div>'}
       <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm · ${esc(f.peso)} kg</p></section>
       <section class="bloque"><h3>1 · Número de guía</h3><input id="guia" type="text" autocapitalize="characters" placeholder="Número de la guía impresa" value="${esc(f.guia)}"></section>
       <section class="bloque"><h3>2 · Foto del paquete cerrado con la guía</h3>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
-      <div class="faltan" id="faltan"></div>
-      <button class="btn" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button>
-      <div style="height:10px"></div>${bloqueProblema(it)}`;
+      ${bloqueProblema(it)}</div>
+      <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
+        <button class="btn go" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button></div></div>`;
   }
   actualizarGate();
 }
 function bloqueProblema(){
-  return `<button class="btn sec" data-act="problema">⚠ Reportar un problema</button>
+  return `<button class="btn" data-act="problema">⚠ Reportar un problema</button>
     <div id="probWrap" hidden><textarea id="probTxt" placeholder="Describe el problema (se avisa a Jorge)"></textarea>
-    <div style="height:8px"></div><button class="btn sec" data-act="enviarProblema">Enviar aviso</button></div>`;
+    <div style="height:8px"></div><button class="btn" data-act="enviarProblema">Enviar aviso</button></div>`;
 }
 
 function actualizarGate(){
   const it = S.items.find(i => i.folio === S.abierto); if (!it) return;
   const f = S.form;
+  let m, txt;
   if (it.etapa === 'producir') {
     const hay = f.contadas !== '' && f.contadas != null && Number(f.contadas) !== it.esperado;
     const w = $('#notaWrap'); if (w) w.hidden = !hay;
-    const m = faltantes(it, f);
+    m = faltantes(it, f);
     $('#btnCompletar').disabled = m.length > 0;
-    $('#faltan').textContent = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
+    txt = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
     if (f.impresion === 'FALLA' || f.corte === 'FALLA' || f.armado === 'FALLA')
-      $('#faltan').textContent += ' · Hay una falla marcada: repórtala abajo y corrígela antes de completar.';
+      txt += ' · Hay una falla marcada: repórtala y corrígela antes de completar';
   } else {
-    const m = faltantesEntrega(it, f);
+    m = faltantesEntrega(it, f);
     $('#btnEntregar').disabled = m.length > 0;
-    $('#faltan').textContent = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
+    txt = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
   }
+  const el = $('#faltan'); el.textContent = txt; el.className = 'estado' + (m.length ? ' falta' : '');
 }
 
 /* ───────── Guardado ───────── */
@@ -324,7 +420,7 @@ document.addEventListener('click', async ev => {
   if (a === 'entrar') {
     const v = ($('#pin').value || '').trim(); if (!v) return;
     S.pin = v; store.set('jp_pin', v); cargar();
-  } else if (a === 'salir') { store.del('jp_pin'); S.pin = ''; S.items = []; render(); }
+  } else if (a === 'salir') { store.del('jp_pin'); S.pin = ''; S.items = []; S.online = null; render(); }
   else if (a === 'recargar') cargar();
   else if (a === 'tab') { S.tab = b.dataset.v; render(); }
   else if (a === 'filtro') { S.filtro = b.dataset.v; render(); }
