@@ -504,7 +504,7 @@ function aplicarDictado(texto){
   const poner = (id, v) => { const el = $(id); el.value = v; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); marcados.push(id); };
   if(r.cliente) poner("fCliente", r.cliente);
   if(r.entrega) poner("fEntrega", r.entrega); if(r.caras) poner("fCaras", r.caras); if(r.factura) poner("fFactura", r.factura);
-  const tel = limpio.match(/(?:\+?\s?52\s?1?\s?)?\b(\d{2}[\s-]?\d{4}[\s-]?\d{4})\b/); if(tel && !$("fContacto").value.trim()) poner("fContacto", tel[1].replace(/[\s-]/g, ""));
+  const tel = limpio.match(/(?:\+?\s?52\s?1?\s?)?\b(\d{2}[\s-]?\d{4}[\s-]?\d{4})\b/); if(tel && !$("fContacto").value.trim()){ poner("fContacto", tel[1].replace(/[\s-]/g, "")); actualizarZonaPorLada(); }
   if(r.items.length){
     items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
       if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; it.tipoPers = x.tipoPers || "niveles"; }
@@ -568,7 +568,7 @@ function mostrarRegistrado(res, order){
 }
 $("regBtn").addEventListener("click", registrar);
 $("againBtn").addEventListener("click", () => {
-  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
+  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fZona").dataset.auto = "0"; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
   archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); $("dictOut").hidden = true;
   $("doneBox").hidden = true; $("formNuevo").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); actualizarDock();
 });
@@ -795,6 +795,66 @@ async function iniciarApp(){
 }
 const ZONAS = ["Aguascalientes","Baja California","Baja California Sur","Campeche","CDMX","Chiapas","Chihuahua","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Monterrey","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
 $("listaZonas").innerHTML = ZONAS.map(z => `<option value="${z}">`).join("");
+
+// ---- Estado automático según la lada del WhatsApp ----
+// Lada de 2 dígitos: 55/56 CDMX, 33 Jalisco, 81 Nuevo León. Lada de 3 dígitos: tabla por estado.
+// Si la lada no está en la tabla, la zona queda vacía (no se adivina).
+const LADAS_ESTADO = {
+  "Aguascalientes": "449 465",
+  "Baja California": "664 686 646 665 661",
+  "Baja California Sur": "612 624 613 615",
+  "Campeche": "981 938 982",
+  "Chiapas": "961 962 963 967 916 919",
+  "Chihuahua": "614 656 625 639 627 635",
+  "Coahuila": "844 871 866 878 877 861 872",
+  "Colima": "312 313 314",
+  "Durango": "618 677",
+  "Estado de México": "722 712 714 726 728 729 591 593 595 597 599",
+  "Guanajuato": "477 462 461 473 464 472 411 415 418 456 469 476",
+  "Guerrero": "744 747 755 762 733",
+  "Hidalgo": "771 773 775 761 789 738",
+  "Jalisco": "322 341 378 376 474 317 357",
+  "Michoacán": "443 452 351 434 453 753 715",
+  "Morelos": "777 735 734 731 739",
+  "Nayarit": "311 323 327 329",
+  "Nuevo León": "821 826 828",
+  "Oaxaca": "951 971 972 958 954 953 287",
+  "Puebla": "222 221 231 238 244 243",
+  "Querétaro": "442 427 441",
+  "Quintana Roo": "998 984 983 987",
+  "San Luis Potosí": "444 481 487 488",
+  "Sinaloa": "667 669 668 687 673",
+  "Sonora": "662 644 631 642 653 622 638",
+  "Tabasco": "993 937 933 914 934",
+  "Tamaulipas": "833 868 899 867 834 831",
+  "Tlaxcala": "246 241",
+  "Veracruz": "229 228 271 272 921 922 782 783 232",
+  "Yucatán": "999 985 986",
+  "Zacatecas": "492 493 437 433"
+};
+const MAPA_LADAS = (() => {
+  const m = { "55": "CDMX", "56": "CDMX", "33": "Jalisco", "81": "Nuevo León" };
+  Object.keys(LADAS_ESTADO).forEach(est => LADAS_ESTADO[est].split(" ").forEach(l => { m[l] = est; }));
+  return m;
+})();
+function zonaPorTelefono(tel){
+  let d = String(tel || "").replace(/\D/g, "");
+  if(d.startsWith("00")) d = d.slice(2);
+  if(d.startsWith("044") || d.startsWith("045")) d = d.slice(3);
+  if(d.length === 13 && d.startsWith("521")) d = d.slice(3);
+  else if(d.length === 12 && d.startsWith("52")) d = d.slice(2);
+  else if(d.length === 11 && d.startsWith("1")) return "Estados Unidos";
+  if(d.length < 3 || d.length > 10) return "";
+  return MAPA_LADAS[d.slice(0, 2)] || MAPA_LADAS[d.slice(0, 3)] || "";
+}
+// Rellena "Estado / ciudad" solo si está vacío o si lo puso este mismo automatismo (lo que escribas a mano no se pisa).
+function actualizarZonaPorLada(){
+  const z = $("fZona"); if(z.value.trim() && z.dataset.auto !== "1") return;
+  const est = zonaPorTelefono($("fContacto").value);
+  z.value = est; z.dataset.auto = est ? "1" : "0"; actualizarDock();
+}
+$("fContacto").addEventListener("input", actualizarZonaPorLada);
+$("fZona").addEventListener("input", () => { $("fZona").dataset.auto = "0"; });
 pintarItems(); actualizarDock();
 
 // ===================== COTIZACIÓN EN PDF =====================
