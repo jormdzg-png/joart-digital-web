@@ -122,6 +122,13 @@
   .lock-form .btn{ width:auto; margin:0; padding:0 18px; }
   .lock-err{ font:400 12px var(--mono); color:var(--danger); min-height:16px; }
 
+  select{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:12px; min-height:52px; font:500 16px 'Inter',sans-serif; border-radius:0; }
+  select:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16); }
+  select option{ background:#10172C; color:var(--ink); }
+  .aviso .link{ display:block; padding:10px 0 0; min-height:0; }
+  .nec{ font:400 10px var(--mono); letter-spacing:.08em; color:var(--mute); text-transform:none; margin-left:6px; }
+  .opts{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .gap{ height:12px; }
   .toast{ position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(100% - 32px); max-width:608px; background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:12px 16px; font:500 13px 'Inter',sans-serif; z-index:95; box-shadow:0 6px 24px rgba(0,0,0,.45); }
   .toast.err{ border-color:rgba(255,130,114,.7); color:#FFB4A9; }
   @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
@@ -151,7 +158,7 @@ const store = {
   set(k,v){ try { localStorage.setItem(k,v); } catch(_) {} },
   del(k){ try { localStorage.removeItem(k); } catch(_) {} }
 };
-const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, online: null, abierto: null, form: {}, preview: {}, errPin: '' };
+const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
 let saveTimer = null;
 const REACTOR = '<svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>';
 
@@ -178,7 +185,7 @@ async function cargar(){
   S.cargando = true; render();
   try {
     const j = await api('lista');
-    S.items = j.items; S.sinFolio = j.sinFolio || 0; S.online = true; S.errPin = '';
+    S.items = j.items; S.sinFolio = j.sinFolio || 0; S.laminas = j.laminas || null; S.online = true; S.errPin = '';
   } catch (e) {
     if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = e.message; }
     else { S.online = false; toast(e.message, true); }
@@ -214,6 +221,32 @@ function onlineHtml(){
   return '<div class="online"><i></i>' + (S.cargando ? 'SINCRONIZANDO' : 'EN LÍNEA') + '</div>';
 }
 
+function conteoPendiente(){
+  const L = S.laminas; if (!L) return '';
+  if (L.dias === null) return 'Todavía no hay un conteo de láminas registrado';
+  if (new Date().getDay() === 5 && L.dias !== 0) return 'Hoy es viernes: toca el conteo de láminas';
+  if (L.dias >= 8) return 'Hace ' + L.dias + ' días que no se cuentan las láminas';
+  return '';
+}
+
+function vistaMas(){
+  const L = S.laminas;
+  let lam;
+  if (!L || !L.cols.length) lam = '<p class="ayuda">No pude leer la pestaña de láminas.</p>';
+  else lam = `<p class="ayuda">Cuenta las láminas completas que hay de cada grosor y escribe el número. Último conteo: <b>${esc(L.ultimo || 'ninguno')}</b></p>
+    <div class="grid4">${L.cols.map(c => `<div><label for="lam-${c.i}">${esc(c.grosor)}<span class="nec">antes: ${esc(c.tengo)}</span></label>
+      <input id="lam-${c.i}" type="number" inputmode="numeric" min="0" placeholder="0" value="${esc(S.conteo[c.i])}"></div>`).join('')}</div>
+    <div class="gap"></div><button class="btn go" data-act="guardarConteo">Guardar conteo</button>`;
+  const tipos = [['pago','Falta pago'],['factura','Falta factura'],['laminas','Faltan láminas o material'],['cliente','Un cliente preguntó'],['otro','Otro']];
+  const opts = S.items.map(i => `<option value="${esc(i.folio)}" ${S.aviso.folio === i.folio ? 'selected' : ''}>${esc(i.negocio)} · ${esc(i.folio)}</option>`).join('');
+  return `<section class="bloque"><h3>Conteo de láminas</h3>${lam}</section>
+    <section class="bloque"><h3>Avisar a Jorge</h3>
+      <div class="opts">${tipos.map(t => `<button class="chip ${S.aviso.tipo === t[0] ? 'on' : ''}" data-act="avTipo" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>
+      <select id="avFolio"><option value="">Sin pedido en particular</option>${opts}</select>
+      <textarea id="avNota" placeholder="Nota (obligatoria si eliges Otro)">${esc(S.aviso.nota)}</textarea>
+      <div class="gap"></div><button class="btn go" data-act="enviarAviso">Enviar aviso</button></section>`;
+}
+
 function vistaLista(app){
   const hastaDom = (7 - new Date().getDay()) % 7;
   const base = S.items.filter(i => i.etapa === S.tab);
@@ -225,27 +258,32 @@ function vistaLista(app){
     const d = it.datos || {};
     const tags = [];
     if (it.nuevo) tags.push('<span class="badge b-gris">Nuevo / personalizado</span>');
+    if (it.requiereFactura) tags.push('<span class="badge b-gris">🧾 Requiere factura</span>');
     if (d.alerta) tags.push('<span class="badge b-rojo">Incidencia abierta</span>');
     if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">Esperando pago</span>');
+    if (it.etapa === 'entregar' && !it.liberado && it.listoHace !== null) tags.push(`<span class="badge ${it.listoHace >= 12 ? 'b-rojo' : 'b-ambar'}">Listo hace ${it.listoHace} d</span>`);
     return `<button class="proj" data-act="abrir" data-folio="${esc(it.folio)}">
       <div class="r1"><div><b>${esc(it.negocio)}</b><div class="sub">${esc(it.tipo)}</div></div><span class="badge b-${cls}">${esc(txt)}</span></div>
       <small>${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.grosor)}</small>
       ${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}</button>`;
   }).join('');
   const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const pend = conteoPendiente();
+  const banner = (pend && S.tab !== 'mas') ? `<div class="aviso b-ambar">🧱 ${esc(pend)}<button class="link" data-act="tab" data-v="mas">Hacer el conteo →</button></div>` : '';
+  const cuerpo = S.tab === 'mas' ? vistaMas() : `${S.tab === 'producir' ? `<div class="chips">
+      <button class="chip ${S.filtro==='semana'?'on':''}" data-act="filtro" data-v="semana">Esta semana</button>
+      <button class="chip ${S.filtro==='todas'?'on':''}" data-act="filtro" data-v="todas">Todas</button></div>` : ''}
+    ${S.cargando && !S.items.length ? '<div class="vacio">Cargando…</div>' : (cards || '<div class="vacio">Nada pendiente aquí</div>')}`;
   app.innerHTML = `
     <div class="top">${REACTOR}<div><b>JOART PRODUCCIÓN</b><small>centro de piso</small></div>${onlineHtml()}</div>
     <div class="saludo">Hola, Daniela</div><div class="hint">${esc(fecha)}</div>
     <div class="tools"><button class="link" data-act="recargar">↻ Actualizar</button><button class="link" data-act="salir">Salir</button></div>
     <div class="tabs">
       <button class="tab ${S.tab==='producir'?'on':''}" data-act="tab" data-v="producir">Producir (${nP})</button>
-      <button class="tab ${S.tab==='entregar'?'on':''}" data-act="tab" data-v="entregar">Entregar (${nE})</button></div>
-    <div class="pane">
-    ${S.tab === 'producir' ? `<div class="chips">
-      <button class="chip ${S.filtro==='semana'?'on':''}" data-act="filtro" data-v="semana">Esta semana</button>
-      <button class="chip ${S.filtro==='todas'?'on':''}" data-act="filtro" data-v="todas">Todas</button></div>` : ''}
-    ${S.cargando && !S.items.length ? '<div class="vacio">Cargando…</div>' : (cards || '<div class="vacio">Nada pendiente aquí</div>')}
-    </div>`;
+      <button class="tab ${S.tab==='entregar'?'on':''}" data-act="tab" data-v="entregar">Entregar (${nE})</button>
+      <button class="tab ${S.tab==='mas'?'on':''}" data-act="tab" data-v="mas">Más</button></div>
+    ${banner}
+    <div class="pane">${cuerpo}</div>`;
 }
 
 /* ───────── Detalle ───────── */
@@ -288,7 +326,7 @@ function vistaDetalle(app){
   const [txt, cls] = badge(it);
   const cab = `<button class="back" data-act="volver">‹ Volver</button>
     <div class="ficha"><div><div class="ficha-name">${esc(it.negocio)}</div><div class="ficha-code">${esc(it.folio)}</div>
-    <p>${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}</p></div><span class="badge b-${cls}">${esc(txt)}</span></div>`;
+    <p>${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}${it.requiereFactura ? '<br>🧾 Requiere factura' : ''}</p></div><span class="badge b-${cls}">${esc(txt)}</span></div>`;
 
   if (it.etapa === 'producir') {
     app.innerHTML = `<div class="pane">` + cab + `
@@ -305,7 +343,7 @@ function vistaDetalle(app){
         <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
         <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div>
         <div><label for="peso">Peso (kg)</label><input id="peso" type="number" inputmode="decimal" min="0" value="${esc(f.peso)}"></div></div></section>
-      ${bloqueProblema(it)}</div>
+      ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnCompletar" data-act="completar" disabled>Completar producción</button></div></div>`;
   } else {
@@ -316,11 +354,19 @@ function vistaDetalle(app){
       <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm · ${esc(f.peso)} kg</p></section>
       <section class="bloque"><h3>1 · Número de guía</h3><input id="guia" type="text" autocapitalize="characters" placeholder="Número de la guía impresa" value="${esc(f.guia)}"></section>
       <section class="bloque"><h3>2 · Foto del paquete cerrado con la guía</h3>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
-      ${bloqueProblema(it)}</div>
+      ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button></div></div>`;
   }
   actualizarGate();
+}
+function bloqueAvisos(it){
+  const b = [];
+  if (it.etapa === 'entregar' && !it.liberado) b.push(['pago', '💬 Recordarle a Jorge: falta el pago']);
+  if (it.requiereFactura) b.push(['factura', '💬 Recordarle a Jorge: falta la factura']);
+  if (!b.length) return '';
+  return `<section class="bloque"><h3>Avisar a Jorge</h3>` +
+    b.map(x => `<button class="btn" style="margin-bottom:10px" data-act="avisoRapido" data-tipo="${x[0]}" data-folio="${esc(it.folio)}">${x[1]}</button>`).join('') + `</section>`;
 }
 function bloqueProblema(){
   return `<button class="btn" data-act="problema">⚠ Reportar un problema</button>
@@ -438,6 +484,40 @@ document.addEventListener('click', async ev => {
     try { await api('incidencia', { folio: S.abierto, texto: t }); toast('Aviso enviado a Jorge ✓'); $('#probTxt').value = ''; $('#probWrap').hidden = true; }
     catch (e) { toast(e.message, true); }
   }
+  else if (a === 'avTipo') {
+    S.aviso.tipo = b.dataset.v;
+    document.querySelectorAll('[data-act=avTipo]').forEach(x => x.classList.toggle('on', x.dataset.v === S.aviso.tipo));
+  }
+  else if (a === 'enviarAviso') {
+    if (!S.aviso.tipo) return toast('Elige qué quieres avisar', true);
+    if (S.aviso.tipo === 'otro' && !S.aviso.nota.trim()) return toast('Escribe el aviso', true);
+    b.disabled = true;
+    try {
+      const j = await api('aviso', { tipo: S.aviso.tipo, folio: S.aviso.folio, nota: S.aviso.nota });
+      toast(j.repetido ? 'Ya le avisaste hace poco' : 'Aviso enviado a Jorge ✓');
+      S.aviso = { tipo: '', folio: '', nota: '' }; render();
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  }
+  else if (a === 'avisoRapido') {
+    b.disabled = true;
+    try {
+      const j = await api('aviso', { tipo: b.dataset.tipo, folio: b.dataset.folio });
+      toast(j.repetido ? 'Ya le avisaste hace poco' : 'Aviso enviado a Jorge ✓');
+    } catch (e) { toast(e.message, true); }
+    b.disabled = false;
+  }
+  else if (a === 'guardarConteo') {
+    const L = S.laminas; if (!L) return;
+    const sin = L.cols.filter(c => S.conteo[c.i] === undefined || String(S.conteo[c.i]).trim() === '');
+    if (sin.length) return toast('Falta contar: ' + sin.map(c => c.grosor).join(', '), true);
+    b.disabled = true;
+    try {
+      const j = await api('laminas_guardar', { valores: S.conteo });
+      S.laminas = j.laminas; S.conteo = {};
+      toast(j.faltan && j.faltan.length ? 'Conteo guardado ✓ Jorge ya sabe que faltan láminas' : 'Conteo guardado ✓ Jorge ya recibió el aviso');
+      render();
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  }
   else if (a === 'completar' || a === 'entregar') {
     b.disabled = true;
     try {
@@ -450,12 +530,16 @@ document.addEventListener('click', async ev => {
 });
 
 document.addEventListener('input', ev => {
+  const mm = /^lam-(\d+)$/.exec(ev.target.id || '');
+  if (mm) { S.conteo[mm[1]] = ev.target.value; return; }
+  if (ev.target.id === 'avNota') { S.aviso.nota = ev.target.value; return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
   if (['contadas','notaConteo','alto','ancho','largo','peso','guia'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
   }
 });
 document.addEventListener('change', ev => {
+  if (ev.target.id === 'avFolio') { S.aviso.folio = ev.target.value; return; }
   const m = /^file-(final|entrega)$/.exec(ev.target.id || '');
   if (m && ev.target.files && ev.target.files[0]) subirFoto(m[1], ev.target.files[0]);
 });
