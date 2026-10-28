@@ -10,8 +10,8 @@
   @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
   :root{
     --bg:#070A14; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
-    --line:rgba(242,204,143,.20); --line-hi:rgba(224,122,95,.65);
-    --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
+    --line:rgba(242,204,143,.20); --line-hi:rgba(var(--terra-rgb),.65);
+    --terra-rgb:224,122,95; --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
     --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     --disp:'Archivo Expanded','Inter',sans-serif;
   }
@@ -19,7 +19,7 @@
   [hidden]{ display:none !important; }
   html{ color-scheme:dark; }
   body{ margin:0; min-height:100vh; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
-    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); background-attachment:fixed; }
+    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(var(--terra-rgb),.10), transparent 60%), var(--bg); background-attachment:fixed; }
   body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
     background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
     background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
@@ -79,7 +79,7 @@
   input[type=text], input[type=number], input[type=password], textarea{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:12px; min-height:52px; font:500 18px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s, background .2s; }
   textarea{ font-size:16px; min-height:84px; margin-top:8px; resize:vertical; }
   input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
-  input:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18); background:rgba(255,255,255,.06); }
+  input:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(var(--terra-rgb),.16), 0 0 18px rgba(var(--terra-rgb),.18); background:rgba(255,255,255,.06); }
   .grid4{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .grid4 label{ display:block; margin-bottom:5px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
   .seg{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -93,7 +93,7 @@
   .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:15px 14px; min-height:52px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; transition:all .2s;
     clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
   .btn:hover{ background:rgba(242,204,143,.1); box-shadow:0 0 18px rgba(242,204,143,.2); }
-  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(224,122,95,.35); }
+  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(var(--terra-rgb),.35); }
   .btn.go:hover{ filter:brightness(1.1); }
   .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
   .back{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:12px 0; min-height:44px; }
@@ -123,12 +123,25 @@
   .lock-err{ font:400 12px var(--mono); color:var(--danger); min-height:16px; }
 
   select{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:12px; min-height:52px; font:500 16px 'Inter',sans-serif; border-radius:0; }
-  select:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16); }
+  select:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(var(--terra-rgb),.16); }
   select option{ background:#10172C; color:var(--ink); }
   .aviso .link{ display:block; padding:10px 0 0; min-height:0; }
   .nec{ font:400 10px var(--mono); letter-spacing:.08em; color:var(--mute); text-transform:none; margin-left:6px; }
   .opts{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
   .gap{ height:12px; }
+  input[type=date]{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:12px; min-height:52px; font:500 16px 'Inter',sans-serif; border-radius:0; color-scheme:dark; }
+  input[type=date]:focus{ outline:none; border-color:var(--terra); }
+  .frase{ margin:2px 0 6px; font-size:13px; line-height:1.45; color:var(--sand); }
+  .frase.suya{ font-style:italic; }
+  .cumple{ margin:10px 0 0; padding:12px; border:1px solid rgba(242,204,143,.5); background:rgba(242,204,143,.10); color:var(--sand); font-size:14px; line-height:1.45; }
+  .sw{ width:46px; height:46px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+  .sw[aria-pressed=true]{ border-color:var(--ink); box-shadow:0 0 0 3px rgba(236,232,214,.18); }
+  .emo{ min-width:46px; min-height:46px; font-size:22px; background:var(--panel2); border:1px solid var(--line); cursor:pointer; color:var(--mute); font-family:inherit; }
+  .emo[aria-pressed=true]{ border-color:var(--sand); background:rgba(242,204,143,.12); color:var(--ink); }
+  .nota-pie{ font-size:11.5px; color:var(--mute); line-height:1.5; margin:4px 2px 0; }
+  .bienv{ position:relative; margin:0 0 14px; padding:14px 14px 6px; border:1px solid rgba(129,178,154,.55); background:rgba(129,178,154,.10); color:#CFE8DB; font-size:13.5px; line-height:1.55; }
+  .bienv b{ display:block; font:800 15px var(--disp); margin-bottom:6px; color:var(--ink); }
+  .bienv .link{ display:block; margin-left:auto; padding:10px 0; min-height:44px; }
   .toast{ position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:calc(100% - 32px); max-width:608px; background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:12px 16px; font:500 13px 'Inter',sans-serif; z-index:95; box-shadow:0 6px 24px rgba(0,0,0,.45); }
   .toast.err{ border-color:rgba(255,130,114,.7); color:#FFB4A9; }
   @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
@@ -158,7 +171,19 @@ const store = {
   set(k,v){ try { localStorage.setItem(k,v); } catch(_) {} },
   del(k){ try { localStorage.removeItem(k); } catch(_) {} }
 };
-const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
+/* ───────── Mi espacio (preferencias de Daniela; se guardan solo en este dispositivo) ───────── */
+const PREF_DEF = { nombre: 'Daniela', emoji: '', color: 'terra', frase: '', inicio: 'producir', orden: 'fecha', cumple: '', sobrio: false };
+const COLORES = { terra: ['#E07A5F', '#C4603F', '224,122,95', 'Terracota'], sage: ['#81B29A', '#5E9A7E', '129,178,154', 'Salvia'], sand: ['#F2CC8F', '#D9B06A', '242,204,143', 'Arena'],
+  rosa: ['#E58FA8', '#C96D8B', '229,143,168', 'Rosa'], lila: ['#A99BE0', '#8677C9', '169,155,224', 'Lila'], cielo: ['#6FB3E0', '#4C93C4', '111,179,224', 'Cielo'] };
+const EMOJIS = ['', '🌸', '☕', '🌿', '✨', '🎧', '🦋', '🌙', '🐱', '🍓'];
+function leerPref(){ try { const o = JSON.parse(store.get('jp_pref') || '{}'); return Object.assign({}, PREF_DEF, o && typeof o === 'object' ? o : {}); } catch (_) { return Object.assign({}, PREF_DEF); } }
+let P = leerPref();
+function aplicarPref(){ const c = COLORES[P.color] || COLORES.terra, r = document.documentElement.style; r.setProperty('--terra', c[0]); r.setProperty('--terra-d', c[1]); r.setProperty('--terra-rgb', c[2]); }
+function guardarPref(){ store.set('jp_pref', JSON.stringify(P)); aplicarPref(); }
+const nom = () => (String(P.nombre || '').trim() || 'Daniela');
+aplicarPref();
+
+const S = { pin: store.get('jp_pin') || '', items: [], tab: (P.inicio === 'entregar' ? 'entregar' : 'producir'), filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
 let saveTimer = null;
 const REACTOR = '<svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>';
 
@@ -174,12 +199,35 @@ async function api(accion, extra){
   if (!j.ok) throw new Error(j.error || 'Error desconocido');
   return j;
 }
+function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+function saludoHora(){ const h = new Date().getHours(); return h < 12 ? 'Buenos días' : (h < 19 ? 'Buenas tardes' : 'Buenas noches'); }
+function esCumple(){
+  if (!P.cumple || P.cumple.length < 10) return false;
+  const d = new Date(), mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  return P.cumple.slice(5) === mm + '-' + dd;
+}
+const LINEAS = ['Un paso a la vez: todo lo de hoy se puede.', 'Toma agua y date tu tiempo.', 'Lo que haces aquí llega a manos de alguien más. Gracias por cuidarlo.',
+  'Si algo no cuadra, avisa. Nadie tiene que adivinar.', 'Tu ojo para los detalles es lo que hace que todo salga bien.', 'Lo que hoy no alcance, mañana se acomoda. Respira.', 'Qué bueno tenerte en el equipo.'];
+function lineaDelDia(){
+  const d = new Date(), dia = d.getDay();
+  if (dia === 1) return 'Semana nueva. Con calma y buen ritmo.';
+  if (dia === 5) return 'Ya casi es fin de semana. Cierra bonito.';
+  const n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+  return LINEAS[n % LINEAS.length];
+}
+function celebra(tipo, negocio){
+  const x = negocio || 'el pedido', n = nom();
+  const a = tipo === 'completar'
+    ? ['Qué buen trabajo con ' + x + ', ' + n + '.', 'Así se hace, ' + n + ': ' + x + ' quedó listo.', x + ' terminado. Se nota el cuidado, ' + n + '.']
+    : [x + ' ya va en camino. Gracias, ' + n + '.', 'Entregado. Un pendiente menos, ' + n + '.', 'Listo, ' + n + '. ' + x + ' salió a tiempo.'];
+  return pick(a);
+}
 function toast(msg, err){
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : '');
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), err ? 4500 : 2500);
+  setTimeout(() => t.remove(), err ? 4500 : 3200);
 }
 async function cargar(){
   S.cargando = true; render();
@@ -187,7 +235,8 @@ async function cargar(){
     const j = await api('lista');
     S.items = j.items; S.sinFolio = j.sinFolio || 0; S.laminas = j.laminas || null; S.online = true; S.errPin = '';
   } catch (e) {
-    if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = e.message; }
+    if (/PIN incorrecto/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = 'Ese PIN no coincide. Revísalo con calma e inténtalo otra vez.'; }
+    else if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = e.message; }
     else { S.online = false; toast(e.message, true); }
   }
   S.cargando = false; render();
@@ -203,7 +252,7 @@ function render(){
 
 function vistaLogin(app){
   app.innerHTML = `<div class="lock">${REACTOR}
-    <div><h2>JOART PRODUCCIÓN</h2><p>Acceso restringido. Escribe tu PIN para entrar.</p></div>
+    <div><h2>JOART PRODUCCIÓN</h2><p>${S.despedida ? esc(S.despedida) : 'Hola, ' + esc(nom()) + '. Escribe tu PIN para entrar.'}</p></div>
     <div class="lock-form"><input id="pin" type="password" autocomplete="current-password" placeholder="••••••"><button type="button" class="btn go" data-act="entrar">Entrar</button></div>
     <div class="lock-err">${esc(S.errPin)}</div></div>`;
 }
@@ -247,10 +296,58 @@ function vistaMas(){
       <div class="gap"></div><button class="btn go" data-act="enviarAviso">Enviar aviso</button></section>`;
 }
 
+function ordenar(a){
+  const c = a.slice();
+  if (P.orden === 'cliente') c.sort((x, y) => String(x.negocio).localeCompare(String(y.negocio), 'es'));
+  else c.sort((x, y) => (x.dias === null ? 9999 : x.dias) - (y.dias === null ? 9999 : y.dias));
+  return c;
+}
+function vacioMsg(){
+  if (P.sobrio || S.cargando) return 'Nada pendiente aquí';
+  return S.tab === 'entregar' ? 'Nada por entregar, ' + esc(nom()) + '. Buen momento para un respiro.' : 'Todo al día, ' + esc(nom()) + '. Tómate un respiro ☕';
+}
+function bloqueCalido(){
+  if (P.sobrio) return '';
+  let h = '';
+  if (esCumple()) h += `<div class="cumple">🎂 ¡Feliz cumpleaños, ${esc(nom())}! Que hoy sea un día muy bonito.</div>`;
+  const f = String(P.frase || '').trim();
+  h += f ? `<div class="frase suya">“${esc(f)}”</div>` : `<div class="frase">${esc(lineaDelDia())}</div>`;
+  return h;
+}
+function bienvenida(){
+  if (P.sobrio || store.get('jp_visto') || S.tab === 'yo') return '';
+  return `<div class="bienv"><b>Bienvenida, ${esc(nom())}</b>Esta es tu plataforma. Aquí ves lo que toca hoy y lo vas marcando conforme avanzas. Si algo no cuadra, avisa desde «Más». En <b style="display:inline;font:inherit;color:var(--sand);margin:0">Mi espacio</b> puedes cambiar tu nombre, tu color y varias cosas a tu gusto.<button class="link" data-act="cerrarBienv">Gracias, entendido</button></div>`;
+}
+function vistaYo(){
+  const sw = Object.keys(COLORES).map(k => `<button class="sw" data-act="pfColor" data-v="${k}" aria-pressed="${P.color === k}" aria-label="${COLORES[k][3]}" style="background:${COLORES[k][0]}"></button>`).join('');
+  const em = EMOJIS.map(e => `<button class="emo" data-act="pfEmoji" data-v="${e}" aria-pressed="${P.emoji === e}" aria-label="${e || 'Ninguno'}">${e || '—'}</button>`).join('');
+  const chip = (act, v, on, t) => `<button class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}">${t}</button>`;
+  return `<section class="bloque"><h3>Cómo te llamo</h3>
+      <input id="pf-nombre" type="text" maxlength="24" autocomplete="off" placeholder="Daniela" value="${esc(P.nombre)}">
+      <p class="ayuda" style="margin-top:8px">Así te voy a saludar. Puede ser tu nombre, un apodo o como tú prefieras.</p></section>
+    <section class="bloque"><h3>Tu toque</h3>
+      <p class="ayuda">Tu color</p><div class="opts">${sw}</div>
+      <p class="ayuda">Un detalle junto a tu nombre</p><div class="opts">${em}</div>
+      <p class="ayuda">Una frase para ti (en lugar de las mías)</p>
+      <input id="pf-frase" type="text" maxlength="80" autocomplete="off" placeholder="Algo que quieras leer cada día" value="${esc(P.frase)}"></section>
+    <section class="bloque"><h3>A tu manera</h3>
+      <p class="ayuda">Al abrir, quiero ver primero</p>
+      <div class="opts">${chip('pfInicio', 'producir', P.inicio !== 'entregar', 'Producir')}${chip('pfInicio', 'entregar', P.inicio === 'entregar', 'Entregar')}</div>
+      <p class="ayuda">Ordenar los pedidos</p>
+      <div class="opts">${chip('pfOrden', 'fecha', P.orden !== 'cliente', 'Lo más urgente primero')}${chip('pfOrden', 'cliente', P.orden === 'cliente', 'Por cliente (A-Z)')}</div>
+      <p class="ayuda">Tu cumpleaños, para saludarte ese día</p>
+      <input id="pf-cumple" type="date" value="${esc(P.cumple)}">
+      <p class="ayuda" style="margin-top:14px">Modo sobrio: sin frases, detalles ni celebraciones. Solo trabajo.</p>
+      <div class="opts">${chip('pfSobrio', '1', P.sobrio, 'Activado')}${chip('pfSobrio', '0', !P.sobrio, 'Desactivado')}</div></section>
+    <p class="nota-pie">Todo esto se guarda solo en este teléfono o computadora, y únicamente tú lo ves. No cambia nada de tu trabajo ni de los pedidos.</p>
+    <button class="link" data-act="pfReset">Volver a como estaba</button>`;
+}
+
 function vistaLista(app){
   const hastaDom = (7 - new Date().getDay()) % 7;
   const base = S.items.filter(i => i.etapa === S.tab);
-  const lista = (S.tab === 'producir' && S.filtro === 'semana') ? base.filter(i => i.dias === null || i.dias <= hastaDom) : base;
+  const lista0 = (S.tab === 'producir' && S.filtro === 'semana') ? base.filter(i => i.dias === null || i.dias <= hastaDom) : base;
+  const lista = ordenar(lista0);
   const nP = S.items.filter(i => i.etapa === 'producir').length;
   const nE = S.items.filter(i => i.etapa === 'entregar').length;
   const cards = lista.map(it => {
@@ -270,19 +367,20 @@ function vistaLista(app){
   const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
   const pend = conteoPendiente();
   const banner = (pend && S.tab !== 'mas') ? `<div class="aviso b-ambar">🧱 ${esc(pend)}<button class="link" data-act="tab" data-v="mas">Hacer el conteo →</button></div>` : '';
-  const cuerpo = S.tab === 'mas' ? vistaMas() : `${S.tab === 'producir' ? `<div class="chips">
+  const cuerpo = S.tab === 'mas' ? vistaMas() : S.tab === 'yo' ? vistaYo() : `${S.tab === 'producir' ? `<div class="chips">
       <button class="chip ${S.filtro==='semana'?'on':''}" data-act="filtro" data-v="semana">Esta semana</button>
       <button class="chip ${S.filtro==='todas'?'on':''}" data-act="filtro" data-v="todas">Todas</button></div>` : ''}
-    ${S.cargando && !S.items.length ? '<div class="vacio">Cargando…</div>' : (cards || '<div class="vacio">Nada pendiente aquí</div>')}`;
+    ${S.cargando && !S.items.length ? '<div class="vacio">Cargando…</div>' : (cards || `<div class="vacio">${vacioMsg()}</div>`)}`;
   app.innerHTML = `
     <div class="top">${REACTOR}<div><b>JOART PRODUCCIÓN</b><small>centro de piso</small></div>${onlineHtml()}</div>
-    <div class="saludo">Hola, Daniela</div><div class="hint">${esc(fecha)}</div>
-    <div class="tools"><button class="link" data-act="recargar">↻ Actualizar</button><button class="link" data-act="salir">Salir</button></div>
+    <div class="saludo">${esc(saludoHora())}, ${esc(nom())}${(!P.sobrio && P.emoji) ? ' ' + esc(P.emoji) : ''}</div><div class="hint">${esc(fecha)}</div>
+    ${bloqueCalido()}
+    <div class="tools"><button class="link" data-act="tab" data-v="yo">${(!P.sobrio && P.emoji) ? esc(P.emoji) + ' ' : ''}Mi espacio</button><button class="link" data-act="recargar">↻ Actualizar</button><button class="link" data-act="salir">Salir</button></div>
     <div class="tabs">
       <button class="tab ${S.tab==='producir'?'on':''}" data-act="tab" data-v="producir">Producir (${nP})</button>
       <button class="tab ${S.tab==='entregar'?'on':''}" data-act="tab" data-v="entregar">Entregar (${nE})</button>
       <button class="tab ${S.tab==='mas'?'on':''}" data-act="tab" data-v="mas">Más</button></div>
-    ${banner}
+    ${bienvenida()}${banner}
     <div class="pane">${cuerpo}</div>`;
 }
 
@@ -465,10 +563,17 @@ document.addEventListener('click', async ev => {
   const a = b.dataset.act;
   if (a === 'entrar') {
     const v = ($('#pin').value || '').trim(); if (!v) return;
-    S.pin = v; store.set('jp_pin', v); cargar();
-  } else if (a === 'salir') { store.del('jp_pin'); S.pin = ''; S.items = []; S.online = null; render(); }
+    S.pin = v; S.despedida = ''; store.set('jp_pin', v); cargar();
+  } else if (a === 'salir') { store.del('jp_pin'); S.pin = ''; S.items = []; S.online = null; S.despedida = P.sobrio ? '' : 'Descansa, ' + nom() + '. Aquí estaremos cuando vuelvas.'; render(); }
   else if (a === 'recargar') cargar();
-  else if (a === 'tab') { S.tab = b.dataset.v; render(); }
+  else if (a === 'tab') { S.tab = b.dataset.v; render(); window.scrollTo(0, 0); }
+  else if (a === 'cerrarBienv') { store.set('jp_visto', '1'); render(); }
+  else if (a === 'pfColor') { P.color = b.dataset.v; guardarPref(); render(); }
+  else if (a === 'pfEmoji') { P.emoji = b.dataset.v; guardarPref(); render(); }
+  else if (a === 'pfInicio') { P.inicio = b.dataset.v; guardarPref(); render(); toast(P.sobrio ? 'Guardado' : 'Anotado, ' + nom() + '. Así te va a aparecer.'); }
+  else if (a === 'pfOrden') { P.orden = b.dataset.v; guardarPref(); render(); }
+  else if (a === 'pfSobrio') { P.sobrio = b.dataset.v === '1'; guardarPref(); render(); }
+  else if (a === 'pfReset') { P = Object.assign({}, PREF_DEF); guardarPref(); render(); toast('Listo, todo como al inicio'); }
   else if (a === 'filtro') { S.filtro = b.dataset.v; render(); }
   else if (a === 'abrir') abrir(b.dataset.folio);
   else if (a === 'volver') cerrarDetalle();
@@ -514,7 +619,7 @@ document.addEventListener('click', async ev => {
     try {
       const j = await api('laminas_guardar', { valores: S.conteo });
       S.laminas = j.laminas; S.conteo = {};
-      toast(j.faltan && j.faltan.length ? 'Conteo guardado ✓ Jorge ya sabe que faltan láminas' : 'Conteo guardado ✓ Jorge ya recibió el aviso');
+      toast((P.sobrio ? '' : 'Gracias por contar, ' + nom() + '. ') + (j.faltan && j.faltan.length ? 'Conteo guardado ✓ Jorge ya sabe que faltan láminas' : 'Conteo guardado ✓ Jorge ya recibió el aviso'));
       render();
     } catch (e) { toast(e.message, true); b.disabled = false; }
   }
@@ -522,8 +627,10 @@ document.addEventListener('click', async ev => {
     b.disabled = true;
     try {
       await guardarYa();
+      const itx = S.items.find(i => i.folio === S.abierto);
       await api(a, { folio: S.abierto });
-      toast(a === 'completar' ? 'Producción completa ✓ Jorge ya recibió el aviso' : 'Entregado a paquetería ✓');
+      toast(P.sobrio ? (a === 'completar' ? 'Producción completa ✓ Jorge ya recibió el aviso' : 'Entregado a paquetería ✓')
+        : celebra(a, itx && itx.negocio) + (a === 'completar' ? ' Jorge ya recibió el aviso ✓' : ' ✓'));
       S.abierto = null; cargar();
     } catch (e) { toast(e.message, true); actualizarGate(); }
   }
@@ -533,6 +640,8 @@ document.addEventListener('input', ev => {
   const mm = /^lam-(\d+)$/.exec(ev.target.id || '');
   if (mm) { S.conteo[mm[1]] = ev.target.value; return; }
   if (ev.target.id === 'avNota') { S.aviso.nota = ev.target.value; return; }
+  if (ev.target.id === 'pf-nombre') { P.nombre = ev.target.value; guardarPref(); return; }
+  if (ev.target.id === 'pf-frase') { P.frase = ev.target.value; guardarPref(); return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
   if (['contadas','notaConteo','alto','ancho','largo','peso','guia'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
@@ -540,6 +649,7 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.id === 'avFolio') { S.aviso.folio = ev.target.value; return; }
+  if (ev.target.id === 'pf-cumple') { P.cumple = ev.target.value; guardarPref(); render(); return; }
   const m = /^file-(final|entrega)$/.exec(ev.target.id || '');
   if (m && ev.target.files && ev.target.files[0]) subirFoto(m[1], ev.target.files[0]);
 });
