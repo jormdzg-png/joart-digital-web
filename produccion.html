@@ -206,15 +206,6 @@ function esCumple(){
   const d = new Date(), mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
   return P.cumple.slice(5) === mm + '-' + dd;
 }
-const LINEAS = ['Un paso a la vez: todo lo de hoy se puede.', 'Toma agua y date tu tiempo.', 'Lo que haces aquí llega a manos de alguien más. Gracias por cuidarlo.',
-  'Si algo no cuadra, avisa. Nadie tiene que adivinar.', 'Tu ojo para los detalles es lo que hace que todo salga bien.', 'Lo que hoy no alcance, mañana se acomoda. Respira.', 'Qué bueno tenerte en el equipo.'];
-function lineaDelDia(){
-  const d = new Date(), dia = d.getDay();
-  if (dia === 1) return 'Semana nueva. Con calma y buen ritmo.';
-  if (dia === 5) return 'Ya casi es fin de semana. Cierra bonito.';
-  const n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
-  return LINEAS[n % LINEAS.length];
-}
 function celebra(tipo, negocio){
   const x = negocio || 'el pedido', n = nom();
   const a = tipo === 'completar'
@@ -311,7 +302,7 @@ function bloqueCalido(){
   let h = '';
   if (esCumple()) h += `<div class="cumple">🎂 ¡Feliz cumpleaños, ${esc(nom())}! Que hoy sea un día muy bonito.</div>`;
   const f = String(P.frase || '').trim();
-  h += f ? `<div class="frase suya">“${esc(f)}”</div>` : `<div class="frase">${esc(lineaDelDia())}</div>`;
+  if (f) h += `<div class="frase suya">“${esc(f)}”</div>`;
   return h;
 }
 function bienvenida(){
