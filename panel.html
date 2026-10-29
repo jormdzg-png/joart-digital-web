@@ -594,7 +594,7 @@ function diasDe(txt){
   if((d - h0) / 86400000 < -200) d = new Date(hoy.getFullYear() + 1, MESES_ES[m[2]], parseInt(m[1], 10));
   return Math.round((d - h0) / 86400000);
 }
-const ORDEN_ESTADO = ["en revision", "hacer render", "corregir render", "yo", "imprimir", "enviar", "enviado"];
+const ORDEN_ESTADO = ["imprimir", "enviar", "enviado", "hacer render", "corregir render", "yo", "en revision"];
 async function cargarLista(){
   const box = $("pLista");
   try{
@@ -630,7 +630,7 @@ function pintarLista(){
   let h = "";
   if(vistaLista === "estado"){
     const grupos = {}; vivos.forEach(t => { const k = (t.estatus || "").trim() || "Sin estatus"; (grupos[k] = grupos[k] || []).push(t); });
-    const rango = (k) => { const i = ORDEN_ESTADO.indexOf(normNom(k)); return i < 0 ? 100 : i; };
+    const rango = (k) => { const i = ORDEN_ESTADO.indexOf(normNom(k)); return i < 0 ? ORDEN_ESTADO.length - 1.5 : i; };
     Object.keys(grupos).sort((x, y) => rango(x) - rango(y) || x.localeCompare(y, "es")).forEach((k, i) => {
       h += `<div class="col-h"><span>${esc(k)} · ${grupos[k].length}</span>${i ? "" : refrescar}</div>` + grupos[k].sort(urg).map(fila).join("");
     });
