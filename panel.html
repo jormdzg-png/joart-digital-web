@@ -636,6 +636,8 @@ function pintarFicha(){
       <button type="button" class="btn go" id="armarCot">${cot ? "Cotización abierta ↓" : "📄 Generar cotización"}</button>
       <a class="btn" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, `Hola ${ped.cliente} 👋 Aquí puedes ver el estatus de tu pedido en vivo: ${PORTAL_URL}?codigo=${ped.codigo}`))}">🔗 Mandar enlace de seguimiento</a>
       <button type="button" class="btn" id="cartaPdf">💌 Carta de agradecimiento (para el empaque)</button>
+      <button type="button" class="btn" id="verProd">📦 Ver producción (fotos y datos de Daniela)</button>
+      <div id="prodBox"></div>
     </div>
     <div id="cotBox"></div>`;
   if(cot) pintarCot();
@@ -643,12 +645,33 @@ function pintarFicha(){
 $("fichaVista").addEventListener("click", (e) => {
   if(e.target.id === "volver"){ abrirTok++; $("fichaVista").hidden = true; $("listaVista").hidden = false; ped = null; cot = null; window.scrollTo(0, 0); return; }
   if(e.target.id === "armarCot"){ armarCot(); }
+  if(e.target.id === "verProd"){ verProduccion(e.target); }
   if(e.target.id === "cartaPdf"){
     if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga la página."); return; }
     const nom = `Carta-${String(ped.cliente || "cliente").replace(/[^\wÀ-ſ]+/g, "-").replace(/^-|-$/g, "")}-${ped.codigo}.pdf`;
     construirCartaPDF(window.jspdf.jsPDF, { cliente: ped.cliente || "", folio: ped.codigo }, LOGO_DATA_URL).save(nom);
   }
 });
+
+async function verProduccion(btn){
+  const box = $("prodBox"), cod = ped && ped.codigo; if(!cod) return;
+  btn.disabled = true; btn.textContent = "Cargando…";
+  try{
+    const r = await post("fotosProduccion", { codigo: cod });
+    if(!ped || ped.codigo !== cod) return;
+    if(!r.ok){ box.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; return; }
+    if(!r.capturado){ box.innerHTML = `<div class="hint" style="margin-top:10px">Todavía no hay nada capturado en producción para este pedido.</div>`; return; }
+    const d = r.datos || {}, ok = (x) => x ? esc(x) : "—";
+    const fotos = (r.fotos || []).map(f => f.b64
+      ? `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a href="${esc(f.url)}" target="_blank" rel="noopener"><img alt="${esc(f.etiqueta)}" src="data:${esc(f.mime)};base64,${f.b64}" style="display:block;width:100%;max-height:70vh;object-fit:contain;background:#000;border:1px solid rgba(242,204,143,.2)"></a>`
+      : `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a class="btn" target="_blank" rel="noopener" href="${esc(f.url)}">Abrir foto en Drive</a>`).join("");
+    box.innerHTML = `<div class="lbl" style="margin-top:16px">Producción</div>
+      <div class="hint">Contadas: ${ok(d.contadas)}${d.notaConteo ? " (" + esc(d.notaConteo) + ")" : ""} · Impresión: ${ok(d.impresion)} · Corte: ${ok(d.corte)}${d.armado ? " · Armado: " + esc(d.armado) : ""}</div>
+      <div class="hint">Paquete: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm · ${ok(d.peso)} kg${d.guia ? " · Guía " + esc(d.guia) : ""}</div>
+      ${fotos || `<div class="hint" style="margin-top:10px">Aún no hay fotos.</div>`}`;
+  }catch(e){ console.error(e); box.innerHTML = `<div class="box err">No se pudo conectar.</div>`; }
+  finally{ btn.disabled = false; btn.textContent = "📦 Ver producción (fotos y datos de Daniela)"; }
+}
 
 // ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
 const DIMS = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i;
