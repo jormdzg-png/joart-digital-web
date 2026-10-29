@@ -390,7 +390,7 @@ function faltantes(it, f){
   if (f.corte !== 'OK') m.push('corte OK');
   if (it.nuevo && f.armado !== 'OK') m.push('armado OK');
   if (!f.fotoFinal) m.push('foto final');
-  if (['alto','ancho','largo','peso'].some(k => !(Number(f[k]) > 0))) m.push('medidas y peso');
+  if (['alto','ancho','largo'].some(k => !(Number(f[k]) > 0))) m.push('medidas del paquete');
   return m;
 }
 function faltantesEntrega(it, f){
@@ -441,11 +441,10 @@ function vistaDetalle(app){
       <section class="bloque"><h3>3 · Calidad de corte</h3>${seg('corte', f)}</section>
       ${it.nuevo ? `<section class="bloque"><h3>4 · Armado de prueba</h3><p class="ayuda">Modelo nuevo/personalizado: ármalo y verifica acoples y holguras.</p>${seg('armado', f)}</section>` : ''}
       <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f, 'fotoFinal', 'Tomar foto')}</section>
-      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (cm y kg)</h3><div class="grid4">
+      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3><div class="grid4">
         <div><label for="alto">Alto</label><input id="alto" type="number" inputmode="decimal" min="0" value="${esc(f.alto)}"></div>
         <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
-        <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div>
-        <div><label for="peso">Peso (kg)</label><input id="peso" type="number" inputmode="decimal" min="0" value="${esc(f.peso)}"></div></div></section>
+        <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div></div></section>
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnCompletar" data-act="completar" disabled>Completar producción</button></div></div>`;
@@ -455,7 +454,7 @@ function vistaDetalle(app){
       ${bloqueRender(it)}
       ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
                     : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado.</div>'}
-      <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm · ${esc(f.peso)} kg</p></section>
+      <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm</p></section>
       <section class="bloque"><h3>1 · Número de guía</h3><input id="guia" type="text" autocapitalize="characters" placeholder="Número de la guía impresa" value="${esc(f.guia)}"></section>
       <section class="bloque"><h3>2 · Foto del paquete cerrado con la guía</h3>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
@@ -659,7 +658,7 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'pf-nombre') { P.nombre = ev.target.value; guardarPref(); return; }
   if (ev.target.id === 'pf-frase') { P.frase = ev.target.value; guardarPref(); return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
-  if (['contadas','notaConteo','alto','ancho','largo','peso','guia'].indexOf(id) >= 0) {
+  if (['contadas','notaConteo','alto','ancho','largo','guia'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
   }
 });
