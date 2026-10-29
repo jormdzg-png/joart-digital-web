@@ -133,6 +133,10 @@
   .proj small{ display:block; font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); margin-top:3px; }
   .proj .go-arrow{ color:var(--terra); font:600 16px var(--mono); }
   .proj.old{ opacity:.6; }
+  .proj .der{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .bdg{ font:600 10px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); border:1px solid var(--line); padding:3px 7px; white-space:nowrap; }
+  .bdg.ambar{ color:#e0a43a; border-color:#e0a43a; }
+  .bdg.rojo{ color:#e5584f; border-color:#e5584f; }
   .vseg{ display:flex; gap:0; margin:12px 0 0; border:1px solid var(--line); }
   .vseg button{ flex:1; background:transparent; border:0; color:var(--mute); padding:10px 8px; font:600 10.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
   .vseg button + button{ border-left:1px solid var(--line); }
@@ -290,7 +294,7 @@
   <section class="pane" id="pane-proyectos">
     <div id="listaVista">
       <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="busca" type="search" placeholder="Buscar cliente o código…" autocomplete="off"></div>
-      <div class="vseg" id="vSeg"><button type="button" data-v="semana">Por semana</button><button type="button" data-v="estado">Por estado</button></div>
+      <div class="vseg" id="vSeg"><button type="button" data-v="semana">Esta semana</button><button type="button" data-v="todas">Todas</button><button type="button" data-v="estado">Por estado</button></div>
       <div id="pLista" class="hint">Cargando proyectos…</div>
     </div>
     <div id="fichaVista" hidden></div>
@@ -580,16 +584,15 @@ $("againBtn").addEventListener("click", () => {
 
 // ===================== PROYECTOS =====================
 let vistaLista = "semana";
-try{ vistaLista = localStorage.getItem("jc_vista") === "estado" ? "estado" : "semana"; }catch(e){}
-const RE_SEP = /^(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b|\bsemana\s*\d/;
-// Las filas separadoras del Sheets ("Octubre - Semana 4") marcan la semana de los pedidos que van debajo.
-function etiquetarSemanas(lista){
-  let sem = "";
-  return lista.map(p => {
-    const nom = normNom(p.cliente);
-    if(nom && RE_SEP.test(nom) && !String(p.tipo || "").trim() && !String(p.estatus || "").trim()){ sem = String(p.cliente).trim(); return null; }
-    return Object.assign({}, p, { semana: sem });
-  }).filter(Boolean);
+try{ const v = localStorage.getItem("jc_vista"); vistaLista = (v === "todas" || v === "estado") ? v : "semana"; }catch(e){}
+const MESES_ES = { enero:0, febrero:1, marzo:2, abril:3, mayo:4, junio:5, julio:6, agosto:7, septiembre:8, setiembre:8, octubre:9, noviembre:10, diciembre:11 };
+// Días que faltan para la fecha límite ("29 de octubre"); negativo = vencido; null = sin fecha.
+function diasDe(txt){
+  const m = normNom(txt).match(/(\d{1,2}) de ([a-z]+)/); if(!m || MESES_ES[m[2]] === undefined) return null;
+  const hoy = new Date(), h0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  let d = new Date(hoy.getFullYear(), MESES_ES[m[2]], parseInt(m[1], 10));
+  if((d - h0) / 86400000 < -200) d = new Date(hoy.getFullYear() + 1, MESES_ES[m[2]], parseInt(m[1], 10));
+  return Math.round((d - h0) / 86400000);
 }
 const ORDEN_ESTADO = ["en revision", "hacer render", "corregir render", "yo", "imprimir", "enviar", "enviado"];
 async function cargarLista(){
@@ -599,7 +602,7 @@ async function cargarLista(){
     if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return 0; }
     todosProyectos = r.proyectos || [];
     // En la lista del panel solo van los pedidos con código (los que se pueden abrir); el Asistente busca en todos.
-    listaCache = etiquetarSemanas(todosProyectos).filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido, semana: p.semana }));
+    listaCache = todosProyectos.filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido, fecha: p.fechaLimite, dias: diasDe(p.fechaLimite) }));
     pintarLista(); return listaCache.length;
   }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; return 0; }
 }
@@ -609,47 +612,40 @@ function pintarLista(){
   const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
   const entregado = (t) => (t.estatus || "").trim().toLowerCase() === "entregado";
   const coincide = (t) => !q || normNom(t.nombre).includes(q) || normNom(t.codigo).includes(q);
-  const fila = (t) => {
-    const sub = vistaLista === "semana" ? (t.estatus || "") : (t.semana || "sin semana");
-    return `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${sub ? " · " + esc(sub) : ""}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="go-arrow">›</span></button>`;
+  const urg = (a, b) => (a.dias === null ? 9999 : a.dias) - (b.dias === null ? 9999 : b.dias);
+  const badge = (t) => {
+    if(entregado(t) || t.dias === null) return t.dias === null && !entregado(t) ? `<span class="bdg">Sin fecha</span>` : "";
+    if(t.dias < 0) return `<span class="bdg rojo">Vencido ${-t.dias} d</span>`;
+    if(t.dias === 0) return `<span class="bdg ambar">Hoy</span>`;
+    if(t.dias === 1) return `<span class="bdg ambar">Mañana</span>`;
+    return `<span class="bdg">${esc(t.fecha)}</span>`;
   };
+  const fila = (t) => `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.estatus ? " · " + esc(t.estatus) : ""}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="der">${badge(t)}<span class="go-arrow">›</span></span></button>`;
   if(!listaCache.length){ box.textContent = "Aún no hay proyectos."; return; }
   const refrescar = `<button type="button" class="link" id="pRefrescar">Actualizar</button>`;
-  const hayAct = listaCache.some(t => !entregado(t) && coincide(t));
-  const lista = listaCache.filter(coincide);
-  let h = "", primero = true;
-  const cab = (txt, extra) => { const x = `<div class="col-h"><span>${txt}</span>${primero ? refrescar : (extra || "")}</div>`; primero = false; return x; };
-
-  if(vistaLista === "semana"){
-    const grupos = [], idx = {};
-    lista.forEach(t => { const k = t.semana || "Sin semana"; if(!(k in idx)){ idx[k] = grupos.length; grupos.push({ k, items: [] }); } grupos[idx[k]].items.push(t); });
-    grupos.reverse();   // la semana más reciente (la de más abajo en el Sheets) arriba
-    const sin = grupos.findIndex(g => g.k === "Sin semana"); if(sin > 0) grupos.push(grupos.splice(sin, 1)[0]);
-    let ocultas = 0;
-    grupos.forEach(g => {
-      const act = g.items.filter(t => !entregado(t)).length;
-      if(!q && !act){ ocultas++; return; }
-      h += cab(`${esc(g.k)} · ${act} en curso${g.items.length - act ? " · " + (g.items.length - act) + " entregados" : ""}`) + g.items.map(fila).join("");
+  const hastaDom = (7 - new Date().getDay()) % 7;   // igual que la plataforma de Daniela: hasta el domingo
+  const vivos = listaCache.filter(t => !entregado(t) && coincide(t));
+  const viejos = listaCache.filter(t => entregado(t) && coincide(t));
+  const cabViejos = viejos.length ? (q || !vivos.length ? `<div class="col-h"><span>Entregados · ${viejos.length}</span></div>` + viejos.slice(0, 40).map(fila).join("") : `<div class="col-h"><span>Entregados · ${viejos.length}</span><span>escribe para buscarlos</span></div>`) : "";
+  let h = "";
+  if(vistaLista === "estado"){
+    const grupos = {}; vivos.forEach(t => { const k = (t.estatus || "").trim() || "Sin estatus"; (grupos[k] = grupos[k] || []).push(t); });
+    const rango = (k) => { const i = ORDEN_ESTADO.indexOf(normNom(k)); return i < 0 ? 100 : i; };
+    Object.keys(grupos).sort((x, y) => rango(x) - rango(y) || x.localeCompare(y, "es")).forEach((k, i) => {
+      h += `<div class="col-h"><span>${esc(k)} · ${grupos[k].length}</span>${i ? "" : refrescar}</div>` + grupos[k].sort(urg).map(fila).join("");
     });
-    if(ocultas) h += `<div class="col-h"><span>${ocultas} ${ocultas === 1 ? "semana entregada" : "semanas entregadas"}</span><span>escribe para buscarlas</span></div>`;
   }else{
-    const clave = (t) => (t.estatus || "").trim() || "Sin estatus";
-    const grupos = {}; lista.forEach(t => { const k = clave(t); (grupos[k] = grupos[k] || []).push(t); });
-    const rango = (k) => { const n = normNom(k); if(n === "entregado") return 999; const i = ORDEN_ESTADO.indexOf(n); return i < 0 ? 100 : i; };
-    const claves = Object.keys(grupos).sort((a, b) => rango(a) - rango(b) || a.localeCompare(b, "es"));
-    claves.forEach(k => {
-      if(normNom(k) === "entregado") return;
-      h += cab(`${esc(k)} · ${grupos[k].length}`) + grupos[k].map(fila).join("");
-    });
-    const ent = grupos[claves.find(k => normNom(k) === "entregado")] || [];
-    if(ent.length) h += q || !hayAct ? cab(`Entregado · ${ent.length}`) + ent.slice(0, 40).map(fila).join("") : `<div class="col-h"><span>Entregado · ${ent.length}</span><span>escribe para buscarlos</span></div>`;
+    const lista = (vistaLista === "semana" && !q ? vivos.filter(t => t.dias === null || t.dias <= hastaDom) : vivos).slice().sort(urg);
+    if(lista.length) h += `<div class="col-h"><span>${vistaLista === "semana" && !q ? "Esta semana" : "En curso"} · ${lista.length}</span>${refrescar}</div>` + lista.map(fila).join("");
+    else h += `<div class="hint">${q ? "" : vistaLista === "semana" ? "Nada para esta semana. Toca “Todas” para ver lo que sigue." : "No hay proyectos en curso."}</div>`;
   }
-  if(!h) h = q ? `<div class="hint">Nada con “${esc($("busca").value)}”.</div>` : `<div class="hint">No hay proyectos en curso.</div>`;
+  h += cabViejos;
+  if(!vivos.length && !viejos.length) h = `<div class="hint">Nada con “${esc($("busca").value)}”.</div>`;
   box.innerHTML = h;
 }
 $("vSeg").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if(!b) return;
-  vistaLista = b.dataset.v === "estado" ? "estado" : "semana";
+  vistaLista = (b.dataset.v === "todas" || b.dataset.v === "estado") ? b.dataset.v : "semana";
   try{ localStorage.setItem("jc_vista", vistaLista); }catch(err){}
   pintarLista();
 });
