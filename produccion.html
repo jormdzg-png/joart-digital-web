@@ -138,6 +138,10 @@
   .sw[aria-pressed=true]{ border-color:var(--ink); box-shadow:0 0 0 3px rgba(236,232,214,.18); }
   .emo{ min-width:46px; min-height:46px; font-size:22px; background:var(--panel2); border:1px solid var(--line); cursor:pointer; color:var(--mute); font-family:inherit; }
   .emo[aria-pressed=true]{ border-color:var(--sand); background:rgba(242,204,143,.12); color:var(--ink); }
+  img.render{ display:block; width:100%; max-height:60vh; object-fit:contain; background:#000; border:1px solid var(--line); cursor:zoom-in; }
+  .visor{ position:fixed; inset:0; z-index:100; background:#000; overflow:auto; touch-action:pan-x pan-y pinch-zoom; }
+  .visor img{ display:block; width:100%; min-height:100%; object-fit:contain; }
+  .visor button{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:101; min-height:44px; padding:0 16px; background:rgba(7,10,20,.85); border:1px solid var(--sand); color:var(--sand); font:600 12px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; }
   .nota-pie{ font-size:11.5px; color:var(--mute); line-height:1.5; margin:4px 2px 0; }
   .bienv{ position:relative; margin:0 0 14px; padding:14px 14px 6px; border:1px solid rgba(129,178,154,.55); background:rgba(129,178,154,.10); color:#CFE8DB; font-size:13.5px; line-height:1.55; }
   .bienv b{ display:block; font:800 15px var(--disp); margin-bottom:6px; color:var(--ink); }
@@ -183,6 +187,7 @@ function guardarPref(){ store.set('jp_pref', JSON.stringify(P)); aplicarPref(); 
 const nom = () => (String(P.nombre || '').trim() || 'Daniela');
 aplicarPref();
 
+const RENDERS = {};
 const S = { pin: store.get('jp_pin') || '', items: [], tab: (P.inicio === 'entregar' ? 'entregar' : 'producir'), filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
 let saveTimer = null;
 const REACTOR = '<svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>';
@@ -347,6 +352,7 @@ function vistaLista(app){
     const tags = [];
     if (it.nuevo) tags.push('<span class="badge b-gris">Nuevo / personalizado</span>');
     if (it.requiereFactura) tags.push('<span class="badge b-gris">🧾 Requiere factura</span>');
+    if (it.tieneRender && it.etapa === 'producir') tags.push('<span class="badge b-gris">🖼 Render aprobado</span>');
     if (d.alerta) tags.push('<span class="badge b-rojo">Incidencia abierta</span>');
     if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">Esperando pago</span>');
     if (it.etapa === 'entregar' && !it.liberado && it.listoHace !== null) tags.push(`<span class="badge ${it.listoHace >= 12 ? 'b-rojo' : 'b-ambar'}">Listo hace ${it.listoHace} d</span>`);
@@ -408,6 +414,13 @@ function fotoBloque(tipo, f, flag, titulo){
     <input type="file" id="file-${tipo}" accept="image/*" capture="environment" hidden></div>`;
 }
 
+function bloqueRender(it){
+  if (!it.tieneRender) return '';
+  const src = RENDERS[it.folio];
+  if (src) return `<section class="bloque"><h3>Render aprobado</h3><img class="render" src="${src}" alt="Render aprobado" data-act="verRender" data-folio="${esc(it.folio)}">
+    <p class="ayuda" style="margin:10px 0 0">Compáralo con lo impreso. Toca la imagen para verla en grande.</p></section>`;
+  return `<section class="bloque"><h3>Render aprobado</h3><button class="btn" data-act="cargarRender" data-folio="${esc(it.folio)}">Ver render aprobado</button></section>`;
+}
 function vistaDetalle(app){
   const it = S.items.find(i => i.folio === S.abierto);
   if (!it) { S.abierto = null; return render(); }
@@ -420,6 +433,7 @@ function vistaDetalle(app){
   if (it.etapa === 'producir') {
     app.innerHTML = `<div class="pane">` + cab + `
       <div class="guardado" id="guardado"></div>
+      ${bloqueRender(it)}
       <section class="bloque"><h3>1 · Conteo</h3><p class="ayuda">Según el pedido: <b>${it.esperado}</b> piezas</p>
         <input id="contadas" type="number" inputmode="numeric" min="0" placeholder="Piezas contadas" value="${esc(f.contadas)}">
         <div id="notaWrap" hidden><textarea id="notaConteo" placeholder="No coincide con el pedido: ¿qué pasó?">${esc(f.notaConteo)}</textarea></div></section>
@@ -438,6 +452,7 @@ function vistaDetalle(app){
   } else {
     app.innerHTML = `<div class="pane">` + cab + `
       <div class="guardado" id="guardado"></div>
+      ${bloqueRender(it)}
       ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
                     : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado.</div>'}
       <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm · ${esc(f.peso)} kg</p></section>
@@ -558,6 +573,16 @@ document.addEventListener('click', async ev => {
   } else if (a === 'salir') { store.del('jp_pin'); S.pin = ''; S.items = []; S.online = null; S.despedida = P.sobrio ? '' : 'Descansa, ' + nom() + '. Aquí estaremos cuando vuelvas.'; render(); }
   else if (a === 'recargar') cargar();
   else if (a === 'tab') { S.tab = b.dataset.v; render(); window.scrollTo(0, 0); }
+  else if (a === 'cargarRender') {
+    b.disabled = true; b.textContent = 'Cargando…';
+    try { const j = await api('render', { folio: b.dataset.folio }); RENDERS[b.dataset.folio] = 'data:' + j.mime + ';base64,' + j.b64; if (S.abierto === b.dataset.folio) vistaDetalle($('#app')); }
+    catch (e) { toast(e.message, true); b.disabled = false; b.textContent = 'Ver render aprobado'; }
+  }
+  else if (a === 'verRender') {
+    const v = document.createElement('div'); v.className = 'visor';
+    v.innerHTML = '<button data-act="cerrarVisor">Cerrar</button><img alt="Render aprobado">'; v.querySelector('img').src = RENDERS[b.dataset.folio]; document.body.appendChild(v);
+  }
+  else if (a === 'cerrarVisor') { const v = b.closest('.visor'); if (v) v.remove(); }
   else if (a === 'cerrarBienv') { store.set('jp_visto', '1'); render(); }
   else if (a === 'pfColor') { P.color = b.dataset.v; guardarPref(); render(); }
   else if (a === 'pfEmoji') { P.emoji = b.dataset.v; guardarPref(); render(); }
