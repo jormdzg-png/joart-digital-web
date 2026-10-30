@@ -229,7 +229,7 @@ async function cargar(){
   S.cargando = true; render();
   try {
     const j = await api('lista');
-    S.items = j.items; S.sinFolio = j.sinFolio || 0; S.laminas = j.laminas || null; S.online = true; S.errPin = '';
+    S.items = j.items; S.laminas = j.laminas || null; S.online = true; S.errPin = '';
   } catch (e) {
     if (/PIN incorrecto/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = 'Ese PIN no coincide. Revísalo con calma e inténtalo otra vez.'; }
     else if (/PIN/.test(e.message)) { store.del('jp_pin'); S.pin = ''; S.errPin = e.message; }
@@ -279,7 +279,7 @@ function vistaMas(){
   let lam;
   if (!L || !L.cols.length) lam = '<p class="ayuda">No pude leer la pestaña de láminas.</p>';
   else lam = `<p class="ayuda">Cuenta las láminas completas que hay de cada grosor y escribe el número. Último conteo: <b>${esc(L.ultimo || 'ninguno')}</b></p>
-    <div class="grid4">${L.cols.map(c => `<div><label for="lam-${c.i}">${esc(c.grosor)}<span class="nec">antes: ${esc(c.tengo)}</span></label>
+    <div class="grid4">${L.cols.map(c => `<div><label for="lam-${c.i}">${esc(c.grosor)}</label>
       <input id="lam-${c.i}" type="number" inputmode="numeric" min="0" placeholder="0" value="${esc(S.conteo[c.i])}"></div>`).join('')}</div>
     <div class="gap"></div><button class="btn go" data-act="guardarConteo">Guardar conteo</button>`;
   const tipos = [['pago','Falta pago'],['factura','Falta factura'],['laminas','Faltan láminas o material'],['cliente','Un cliente preguntó'],['otro','Otro']];
@@ -351,11 +351,10 @@ function vistaLista(app){
     const d = it.datos || {};
     const tags = [];
     if (it.nuevo) tags.push('<span class="badge b-gris">Nuevo / personalizado</span>');
-    if (it.requiereFactura) tags.push('<span class="badge b-gris">🧾 Requiere factura</span>');
     if (it.tieneRender && it.etapa === 'producir') tags.push('<span class="badge b-gris">🖼 Render aprobado</span>');
     if (d.alerta) tags.push('<span class="badge b-rojo">Incidencia abierta</span>');
-    if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">Esperando pago</span>');
-    if (it.etapa === 'entregar' && !it.liberado && it.listoHace !== null) tags.push(`<span class="badge ${it.listoHace >= 12 ? 'b-rojo' : 'b-ambar'}">Listo hace ${it.listoHace} d</span>`);
+    if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">En espera</span>');
+    if (it.adelantado) tags.push('<span class="badge b-ambar">Falta cerrar tu revisión</span>');
     return `<button class="proj" data-act="abrir" data-folio="${esc(it.folio)}">
       <div class="r1"><div><b>${esc(it.negocio)}</b><div class="sub">${esc(it.tipo)}</div></div><span class="badge b-${cls}">${esc(txt)}</span></div>
       <small>${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.grosor)}</small>
@@ -396,8 +395,7 @@ function faltantes(it, f){
 function faltantesEntrega(it, f){
   const m = [];
   if (!it.liberado) m.push('liberación de pago');
-  if (!String(f.guia || '').trim()) m.push('número de guía');
-  if (!f.fotoEntrega) m.push('foto del paquete con guía');
+  if (!f.fotoEntrega) m.push('foto del paquete cerrado');
   return m;
 }
 
@@ -428,7 +426,7 @@ function vistaDetalle(app){
   const [txt, cls] = badge(it);
   const cab = `<button class="back" data-act="volver">‹ Volver</button>
     <div class="ficha"><div><div class="ficha-name">${esc(it.negocio)}</div><div class="ficha-code">${esc(it.folio)}</div>
-    <p>${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}${it.requiereFactura ? '<br>🧾 Requiere factura' : ''}</p></div><span class="badge b-${cls}">${esc(txt)}</span></div>`;
+    <p>${esc(it.tipo)}<br>${esc(it.cantidad)} · ${esc(it.grosor)}</p></div><span class="badge b-${cls}">${esc(txt)}</span></div>`;
 
   if (it.etapa === 'producir') {
     app.innerHTML = `<div class="pane">` + cab + `
@@ -453,10 +451,9 @@ function vistaDetalle(app){
       <div class="guardado" id="guardado"></div>
       ${bloqueRender(it)}
       ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
-                    : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado.</div>'}
+                    : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado; Jorge te avisa.</div>'}
       <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm</p></section>
-      <section class="bloque"><h3>1 · Número de guía</h3><input id="guia" type="text" autocapitalize="characters" placeholder="Número de la guía impresa" value="${esc(f.guia)}"></section>
-      <section class="bloque"><h3>2 · Foto del paquete cerrado con la guía</h3>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
+      <section class="bloque"><h3>Foto del paquete cerrado</h3><p class="ayuda">Con la guía ya pegada, antes de entregarlo a la paquetería.</p>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button></div></div>`;
@@ -466,7 +463,6 @@ function vistaDetalle(app){
 function bloqueAvisos(it){
   const b = [];
   if (it.etapa === 'entregar' && !it.liberado) b.push(['pago', '💬 Recordarle a Jorge: falta el pago']);
-  if (it.requiereFactura) b.push(['factura', '💬 Recordarle a Jorge: falta la factura']);
   if (!b.length) return '';
   return `<section class="bloque"><h3>Avisar a Jorge</h3>` +
     b.map(x => `<button class="btn" style="margin-bottom:10px" data-act="avisoRapido" data-tipo="${x[0]}" data-folio="${esc(it.folio)}">${x[1]}</button>`).join('') + `</section>`;
@@ -500,7 +496,7 @@ function actualizarGate(){
 /* ───────── Guardado ───────── */
 function camposActuales(){
   const f = S.form, o = {};
-  ['contadas','notaConteo','impresion','corte','armado','alto','ancho','largo','peso','guia'].forEach(k => { if (f[k] !== undefined) o[k] = f[k]; });
+  ['contadas','notaConteo','impresion','corte','armado','alto','ancho','largo'].forEach(k => { if (f[k] !== undefined) o[k] = f[k]; });
   return o;
 }
 function programarGuardado(){
@@ -554,7 +550,7 @@ function abrir(folio){
   const it = S.items.find(i => i.folio === folio); if (!it) return;
   S.abierto = folio; S.preview = {};
   const d = it.datos || {};
-  S.form = Object.assign({ contadas:'', notaConteo:'', impresion:'', corte:'', armado:'', alto:'', ancho:'', largo:'', peso:'', guia:'', fotoFinal:false, fotoEntrega:false }, d);
+  S.form = Object.assign({ contadas:'', notaConteo:'', impresion:'', corte:'', armado:'', alto:'', ancho:'', largo:'', fotoFinal:false, fotoEntrega:false }, d);
   Object.keys(S.form).forEach(k => { if (S.form[k] == null) S.form[k] = ''; });
   window.scrollTo(0, 0); render();
 }
@@ -658,7 +654,7 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'pf-nombre') { P.nombre = ev.target.value; guardarPref(); return; }
   if (ev.target.id === 'pf-frase') { P.frase = ev.target.value; guardarPref(); return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
-  if (['contadas','notaConteo','alto','ancho','largo','guia'].indexOf(id) >= 0) {
+  if (['contadas','notaConteo','alto','ancho','largo'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
   }
 });

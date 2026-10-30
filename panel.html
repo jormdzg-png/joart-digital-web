@@ -216,6 +216,7 @@
   <div class="tabs">
     <button class="tab on" data-tab="nuevo">Nuevo</button>
     <button class="tab" data-tab="proyectos">Proyectos</button>
+    <button class="tab" data-tab="produccion">Producción</button>
     <button class="tab" data-tab="mas">Más</button>
   </div>
 
@@ -298,6 +299,11 @@
       <div id="pLista" class="hint">Cargando proyectos…</div>
     </div>
     <div id="fichaVista" hidden></div>
+  </section>
+
+  <!-- ============ PRODUCCIÓN ============ -->
+  <section class="pane" id="pane-produccion">
+    <div id="prodVista" class="hint">Cargando producción…</div>
   </section>
 
   <!-- ============ MÁS ============ -->
@@ -705,6 +711,17 @@ $("fichaVista").addEventListener("click", (e) => {
   }
 });
 
+function pintarProdDetalle(box, r){
+  if(!r.capturado){ box.innerHTML = `<div class="hint" style="margin-top:10px">Todavía no hay nada capturado en producción para este pedido.</div>`; return; }
+  const d = r.datos || {}, ok = (x) => x ? esc(x) : "—";
+  const fotos = (r.fotos || []).map(f => f.b64
+    ? `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a href="${esc(f.url)}" target="_blank" rel="noopener"><img alt="${esc(f.etiqueta)}" src="data:${esc(f.mime)};base64,${f.b64}" style="display:block;width:100%;max-height:70vh;object-fit:contain;background:#000;border:1px solid rgba(242,204,143,.2)"></a>`
+    : `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a class="btn" target="_blank" rel="noopener" href="${esc(f.url)}">Abrir foto en Drive</a>`).join("");
+  box.innerHTML = `<div class="lbl" style="margin-top:16px">Producción</div>
+    <div class="hint">Contadas: ${ok(d.contadas)}${d.notaConteo ? " (" + esc(d.notaConteo) + ")" : ""} · Impresión: ${ok(d.impresion)} · Corte: ${ok(d.corte)}${d.armado ? " · Armado: " + esc(d.armado) : ""}</div>
+    <div class="hint">Paquete: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm</div>
+    ${fotos || `<div class="hint" style="margin-top:10px">Aún no hay fotos.</div>`}`;
+}
 async function verProduccion(btn){
   const box = $("prodBox"), cod = ped && ped.codigo; if(!cod) return;
   btn.disabled = true; btn.textContent = "Cargando…";
@@ -712,18 +729,72 @@ async function verProduccion(btn){
     const r = await post("fotosProduccion", { codigo: cod });
     if(!ped || ped.codigo !== cod) return;
     if(!r.ok){ box.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; return; }
-    if(!r.capturado){ box.innerHTML = `<div class="hint" style="margin-top:10px">Todavía no hay nada capturado en producción para este pedido.</div>`; return; }
-    const d = r.datos || {}, ok = (x) => x ? esc(x) : "—";
-    const fotos = (r.fotos || []).map(f => f.b64
-      ? `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a href="${esc(f.url)}" target="_blank" rel="noopener"><img alt="${esc(f.etiqueta)}" src="data:${esc(f.mime)};base64,${f.b64}" style="display:block;width:100%;max-height:70vh;object-fit:contain;background:#000;border:1px solid rgba(242,204,143,.2)"></a>`
-      : `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a class="btn" target="_blank" rel="noopener" href="${esc(f.url)}">Abrir foto en Drive</a>`).join("");
-    box.innerHTML = `<div class="lbl" style="margin-top:16px">Producción</div>
-      <div class="hint">Contadas: ${ok(d.contadas)}${d.notaConteo ? " (" + esc(d.notaConteo) + ")" : ""} · Impresión: ${ok(d.impresion)} · Corte: ${ok(d.corte)}${d.armado ? " · Armado: " + esc(d.armado) : ""}</div>
-      <div class="hint">Paquete: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm${d.guia ? " · Guía " + esc(d.guia) : ""}</div>
-      ${fotos || `<div class="hint" style="margin-top:10px">Aún no hay fotos.</div>`}`;
+    pintarProdDetalle(box, r);
   }catch(e){ console.error(e); box.innerHTML = `<div class="box err">No se pudo conectar.</div>`; }
   finally{ btn.disabled = false; btn.textContent = "📦 Ver producción (fotos y datos de Daniela)"; }
 }
+
+// ===================== PRODUCCIÓN (todo lo que Daniela va capturando) =====================
+let prodCache = null;
+async function cargarProduccion(){
+  const box = $("prodVista");
+  if(!prodCache) box.textContent = "Cargando producción…";
+  try{
+    const r = await post("produccionResumen");
+    if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return; }
+    prodCache = r; pintarProduccion();
+  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
+}
+function pintarProduccion(){
+  const r = prodCache, box = $("prodVista"); if(!r) return;
+  const abiertos = new Set(Array.from(box.querySelectorAll(".prow.open")).map(x => x.dataset.f));
+  const grupos = [["listo", "Listos para enviar"], ["proceso", "En proceso"], ["nuevo", "Sin empezar"], ["enviado", "Enviados · últimos 14 días"]];
+  const badge = (t, c) => `<span style="white-space:nowrap;font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:1px solid ${c};color:${c}">${esc(t)}</span>`;
+  const fila = (it) => {
+    const pct = it.total ? Math.round(100 * it.hechos / it.total) : 0;
+    const col = it.estado === "listo" || it.estado === "enviado" ? "#81B29A" : it.estado === "proceso" ? "#F2CC8F" : "#8E96B2";
+    const tags = [];
+    if(it.alerta) tags.push(badge("⚠ Incidencia", "#FF8272"));
+    if(it.adelantado) tags.push(badge("Enviar sin revisión", "#F2CC8F"));
+    const pend = it.estado === "nuevo" || it.estado === "proceso";
+    if(it.dias !== null && it.dias < 0 && pend) tags.push(badge("Vencido " + (-it.dias) + " d", "#FF8272"));
+    else if(it.dias === 0 && pend) tags.push(badge("Hoy", "#F2CC8F"));
+    else if(it.fechaTxt && pend) tags.push(badge(it.fechaTxt, "#8E96B2"));
+    if(it.pagado) tags.push(badge("Pagado " + it.pagado, /^100/.test(it.pagado) ? "#81B29A" : "#8E96B2"));
+    const pasos = it.pasos.map(p => `<span style="margin-right:10px;color:${p.ok ? "#B5DEC9" : "#8E96B2"}">${p.ok ? "✓" : "○"} ${esc(p.n)}</span>`).join("");
+    return `<div class="prow${abiertos.has(it.folio) ? " open" : ""}" data-f="${esc(it.folio)}" style="margin-bottom:6px;background:var(--panel);border:1px solid var(--line)">
+      <button type="button" class="pcab" data-f="${esc(it.folio)}" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);padding:13px 14px;cursor:pointer;font:inherit">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><b style="font:600 14.5px Inter,sans-serif">${esc(it.negocio)}</b><span style="font:600 11px var(--mono);color:${col}">${it.hechos}/${it.total}</span></div>
+        <div class="hint" style="margin-top:2px">${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.tipo)}</div>
+        <div style="height:4px;background:rgba(255,255,255,.07);margin:9px 0 8px"><div style="height:4px;width:${pct}%;background:${col}"></div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${tags.join("")}</div></button>
+      <div class="pdet" style="padding:0 14px 14px" ${abiertos.has(it.folio) ? "" : "hidden"}>
+        <div class="hint" style="line-height:1.9">${pasos}</div>
+        ${it.listoEl ? `<div class="hint">Listo: ${esc(it.listoEl)}${it.entregadoEl ? " · Entregado a paquetería: " + esc(it.entregadoEl) : ""}</div>` : ""}
+        ${it.incidencias ? `<div class="box err" style="white-space:pre-line">${esc(it.incidencias)}</div>` : ""}
+        <button type="button" class="btn pfotos" data-f="${esc(it.folio)}" style="margin-top:10px">📷 Ver fotos y datos</button>
+        <div class="pfbox"></div></div></div>`;
+  };
+  const sec = grupos.map(([k, t]) => { const l = r.items.filter(i => i.estado === k); return l.length ? `<div class="col-h"><span>${t} · ${l.length}</span></div>` + l.map(fila).join("") : ""; }).join("");
+  const av = (r.avisos || []).length ? `<details style="margin-top:18px"><summary class="col-h" style="cursor:pointer"><span>Avisos de Daniela · ${r.avisos.length}</span></summary>`
+    + r.avisos.map(a => `<div class="hint" style="padding:8px 0;border-bottom:1px solid var(--line)"><b style="color:var(--sand)">${esc(a.aviso)}</b> · ${esc(a.fecha)}<br>${esc([a.negocio, a.folio].filter(Boolean).join(" · "))}${a.nota ? "<br>" + esc(a.nota) : ""}</div>`).join("") + `</details>` : "";
+  const lam = r.laminas && r.laminas.ultimo ? `<div class="hint" style="margin-top:14px">🧱 Último conteo de láminas: ${esc(r.laminas.ultimo)}</div>` : "";
+  box.innerHTML = `<div class="col-h"><span>${r.items.length} pedidos en producción</span><button type="button" class="link" id="prodRefrescar">Actualizar</button></div>`
+    + (sec || `<div class="hint">No hay pedidos en producción.</div>`) + av + lam;
+}
+$("prodVista").addEventListener("click", async (e) => {
+  if(e.target.id === "prodRefrescar"){ cargarProduccion(); return; }
+  const cab = e.target.closest(".pcab");
+  if(cab){ const row = cab.closest(".prow"); row.classList.toggle("open"); row.querySelector(".pdet").hidden = !row.classList.contains("open"); return; }
+  const b = e.target.closest(".pfotos"); if(!b) return;
+  const row = b.closest(".prow"), fb = row.querySelector(".pfbox"); b.disabled = true; b.textContent = "Cargando…";
+  try{
+    const r = await post("fotosProduccion", { codigo: b.dataset.f });
+    if(!r.ok){ fb.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; }
+    else pintarProdDetalle(fb, r);
+  }catch(err){ console.error(err); fb.innerHTML = `<div class="box err">No se pudo conectar.</div>`; }
+  finally{ b.disabled = false; b.textContent = "📷 Ver fotos y datos"; }
+});
 
 // ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
 const DIMS = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i;
@@ -843,7 +914,7 @@ document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () =>
 function abrirTab(t){
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
   document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
-  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); if(t === "mas") cargarLaminas(); window.scrollTo(0, 0);
+  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); if(t === "produccion") cargarProduccion(); if(t === "mas") cargarLaminas(); window.scrollTo(0, 0);
 }
 
 // ===================== LÁMINAS (Más) =====================
