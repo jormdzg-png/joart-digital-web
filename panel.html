@@ -720,7 +720,7 @@ function pintarProdDetalle(box, r){
     : `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a class="btn" target="_blank" rel="noopener" href="${esc(f.url)}">Abrir foto en Drive</a>`).join("");
   box.innerHTML = `<div class="lbl" style="margin-top:16px">Producción</div>
     <div class="hint">Contadas: ${ok(d.contadas)}${d.notaConteo ? " (" + esc(d.notaConteo) + ")" : ""} · Impresión: ${ok(d.impresion)} · Corte: ${ok(d.corte)}${d.armado ? " · Armado: " + esc(d.armado) : ""}</div>
-    <div class="hint">Paquete: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm</div>
+    <div class="hint">${(d.extras || []).length ? "Paquete 1" : "Paquete"}: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm${(d.extras || []).map((e, i) => `<br>Paquete ${i + 2}: ${ok(e.alto)} × ${ok(e.ancho)} × ${ok(e.largo)} cm`).join("")}</div>
     ${fotos || `<div class="hint" style="margin-top:10px">Aún no hay fotos.</div>`}`;
 }
 async function verProduccion(btn){

@@ -80,6 +80,9 @@
   textarea{ font-size:16px; min-height:84px; margin-top:8px; resize:vertical; }
   input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
   input:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(var(--terra-rgb),.16), 0 0 18px rgba(var(--terra-rgb),.18); background:rgba(255,255,255,.06); }
+  .paq-n{ margin:14px 0 6px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; }
+  .paq-mas, .paq-quitar{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.08em; cursor:pointer; padding:10px 0 0; min-height:36px; text-transform:uppercase; }
+  .paq-quitar{ padding:0; min-height:0; color:var(--mute); }
   .grid4{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .grid4 label{ display:block; margin-bottom:5px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
   .seg{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -389,13 +392,16 @@ function faltantes(it, f){
   if (f.corte !== 'OK') m.push('corte OK');
   if (it.nuevo && f.armado !== 'OK') m.push('armado OK');
   if (!f.fotoFinal) m.push('foto final');
-  if (['alto','ancho','largo'].some(k => !(Number(f[k]) > 0))) m.push('medidas del paquete');
+  if (['alto','ancho','largo'].some(k => !(Number(f[k]) > 0))) m.push('medidas del paquete' + ((f.extras || []).length ? ' 1' : ''));
+  (f.extras || []).forEach((e, i) => { if (['alto','ancho','largo'].some(k => !(Number(e[k]) > 0))) m.push('medidas del paquete ' + (i + 2)); });
   return m;
 }
 function faltantesEntrega(it, f){
   const m = [];
   if (!it.liberado) m.push('liberación de pago');
-  if (!f.fotoEntrega) m.push('foto del paquete cerrado');
+  const n = (f.extras || []).length;
+  if (!f.fotoEntrega) m.push(n ? 'foto del paquete 1' : 'foto del paquete cerrado');
+  (f.extras || []).forEach((e, i) => { if (!e.foto) m.push('foto del paquete ' + (i + 2)); });
   return m;
 }
 
@@ -404,11 +410,11 @@ function seg(k, f){
     <button data-act="seg" data-k="${k}" data-v="OK" aria-pressed="${f[k]==='OK'}">✔ OK</button>
     <button data-act="seg" data-k="${k}" data-v="FALLA" aria-pressed="${f[k]==='FALLA'}">✖ Falla</button></div>`;
 }
-function fotoBloque(tipo, f, flag, titulo){
+function fotoBloque(tipo, tiene, titulo){
   return `<div class="foto">
     ${S.preview[tipo] ? `<img src="${S.preview[tipo]}" alt="">` : ''}
-    <div style="flex:1"><button class="btn" data-act="foto" data-tipo="${tipo}">${f[flag] ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
-    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:8px 0 0">${f[flag] ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
+    <div style="flex:1"><button class="btn" data-act="foto" data-tipo="${tipo}">${tiene ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
+    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:8px 0 0">${tiene ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
     <input type="file" id="file-${tipo}" accept="image/*" capture="environment" hidden></div>`;
 }
 
@@ -438,11 +444,8 @@ function vistaDetalle(app){
       <section class="bloque"><h3>2 · Calidad de impresión</h3>${seg('impresion', f)}</section>
       <section class="bloque"><h3>3 · Calidad de corte</h3>${seg('corte', f)}</section>
       ${it.nuevo ? `<section class="bloque"><h3>4 · Armado de prueba</h3><p class="ayuda">Modelo nuevo/personalizado: ármalo y verifica acoples y holguras.</p>${seg('armado', f)}</section>` : ''}
-      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f, 'fotoFinal', 'Tomar foto')}</section>
-      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3><div class="grid4">
-        <div><label for="alto">Alto</label><input id="alto" type="number" inputmode="decimal" min="0" value="${esc(f.alto)}"></div>
-        <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
-        <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div></div></section>
+      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f.fotoFinal, 'Tomar foto')}</section>
+      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3>${bloquePaquetes(f)}</section>
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnCompletar" data-act="completar" disabled>Completar producción</button></div></div>`;
@@ -452,13 +455,31 @@ function vistaDetalle(app){
       ${bloqueRender(it)}
       ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
                     : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado; Jorge te avisa.</div>'}
-      <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm</p></section>
-      <section class="bloque"><h3>Foto del paquete cerrado</h3><p class="ayuda">Con la guía ya pegada, antes de entregarlo a la paquetería.</p>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
+      ${bloqueEntrega(f)}
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button></div></div>`;
   }
   actualizarGate();
+}
+function bloquePaquetes(f){
+  const ex = f.extras || [], campo = (id, et, v) => `<div><label for="${id}">${et}</label><input id="${id}" type="number" inputmode="decimal" min="0" value="${esc(v)}"></div>`;
+  let h = ex.length ? '<div class="paq-n"><span>Paquete 1</span></div>' : '';
+  h += `<div class="grid4">${campo('alto','Alto',f.alto)}${campo('ancho','Ancho',f.ancho)}${campo('largo','Largo',f.largo)}</div>`;
+  ex.forEach((e, i) => {
+    h += `<div class="paq-n"><span>Paquete ${i + 2}</span>${i === ex.length - 1 ? '<button class="paq-quitar" data-act="quitarPaquete">Quitar</button>' : ''}</div>
+      <div class="grid4">${campo('ex-' + i + '-alto','Alto',e.alto)}${campo('ex-' + i + '-ancho','Ancho',e.ancho)}${campo('ex-' + i + '-largo','Largo',e.largo)}</div>`;
+  });
+  if (ex.length < 4) h += '<button class="paq-mas" data-act="agregarPaquete">+ Otro paquete</button>';
+  return h;
+}
+function bloqueEntrega(f){
+  const ex = f.extras || [];
+  if (!ex.length) return `<section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm</p></section>
+    <section class="bloque"><h3>Foto del paquete cerrado</h3><p class="ayuda">Con la guía ya pegada, antes de entregarlo a la paquetería.</p>${fotoBloque('entrega', f.fotoEntrega, 'Tomar foto')}</section>`;
+  const uno = (n, med, tipo, tiene) => `<section class="bloque"><h3>Paquete ${n} · ${esc(med)} cm</h3><p class="ayuda">${n === 1 ? 'Con la guía ya pegada, antes de entregarlo a la paquetería.' : 'Foto del paquete cerrado con su guía.'}</p>${fotoBloque(tipo, tiene, 'Tomar foto')}</section>`;
+  return uno(1, f.alto + ' × ' + f.ancho + ' × ' + f.largo, 'entrega', f.fotoEntrega) +
+    ex.map((e, i) => uno(i + 2, e.alto + ' × ' + e.ancho + ' × ' + e.largo, 'entrega' + (i + 2), e.foto)).join('');
 }
 function bloqueAvisos(it){
   const b = [];
@@ -494,9 +515,11 @@ function actualizarGate(){
 }
 
 /* ───────── Guardado ───────── */
+function it_etapaProducir(){ const it = S.items.find(i => i.folio === S.abierto); return !!it && it.etapa === 'producir'; }
 function camposActuales(){
   const f = S.form, o = {};
   ['contadas','notaConteo','impresion','corte','armado','alto','ancho','largo'].forEach(k => { if (f[k] !== undefined) o[k] = f[k]; });
+  if (it_etapaProducir()) o.extras = (f.extras || []).map(e => ({ alto: e.alto, ancho: e.ancho, largo: e.largo }));
   return o;
 }
 function programarGuardado(){
@@ -534,9 +557,10 @@ async function subirFoto(tipo, file){
   try {
     if (est) est.textContent = 'Subiendo…';
     const { b64, preview } = await comprimir(file);
-    await api('foto', { folio: S.abierto, tipo, b64 });
+    const mx = /^entrega(\d)$/.exec(tipo);
+    await api('foto', mx ? { folio: S.abierto, tipo: 'entrega', n: Number(mx[1]), b64 } : { folio: S.abierto, tipo, b64 });
     S.preview[tipo] = preview;
-    S.form[tipo === 'final' ? 'fotoFinal' : 'fotoEntrega'] = true;
+    if (mx) S.form.extras[Number(mx[1]) - 2].foto = true; else S.form[tipo === 'final' ? 'fotoFinal' : 'fotoEntrega'] = true;
     vistaDetalle($('#app'));
     toast('Foto guardada ✓');
   } catch (e) {
@@ -552,6 +576,7 @@ function abrir(folio){
   const d = it.datos || {};
   S.form = Object.assign({ contadas:'', notaConteo:'', impresion:'', corte:'', armado:'', alto:'', ancho:'', largo:'', fotoFinal:false, fotoEntrega:false }, d);
   Object.keys(S.form).forEach(k => { if (S.form[k] == null) S.form[k] = ''; });
+  S.form.extras = (d.extras || []).map(e => Object.assign({}, e));
   window.scrollTo(0, 0); render();
 }
 async function cerrarDetalle(){
@@ -593,6 +618,14 @@ document.addEventListener('click', async ev => {
     document.querySelectorAll('.seg[data-k="' + k + '"] button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.form[k]));
     actualizarGate(); programarGuardado();
   }
+  else if (a === 'agregarPaquete') {
+    if ((S.form.extras || []).length < 4) {
+      S.form.extras.push({ alto: '', ancho: '', largo: '', foto: false });
+      vistaDetalle($('#app')); actualizarGate(); programarGuardado();
+      const i = $('#ex-' + (S.form.extras.length - 1) + '-alto'); if (i) i.focus();
+    }
+  }
+  else if (a === 'quitarPaquete') { S.form.extras.pop(); vistaDetalle($('#app')); actualizarGate(); programarGuardado(); }
   else if (a === 'foto') { const i = $('#file-' + b.dataset.tipo); if (i) i.click(); }
   else if (a === 'problema') { $('#probWrap').hidden = !$('#probWrap').hidden; }
   else if (a === 'enviarProblema') {
@@ -654,6 +687,8 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'pf-nombre') { P.nombre = ev.target.value; guardarPref(); return; }
   if (ev.target.id === 'pf-frase') { P.frase = ev.target.value; guardarPref(); return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
+  const mx = /^ex-(\d)-(alto|ancho|largo)$/.exec(id);
+  if (mx && S.form.extras[+mx[1]]) { S.form.extras[+mx[1]][mx[2]] = ev.target.value; actualizarGate(); programarGuardado(); return; }
   if (['contadas','notaConteo','alto','ancho','largo'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
   }
@@ -661,7 +696,7 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', ev => {
   if (ev.target.id === 'avFolio') { S.aviso.folio = ev.target.value; return; }
   if (ev.target.id === 'pf-cumple') { P.cumple = ev.target.value; guardarPref(); render(); return; }
-  const m = /^file-(final|entrega)$/.exec(ev.target.id || '');
+  const m = /^file-(final|entrega\d?)$/.exec(ev.target.id || '');
   if (m && ev.target.files && ev.target.files[0]) subirFoto(m[1], ev.target.files[0]);
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'pin') document.querySelector('[data-act=entrar]').click(); });
