@@ -916,7 +916,7 @@ function datosCot(){
     entrega: cot.entrega, dosCaras: cot.caras === "dos", requiereFactura: cot.factura === "si", soloPrecios: false, envioGratis: (c.subtotal + c.recargo) > 1000,
     items: c.lineas.map(l => ({ nombre: esPers(l.it) ? nombreDe(l.it) + " (a medida)" : l.it.modelo, medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })),
     subtotal: c.subtotal, envio: c.envio, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
-    cuenta: cuentaDe(cot.factura === "si") };
+    cuenta: cuentaDe(cot.factura === "si"), opcionesExtra: extrasCot(cot.items, cot.caras, c.pctEntrega) };
 }
 function waUrl(tel, texto){
   let n = String(tel || "").replace(/\D/g, ""); if(n.length === 10) n = "52" + n; else if(n.length === 13 && n.startsWith("521")) n = "52" + n.slice(3);
@@ -925,7 +925,7 @@ function waUrl(tel, texto){
 const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
 const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
 const lineaEnvio = (d) => d.envio ? `Envío: ${fmt(d.envio)}\n` : (d.envioGratis ? "Envío nacional: gratis 🚚\n" : "");
-const mensajeCot = (d) => `Hola ${d.cliente} 👋 Te comparto la cotización de tu pedido *${d.folio}*; el detalle, las condiciones y los datos de pago van en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido) · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\nVigencia: hasta el ${d.vigencia}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
+const mensajeCot = (d) => `Hola ${d.cliente} 👋 Te comparto la cotización de tu pedido *${d.folio}*; el detalle, las condiciones y los datos de pago van en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido) · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n${otrasMsg(d)}Vigencia: hasta el ${d.vigencia}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
 async function compartirPDF(d, texto, tel){
   if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga la página."); return; }
   if(!cuentaListaParaPDF(d)) return;
@@ -1199,6 +1199,20 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   y += 6;
 
   }
+  if(d.opcionesExtra && d.opcionesExtra.length){
+    nuevaPagina(22 + d.opcionesExtra.length * 6);
+    texto("Otras cantidades (precio por pieza, IVA incluido)", M, y, { bold: true, size: 10 }); y += 5;
+    doc.setFillColor(...CREAM); doc.rect(M, y - 4.5, R - M, 7, "F");
+    texto("Concepto", M + 3, y, { bold: true, size: 8.5 }); texto("Cant.", cCant, y, { bold: true, size: 8.5, align: "right" });
+    texto("Precio unit.", cPU, y, { bold: true, size: 8.5, align: "right" }); texto("Importe", cImp - 3, y, { bold: true, size: 8.5, align: "right" });
+    y += 7;
+    d.opcionesExtra.forEach(x => {
+      texto(doc.splitTextToSize(x.nombre, 88)[0], M + 3, y, { size: 9.5 }); texto(String(x.cantidad), cCant, y, { size: 9.5, align: "right" });
+      texto(moneyS(x.precioUnitario), cPU, y, { size: 9.5, align: "right" }); texto(moneyS(x.precioUnitario * x.cantidad), cImp - 3, y, { size: 9.5, align: "right", bold: true });
+      y += 6;
+    });
+    texto("Referencia: estas cantidades no se suman al total de arriba.", M, y, { size: 8.5, color: MUTED }); y += 8;
+  }
   if(d.notas){
     const ln = doc.splitTextToSize(d.notas, R - M - 6);
     nuevaPagina(ln.length * 4.5 + 12);
@@ -1269,12 +1283,49 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
 }
 </script>
 <script>
+// ===== Otras cantidades (compartido por Proyectos y Cotizar) =====
+const parseOtras = (s) => { const out = []; String(s || "").split(/[^\d]+/).forEach(t => { const n = parseInt(t, 10); if(n > 0 && out.indexOf(n) === -1) out.push(n); }); return out; };
+// Precio de cada cantidad extra de cada producto (con recargo de entrega incluido), con el mismo motor de precios
+function extrasCot(items, caras, pctEntrega){
+  const out = [];
+  items.forEach((it, idx) => {
+    const main = parseInt(it.cantidad, 10) || 0;
+    parseOtras(it.otras).filter(n => n !== main).sort((a, b) => a - b).forEach(q => {
+      const arr = items.map((x, i) => i === idx ? Object.assign({}, x, { cantidad: q }) : x), l = calcularLineas(arr, { caras })[idx];
+      if(l.unit != null && l.unit > 0) out.push({ nombre: esPers(it) ? nombreDe(it) + " (a medida)" : it.modelo, cantidad: q, precioUnitario: Math.round(l.unit * (1 + (pctEntrega || 0))) });
+    });
+  });
+  return out;
+}
+function otrasMsg(d){
+  if(!d.opcionesExtra || !d.opcionesExtra.length) return "";
+  const varios = new Set(d.opcionesExtra.map(x => x.nombre)).size > 1;
+  return "Otras cantidades (por pieza):\n" + d.opcionesExtra.map(x => `• ${varios ? x.nombre + ": " : ""}${x.cantidad} pz → ${fmt(x.precioUnitario)} c/u (${fmt(x.precioUnitario * x.cantidad)})`).join("\n") + "\n\n";
+}
+// En la cotización de Proyectos: campo "Otras cantidades" dentro de cada producto
+(function(){
+  const fv = document.getElementById("fichaVista");
+  const inyectar = () => document.querySelectorAll("#cotItems .item").forEach(card => {
+    if(card.querySelector("[data-otras]") || typeof cot === "undefined" || !cot) return;
+    const it = cot.items.find(x => x.id === +card.dataset.id); if(!it) return;
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>Otras cantidades a cotizar (opcional)</label><input data-otras type="text" inputmode="numeric" placeholder="Ej. 100" value="${esc(it.otras || "")}">`;
+    card.insertBefore(f, card.querySelector(".calc"));
+  });
+  new MutationObserver(inyectar).observe(fv, { childList: true, subtree: true });
+  fv.addEventListener("input", (e) => {
+    if(!e.target.hasAttribute || !e.target.hasAttribute("data-otras") || !cot) return;
+    const card = e.target.closest(".item"), it = card && cot.items.find(x => x.id === +card.dataset.id); if(!it) return;
+    it.otras = e.target.value;
+  });
+})();
+</script>
+<script>
 // ===================== COTIZAR (apartado propio, desde Más) =====================
 // Cotiza primero; al guardar registra el pedido (mismas acciones que Nuevo + Guardar cotización de Proyectos).
 // Un solo registro por cotización: el código se guarda en Q.codigo y los guardados siguientes solo ACTUALIZAN.
 (function(){
   const Q = { items: [nuevoItem()], codigo: "", idem: null, guardando: false, notaGuardada: "", calc: null };
-  const parseOtras = (s) => { const out = []; String(s || "").split(/[^\d]+/).forEach(t => { const n = parseInt(t, 10); if(n > 0 && out.indexOf(n) === -1) out.push(n); }); return out; };
   const nomLinea = (it) => esPers(it) ? nombreDe(it) + " (a medida)" : it.modelo;
 
   // Precio de cada cantidad (la principal + las otras) para un producto, con el mismo motor de precios
@@ -1304,7 +1355,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
     Q.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, opciones, hayOpc };
     const c = Q.calc;
     const filasOpc = hayOpc ? `<div class="lbl" style="margin-top:14px">Opciones de cantidad</div>` + Q.items.map((it, i) => opciones[i].length > 1 ? `<div class="linea"><b>${i + 1}</b><span>${esc(nomLinea(it))}<small>${opciones[i].map(o => `${o.q} pz · ${o.unit != null ? fmt(Math.round(o.unit * (1 + pctEntrega))) + " c/u" : "—"}`).join("  |  ")}</small></span></div>` : "").join("") +
-      `<div class="hint" style="margin:6px 0 10px">El PDF y el mensaje al cliente salen como comparativo de precios por pieza. El pedido se registra con la primera cantidad de cada producto; cuando el cliente elija, se ajusta en Proyectos.</div>` : "";
+      `<div class="hint" style="margin:6px 0 10px">El PDF y el mensaje llevan el total de la cantidad principal (la primera) y las otras cantidades como tabla de referencia. El pedido se registra con la principal; cuando el cliente elija, se ajusta en Proyectos.</div>` : "";
     $("qRes").innerHTML = `<div class="sum">
       ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
       ${filasOpc}
@@ -1327,18 +1378,15 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
     const base = { folio: Q.codigo, cliente: $("qCliente").value.trim(), contacto: $("qContacto").value.trim(), fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
       entrega: $("qEntrega").value, dosCaras: $("qCaras").value === "dos", requiereFactura: factura, envioGratis: (c.subtotal + c.recargo) > 1000,
       subtotal: c.subtotal, envio: c.envio, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo, cuenta: cuentaDe(factura) };
-    if(!c.hayOpc) return Object.assign(base, { soloPrecios: false, items: c.lineas.map(l => ({ nombre: nomLinea(l.it), medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })) });
-    const items = []; Q.items.forEach((it, i) => c.opciones[i].forEach(o => items.push({ nombre: nomLinea(it), medidas: medidasDe(it), cantidad: o.q, precioUnitario: Math.round(o.unit * (1 + c.pctEntrega)), personalizado: esPers(it), grosor: it.grosor })));
-    return Object.assign(base, { soloPrecios: true, items });
+    return Object.assign(base, { soloPrecios: false, opcionesExtra: extrasCot(Q.items, $("qCaras").value, c.pctEntrega), items: c.lineas.map(l => ({ nombre: nomLinea(l.it), medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })) });
   }
-  const textoOpciones = (d) => { const por = {}; d.items.forEach(x => { (por[x.nombre] = por[x.nombre] || []).push(`${x.cantidad} pz ${fmt(x.precioUnitario)} c/u`); }); return Object.keys(por).map(n => `• ${n}: ${por[n].join(" · ")}`).join("\n"); };
-  const mensajeOpc = (d) => `Hola ${d.cliente} 👋 Te comparto las opciones de tu cotización *${d.folio}*; el detalle y las condiciones van en el PDF.\n\n${textoOpciones(d)}\n\nPrecios por pieza, IVA incluido. Vigencia: hasta el ${d.vigencia}\n\nDime qué cantidad te conviene y seguimos con tu render 3D gratis.\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
 
   const notaCompleta = () => {
     const c = Q.calc, entrega = $("qEntrega").value, extras = [];
     if(entrega !== "estandar") extras.push("Entrega " + ({ expres: "exprés (4 días háb.)", urgente: "urgente (2 días háb.; pago 100%)" })[entrega]);
     if($("qCaras").value === "dos") extras.push("Impresión frente y vuelta");
-    if(c.hayOpc) extras.push("Opciones cotizadas — " + textoOpciones(datosQ()).replace(/^• /gm, "").replace(/\n/g, "; "));
+    const ex = extrasCot(Q.items, $("qCaras").value, c.pctEntrega);
+    if(ex.length) extras.push("Otras cantidades cotizadas — " + ex.map(x => `${x.nombre}: ${x.cantidad} pz ${fmt(x.precioUnitario)} c/u`).join("; "));
     extras.push("Creado desde Cotizar");
     return [$("qNotas").value.trim(), ...extras].filter(Boolean).join(" | ");
   };
@@ -1379,7 +1427,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
       if(extra.notaNueva) Q.notaGuardada = nota;
       $("qStatus").hidden = false; $("qStatusCode").textContent = Q.codigo; $("qStatusWarn").textContent = warnClick; window.scrollTo(0, 0);
       toast("Guardado en Sheets y ClickUp");
-      if(enviar){ const d = datosQ(); await compartirPDF(d, d.soloPrecios ? mensajeOpc(d) : mensajeCot(d), d.contacto); }
+      if(enviar){ const d = datosQ(); await compartirPDF(d, mensajeCot(d), d.contacto); }
     }catch(err){
       console.error(err);
       if(Q.codigo){ $("qStatus").hidden = false; $("qStatusCode").textContent = Q.codigo; }
