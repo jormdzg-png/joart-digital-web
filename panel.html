@@ -278,10 +278,51 @@
     <div id="prodVista" class="hint">Cargando producción…</div>
   </section>
 
+  <!-- ============ COTIZAR (desde Más; cotiza primero y registra al guardar) ============ -->
+  <section class="pane" id="pane-cotizar">
+    <button type="button" class="back" id="qVolver">‹ Más</button>
+    <div id="qStatus" hidden class="hud done">
+      <div class="tag">Cotización guardada · ya está en Sheets y ClickUp</div>
+      <div class="code" id="qStatusCode">—</div>
+      <div class="hint" id="qStatusWarn" style="color:var(--danger)"></div>
+      <div class="hint">Si cambias algo y vuelves a guardar, se actualiza esta misma cotización (no se crea otra).</div>
+      <button type="button" class="btn" id="qPdf">📄 Descargar PDF</button>
+      <button type="button" class="btn go" id="qNueva">+ Nueva cotización</button>
+    </div>
+    <div id="qForm">
+      <div class="hud">
+        <div class="lbl">Cliente</div>
+        <div class="row">
+          <div class="field"><label for="qCliente">Nombre o marca *</label><input id="qCliente" type="text" placeholder="Ej. Papas Chidas" autocomplete="off"></div>
+          <div class="field"><label for="qContacto">WhatsApp</label><input id="qContacto" type="tel" placeholder="55 1234 5678" autocomplete="off"></div>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="lbl">Productos</div>
+        <div id="qItems"></div>
+        <button type="button" class="adder" id="qAdd">+ Agregar otro producto</button>
+      </div>
+      <div class="hud">
+        <div class="lbl">Condiciones</div>
+        <div class="row">
+          <div class="field"><label>Entrega</label><select id="qEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +15%</option><option value="urgente">Urgente +25%</option></select></div>
+          <div class="field"><label>Impresión</label><select id="qCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>¿Factura?</label><select id="qFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
+          <div class="field"><label>Envío (si ≤ $1,000)</label><input id="qEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="field"><label for="qNotas">Notas · no salen en el PDF</label><textarea id="qNotas" rows="2" placeholder="Se registran en Sheets y ClickUp"></textarea></div>
+        <div id="qRes"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ MÁS ============ -->
   <section class="pane" id="pane-mas">
     <div class="hud">
       <div class="lbl">Herramientas</div>
+      <button type="button" class="btn go" id="irCotizar">🧮 Cotizar · sin pedido previo</button>
       <a class="btn" href="asistente.html">🤖 Asistente</a>
       <a class="btn" href="video-render.html">🎬 Video del render · para WhatsApp</a>
       <a class="btn" href="mi-pedido.html" target="_blank" rel="noopener">👁 Mi pedido · lo que ve el cliente</a>
@@ -1226,6 +1267,162 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   for(let p = 1; p <= n; p++){ doc.setPage(p); texto(d.folio + "  ·  Página " + p + " de " + n, W / 2, 291, { size: 7.5, color: MUTED, align: "center" }); }
   return doc;
 }
+</script>
+<script>
+// ===================== COTIZAR (apartado propio, desde Más) =====================
+// Cotiza primero; al guardar registra el pedido (mismas acciones que Nuevo + Guardar cotización de Proyectos).
+// Un solo registro por cotización: el código se guarda en Q.codigo y los guardados siguientes solo ACTUALIZAN.
+(function(){
+  const Q = { items: [nuevoItem()], codigo: "", idem: null, guardando: false, notaGuardada: "", calc: null };
+  const parseOtras = (s) => { const out = []; String(s || "").split(/[^\d]+/).forEach(t => { const n = parseInt(t, 10); if(n > 0 && out.indexOf(n) === -1) out.push(n); }); return out; };
+  const nomLinea = (it) => esPers(it) ? nombreDe(it) + " (a medida)" : it.modelo;
+
+  // Precio de cada cantidad (la principal + las otras) para un producto, con el mismo motor de precios
+  function opcionesDe(idx, ctx){
+    const it = Q.items[idx], main = parseInt(it.cantidad, 10) || 0, otras = parseOtras(it.otras).filter(n => n !== main);
+    return [main].concat(otras).map((q, k) => {
+      const arr = Q.items.map((x, i) => i === idx ? Object.assign({}, x, { cantidad: q }) : x), l = calcularLineas(arr, ctx)[idx];
+      return { q, unit: l.unit, principal: k === 0 };
+    });
+  }
+
+  function calcQ(){
+    const caras = $("qCaras").value, entrega = $("qEntrega").value, ctx = { caras };
+    const lineas = calcularLineas(Q.items, ctx), piezas = lineas.reduce((s, l) => s + l.q, 0);
+    const pctEntrega = entrega === "expres" ? 0.15 : entrega === "urgente" ? 0.25 : 0;
+    const subtotal = lineas.reduce((s, l) => s + l.importe, 0), recargo = Math.round(subtotal * pctEntrega);
+    const envio = (subtotal + recargo) <= 1000 ? (parseFloat($("qEnvio").value) || 0) : 0, total = subtotal + recargo + envio;
+    const pctA = entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
+    const opciones = Q.items.map((it, i) => opcionesDe(i, ctx)), hayOpc = opciones.some(o => o.length > 1);
+    let err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
+    if(!err && opciones.some(os => os.some(o => o.unit == null || !(o.unit > 0)))) err = "Revisa las cantidades extra: alguna no tiene precio.";
+    const avisos = [];
+    if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
+    if(opciones.some(os => os.some(o => o.q > CONFIG.maxPiezas))) avisos.push(`Hay cantidades de más de ${CONFIG.maxPiezas} piezas: ese precio es solo de referencia.`);
+    if(entrega !== "estandar" && piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas.`);
+    if(entrega !== "estandar" && Q.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
+    Q.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, opciones, hayOpc };
+    const c = Q.calc;
+    const filasOpc = hayOpc ? `<div class="lbl" style="margin-top:14px">Opciones de cantidad</div>` + Q.items.map((it, i) => opciones[i].length > 1 ? `<div class="linea"><b>${i + 1}</b><span>${esc(nomLinea(it))}<small>${opciones[i].map(o => `${o.q} pz · ${o.unit != null ? fmt(Math.round(o.unit * (1 + pctEntrega))) + " c/u" : "—"}`).join("  |  ")}</small></span></div>` : "").join("") +
+      `<div class="hint" style="margin:6px 0 10px">El PDF y el mensaje al cliente salen como comparativo de precios por pieza. El pedido se registra con la primera cantidad de cada producto; cuando el cliente elija, se ajusta en Proyectos.</div>` : "";
+    $("qRes").innerHTML = `<div class="sum">
+      ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
+      ${filasOpc}
+      <div class="l"><span>${piezas} pieza${piezas === 1 ? "" : "s"}${hayOpc ? " (cantidad principal)" : ""}</span><span>${fmt(subtotal)}</span></div>
+      ${recargo ? `<div class="l"><span>Recargo ${entrega === "expres" ? "exprés" : "urgente"}</span><span>${fmt(recargo)}</span></div>` : ""}
+      ${envio ? `<div class="l"><span>Envío</span><span>${fmt(envio)}</span></div>` : ""}
+      ${(subtotal + recargo) > 1000 ? `<div class="l g"><span>🚚 Envío nacional GRATIS</span><span></span></div>` : (subtotal > 0 && !envio ? `<div class="box warn">Pedido de $1,000 o menos: el envío no va incluido. Escribe el costo si lo cobras.</div>` : "")}
+      <div class="tot">${fmt(total)} <small style="font:600 11px var(--mono);color:var(--mute)">MXN · IVA incluido</small></div>
+      <div class="split"><div>Anticipo ${Math.round(pctA * 100)}%<strong>${fmt(anticipo)}</strong></div><div>Saldo<strong>${fmt(total - anticipo)}</strong></div></div>
+      <button type="button" class="btn go" id="qEnviar" ${err ? "disabled" : ""}>📲 Guardar y enviar al cliente</button>
+      <button type="button" class="btn" id="qGuardar" ${err ? "disabled" : ""}>💾 Guardar sin enviar</button>
+    </div>`;
+    $("qEnviar").addEventListener("click", () => guardar(true)); $("qGuardar").addEventListener("click", () => guardar(false));
+    if(Q.guardando){ $("qEnviar").disabled = true; $("qGuardar").disabled = true; }
+  }
+
+  // Datos para el PDF y el mensaje (misma forma que datosCot de Proyectos)
+  function datosQ(){
+    const c = Q.calc, hoy = new Date(), vence = new Date(hoy.getTime() + CONFIG.vigenciaDias * 86400000), factura = $("qFactura").value === "si";
+    const base = { folio: Q.codigo, cliente: $("qCliente").value.trim(), contacto: $("qContacto").value.trim(), fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
+      entrega: $("qEntrega").value, dosCaras: $("qCaras").value === "dos", requiereFactura: factura, envioGratis: (c.subtotal + c.recargo) > 1000,
+      subtotal: c.subtotal, envio: c.envio, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo, cuenta: cuentaDe(factura) };
+    if(!c.hayOpc) return Object.assign(base, { soloPrecios: false, items: c.lineas.map(l => ({ nombre: nomLinea(l.it), medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })) });
+    const items = []; Q.items.forEach((it, i) => c.opciones[i].forEach(o => items.push({ nombre: nomLinea(it), medidas: medidasDe(it), cantidad: o.q, precioUnitario: Math.round(o.unit * (1 + c.pctEntrega)), personalizado: esPers(it), grosor: it.grosor })));
+    return Object.assign(base, { soloPrecios: true, items });
+  }
+  const textoOpciones = (d) => { const por = {}; d.items.forEach(x => { (por[x.nombre] = por[x.nombre] || []).push(`${x.cantidad} pz ${fmt(x.precioUnitario)} c/u`); }); return Object.keys(por).map(n => `• ${n}: ${por[n].join(" · ")}`).join("\n"); };
+  const mensajeOpc = (d) => `Hola ${d.cliente} 👋 Te comparto las opciones de tu cotización *${d.folio}*; el detalle y las condiciones van en el PDF.\n\n${textoOpciones(d)}\n\nPrecios por pieza, IVA incluido. Vigencia: hasta el ${d.vigencia}\n\nDime qué cantidad te conviene y seguimos con tu render 3D gratis.\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
+
+  const notaCompleta = () => {
+    const c = Q.calc, entrega = $("qEntrega").value, extras = [];
+    if(entrega !== "estandar") extras.push("Entrega " + ({ expres: "exprés (4 días háb.)", urgente: "urgente (2 días háb.; pago 100%)" })[entrega]);
+    if($("qCaras").value === "dos") extras.push("Impresión frente y vuelta");
+    if(c.hayOpc) extras.push("Opciones cotizadas — " + textoOpciones(datosQ()).replace(/^• /gm, "").replace(/\n/g, "; "));
+    extras.push("Creado desde Cotizar");
+    return [$("qNotas").value.trim(), ...extras].filter(Boolean).join(" | ");
+  };
+
+  async function guardar(enviar){
+    if(Q.guardando) return;
+    const c = Q.calc, nombre = $("qCliente").value.trim();
+    if(!c || c.err){ toast(c && c.err || "Falta información"); return; }
+    if(!nombre){ toast("Falta el nombre del cliente"); $("qCliente").focus(); return; }
+    if(!Q.codigo){
+      if(c.piezas > CONFIG.maxPiezas && !confirm(`La cotización suma ${c.piezas} piezas y el máximo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Guardarla de todos modos?`)) return;
+      const nom = normNom(nombre), ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
+      if(ya.length && !confirm(`«${nombre}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi es el mismo pedido, NO crees otro: ábrelo en Proyectos y actualiza su cotización.\n\n¿Crear uno nuevo de todos modos?`)) return;
+    }
+    Q.guardando = true; ["qEnviar", "qGuardar"].forEach(id => { const b = $(id); if(b){ b.disabled = true; } });
+    const btn = $(enviar ? "qEnviar" : "qGuardar"), orig = btn.textContent; btn.textContent = "Guardando…";
+    let creadoAhora = false, warnClick = "";
+    try{
+      const nota = notaCompleta();
+      if(!Q.codigo){
+        if(!Q.idem) Q.idem = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+        const lineas = c.lineas.map(l => ({ modelo: nombreDe(l.it), medidas: medidasDe(l.it), cantidad: l.q, grosor: l.it.grosor, precioUnitario: 0, personalizado: esPers(l.it), hpPorPieza: esPers(l.it) ? hpDe(l.it) : null }));
+        const order = { idem: Q.idem, cliente: nombre, contacto: $("qContacto").value.trim(), zona: "", requiereFactura: false, fechaLimite: "", notas: nota || "sin notas", items: lineas };
+        const res = await post("crearPedido", { order, logos: [] });
+        if(!res.ok) throw new Error(res.error || "no se pudo registrar");
+        if(!res.codigoSeguimiento) throw new Error("el Sheets no devolvió el código; vuelve a intentar (no se duplicará)");
+        Q.codigo = res.codigoSeguimiento; Q.idem = null; Q.notaGuardada = nota; creadoAhora = true;
+        warnClick = (res.clickup && res.clickup.ok === false) ? "⚠ Se guardó en Sheets, pero NO se creó la tarjeta de ClickUp: " + (res.clickup.motivo || "error") : "";
+        $("qCliente").readOnly = true; $("qContacto").readOnly = true;
+        cargarLista();
+      }
+      const factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
+      const itemsG = c.lineas.map(l => ({ modelo: nombreDe(l.it), medidas: medidasDe(l.it), cantidad: l.q, grosor: l.it.grosor, precioUnitario: Math.round(l.unit * factor * 100) / 100, personalizado: esPers(l.it), hpPorPieza: esPers(l.it) ? hpDe(l.it) : null }));
+      if(c.envio) itemsG.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
+      const extra = (!creadoAhora && nota !== Q.notaGuardada) ? { notaNueva: "Actualización de cotización: " + nota } : {};
+      const r = await post("guardarCobro", Object.assign({ codigo: Q.codigo, items: itemsG, requiereFactura: $("qFactura").value === "si" }, extra));
+      if(!r.ok) throw new Error(r.error || "no se guardaron los precios");
+      if(extra.notaNueva) Q.notaGuardada = nota;
+      $("qStatus").hidden = false; $("qStatusCode").textContent = Q.codigo; $("qStatusWarn").textContent = warnClick; window.scrollTo(0, 0);
+      toast("Guardado en Sheets y ClickUp");
+      if(enviar){ const d = datosQ(); await compartirPDF(d, d.soloPrecios ? mensajeOpc(d) : mensajeCot(d), d.contacto); }
+    }catch(err){
+      console.error(err);
+      if(Q.codigo){ $("qStatus").hidden = false; $("qStatusCode").textContent = Q.codigo; }
+      alert("No se pudo terminar: " + (err.message || "error de conexión") + "." + (Q.codigo ? `\n\nEl pedido ya quedó registrado como ${Q.codigo}. Vuelve a tocar el botón: solo se actualizará, no se creará otro.` : "\n\nNo se registró nada.") + (enviar ? " No se envió nada al cliente." : ""));
+    }finally{ Q.guardando = false; btn.textContent = orig; calcQ(); }
+  }
+
+  function nueva(){
+    Q.items = [nuevoItem()]; Q.codigo = ""; Q.idem = null; Q.notaGuardada = ""; Q.calc = null;
+    ["qCliente", "qContacto", "qEnvio", "qNotas"].forEach(id => { $(id).value = ""; }); $("qCliente").readOnly = false; $("qContacto").readOnly = false;
+    $("qEntrega").value = "estandar"; $("qCaras").value = "una"; $("qFactura").value = "no"; $("qStatus").hidden = true;
+    repintar(); calcQ(); window.scrollTo(0, 0);
+  }
+
+  const cambio = () => calcQ(); cambio.ctx = () => ({ caras: $("qCaras").value });
+  const repintar = enlazarItems($("qItems"), () => Q.items, (a) => { Q.items = a; }, true, cambio);
+  // Campo "Otras cantidades" dentro de cada producto (se vuelve a poner cada vez que el editor repinta)
+  function inyectar(){
+    $("qItems").querySelectorAll(".item").forEach(card => {
+      if(card.querySelector("[data-otras]")) return;
+      const it = Q.items.find(x => x.id === +card.dataset.id); if(!it) return;
+      const f = document.createElement("div"); f.className = "field";
+      f.innerHTML = `<label>Otras cantidades a cotizar (opcional)</label><input data-otras type="text" inputmode="numeric" placeholder="Ej. 25, 50, 100" value="${esc(it.otras || "")}">`;
+      card.insertBefore(f, card.querySelector(".calc"));
+    });
+  }
+  new MutationObserver(inyectar).observe($("qItems"), { childList: true });
+  $("qItems").addEventListener("input", (e) => {
+    if(!e.target.hasAttribute || !e.target.hasAttribute("data-otras")) return;
+    const card = e.target.closest(".item"), it = card && Q.items.find(x => x.id === +card.dataset.id); if(!it) return;
+    it.otras = e.target.value; calcQ();
+  });
+  $("qAdd").addEventListener("click", () => { Q.items.push(nuevoItem()); repintar(); calcQ(); });
+  ["qEntrega", "qCaras", "qFactura", "qEnvio", "qNotas"].forEach(id => $(id).addEventListener("input", () => { if(id === "qCaras") repintar(); calcQ(); }));
+  $("qPdf").addEventListener("click", () => {
+    if(!Q.calc || Q.calc.err || !Q.codigo) return; if(!window.jspdf){ alert("No cargó la librería de PDF."); return; }
+    const d = datosQ(); if(!cuentaListaParaPDF(d)) return; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d));
+  });
+  $("qNueva").addEventListener("click", nueva);
+  $("qVolver").addEventListener("click", () => abrirTab("mas"));
+  $("irCotizar").addEventListener("click", () => { abrirTab("cotizar"); const m = document.querySelector('.tab[data-tab="mas"]'); if(m) m.classList.add("on"); });
+  repintar(); inyectar(); calcQ();
+})();
 </script>
 </body>
 </html>
