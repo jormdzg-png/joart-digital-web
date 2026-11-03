@@ -4,24 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#070A14">
+<meta name="theme-color" content="#070A14" id="metaTema">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Joart Core">
+<script>(function(){try{var p=localStorage.getItem('jc_tema')||'auto',l=matchMedia('(prefers-color-scheme: light)').matches;document.documentElement.dataset.tema=(p==='claro'||(p==='auto'&&l))?'claro':'oscuro';}catch(e){document.documentElement.dataset.tema='oscuro';}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <title>Joart Core</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
   :root{
-    --bg:#070A14; --bg2:#0C1222; --panel:rgba(16,23,44,.78); --panel2:rgba(255,255,255,.035);
-    --line:rgba(242,204,143,.20); --line-hi:rgba(224,122,95,.65);
+    color-scheme:dark;
+    --bg:#070A14; --bg2:#0C1222; --glow:#1B2547; --glow2:rgba(224,122,95,.10);
+    --panel:rgba(16,23,44,.78); --solid:#10172C; --thumb:#0A0F1F;
     --sand:#F2CC8F; --terra:#E07A5F; --terra-d:#C4603F; --sage:#81B29A; --ink:#ECE8D6; --mute:#8E96B2; --danger:#FF8272;
+    --line:color-mix(in srgb, var(--sand) 20%, transparent); --line-hi:color-mix(in srgb, var(--terra) 65%, transparent);
+    --panel2:color-mix(in srgb, var(--ink) 3.5%, transparent);
+    --ok-ink:#B5DEC9; --err-ink:#FFB4A9; --ambar:#E0A43A; --rojo:#E5584F; --sum-b:rgba(16,23,44,.9);
     --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --disp:'Archivo Expanded','Inter',sans-serif;
+    --disp:'Archivo Expanded','Inter',system-ui,sans-serif;
+  }
+  :root[data-tema="claro"]{
+    color-scheme:light;
+    --bg:#F5F0E4; --bg2:#EFE8D8; --glow:#EADFC4; --glow2:rgba(224,122,95,.14);
+    --panel:rgba(255,255,255,.84); --solid:#FFFFFF; --thumb:#EDE6D4;
+    --sand:#8A5E14; --terra:#C4603F; --terra-d:#A94E31; --sage:#2F7A5C; --ink:#1A2036; --mute:#5E667F; --danger:#C0392B;
+    --ok-ink:#1F6048; --err-ink:#9B2C20; --ambar:#9A6A12; --rojo:#B3342B; --sum-b:rgba(255,255,255,.92);
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   [hidden]{ display:none !important; }
-  html{ color-scheme:dark; }
   body{ margin:0; min-height:100vh; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased;
-    background:radial-gradient(900px 520px at 50% -8%, #1B2547 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, rgba(224,122,95,.10), transparent 60%), var(--bg); }
+    background:radial-gradient(900px 520px at 50% -8%, var(--glow) 0%, transparent 62%), radial-gradient(600px 420px at 100% 100%, var(--glow2), transparent 60%), var(--bg); }
   body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
-    background-image:linear-gradient(rgba(242,204,143,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(242,204,143,.05) 1px, transparent 1px);
+    background-image:linear-gradient(color-mix(in srgb, var(--sand) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--sand) 5%, transparent) 1px, transparent 1px);
     background-size:44px 44px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, transparent 72%); }
   .wrap{ position:relative; z-index:1; width:100%; max-width:640px; margin:0 auto; padding:14px 16px calc(120px + env(safe-area-inset-bottom)); }
 
@@ -52,23 +71,22 @@
   .lbl::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--line), transparent); }
   .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; min-width:0; } .field:last-child{ margin-bottom:0; }
   .field label{ font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
-  input, select, textarea{ width:100%; background:var(--panel2); border:1px solid rgba(242,204,143,.22); color:var(--ink); padding:11px 12px; font:500 14.5px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s, background .2s; }
-  input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
-  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(224,122,95,.16), 0 0 18px rgba(224,122,95,.18); background:rgba(255,255,255,.06); }
-  select option{ background:#10172C; color:var(--ink); }
+  input, select, textarea{ width:100%; background:var(--panel2); border:1px solid color-mix(in srgb, var(--sand) 22%, transparent); color:var(--ink); padding:11px 12px; font:500 14.5px 'Inter',sans-serif; border-radius:0; transition:border-color .2s, box-shadow .2s, background .2s; }
+  input::placeholder, textarea::placeholder{ color:color-mix(in srgb, var(--mute) 70%, transparent); }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px color-mix(in srgb, var(--terra) 16%, transparent), 0 0 18px color-mix(in srgb, var(--terra) 18%, transparent); background:color-mix(in srgb, var(--ink) 6%, transparent); }
+  select option{ background:var(--solid); color:var(--ink); }
   textarea{ resize:vertical; min-height:64px; }
   .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .row3{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   .hint{ font-size:11.5px; color:var(--mute); line-height:1.45; }
   .flash{ animation:flash 1.4s ease-out; }
-  @keyframes flash{ 0%{ box-shadow:0 0 0 2px var(--sand), 0 0 22px rgba(242,204,143,.55); background:rgba(242,204,143,.14); } 100%{ box-shadow:none; } }
+  @keyframes flash{ 0%{ box-shadow:0 0 0 2px var(--sand), 0 0 22px color-mix(in srgb, var(--sand) 55%, transparent); background:color-mix(in srgb, var(--sand) 14%, transparent); } 100%{ box-shadow:none; } }
 
   /* ---------- botones ---------- */
-  .btn{ display:block; width:100%; border:1px solid rgba(242,204,143,.45); background:transparent; color:var(--sand); padding:13px 14px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; text-decoration:none; text-align:center; transition:all .2s; margin-top:8px;
-    clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
-  .btn:hover{ background:rgba(242,204,143,.1); box-shadow:0 0 18px rgba(242,204,143,.2); }
-  .btn.go{ background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px rgba(224,122,95,.35); }
-  .btn.go:hover{ filter:brightness(1.1); box-shadow:0 0 34px rgba(224,122,95,.55); }
-  .btn.ok{ background:rgba(129,178,154,.14); border-color:rgba(129,178,154,.6); color:#B5DEC9; }
+  .btn{ display:block; width:100%; border:1px solid color-mix(in srgb, var(--sand) 45%, transparent); background:transparent; color:var(--sand); padding:13px 14px; font:600 12.5px var(--mono); letter-spacing:.13em; text-transform:uppercase; cursor:pointer; text-decoration:none; text-align:center; transition:all .2s; margin-top:8px; }
+  .btn:hover{ background:color-mix(in srgb, var(--sand) 10%, transparent); box-shadow:0 0 18px color-mix(in srgb, var(--sand) 20%, transparent); }
+  .btn.go{ clip-path:polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); background:linear-gradient(135deg, var(--terra), var(--terra-d)); color:#fff; border-color:transparent; box-shadow:0 0 26px color-mix(in srgb, var(--terra) 35%, transparent); }
+  .btn.go:hover{ filter:brightness(1.1); box-shadow:0 0 34px color-mix(in srgb, var(--terra) 55%, transparent); }
+  .btn.ok{ background:color-mix(in srgb, var(--sage) 14%, transparent); border-color:color-mix(in srgb, var(--sage) 60%, transparent); color:var(--ok-ink); }
   .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
   .btn.mini{ display:inline-block; width:auto; padding:8px 12px; margin:0; font-size:11px; }
   .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0; }
@@ -78,32 +96,32 @@
   .readout b{ color:var(--sand); font-weight:600; }
 
   /* ---------- productos ---------- */
-  .item{ position:relative; border:1px solid var(--line); background:rgba(255,255,255,.025); padding:14px 12px 12px; margin-bottom:12px; }
+  .item{ position:relative; border:1px solid var(--line); background:color-mix(in srgb, var(--ink) 2.5%, transparent); padding:14px 12px 12px; margin-bottom:12px; }
   .item-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font:600 10.5px var(--mono); letter-spacing:.16em; color:var(--terra); text-transform:uppercase; }
   .item .calc{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font:400 11.5px var(--mono); color:var(--mute); }
   .item .calc b{ font:800 15px var(--disp); color:var(--sand); white-space:nowrap; }
-  .adder{ width:100%; background:transparent; color:var(--mute); border:1px dashed rgba(242,204,143,.35); padding:12px; font:600 11.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
+  .adder{ width:100%; background:transparent; color:var(--mute); border:1px dashed color-mix(in srgb, var(--sand) 35%, transparent); padding:12px; font:600 11.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; }
   .adder:hover{ color:var(--sand); border-color:var(--sand); }
 
-  .drop{ border:1px dashed rgba(242,204,143,.4); padding:18px; text-align:center; cursor:pointer; color:var(--mute); font-size:13px; transition:all .2s; }
-  .drop:hover, .drop.over{ border-color:var(--terra); color:var(--sand); background:rgba(224,122,95,.07); box-shadow:0 0 22px rgba(224,122,95,.15); }
+  .drop{ border:1px dashed color-mix(in srgb, var(--sand) 40%, transparent); padding:18px; text-align:center; cursor:pointer; color:var(--mute); font-size:13px; transition:all .2s; }
+  .drop:hover, .drop.over{ border-color:var(--terra); color:var(--sand); background:color-mix(in srgb, var(--terra) 7%, transparent); box-shadow:0 0 22px color-mix(in srgb, var(--terra) 15%, transparent); }
   .drop b{ display:block; font:600 11px var(--mono); letter-spacing:.16em; color:var(--sand); margin-bottom:4px; text-transform:uppercase; }
   .thumbs{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .thumb{ position:relative; width:64px; height:64px; border:1px solid var(--line); background:#0a0f1f; display:flex; align-items:center; justify-content:center; overflow:hidden; font:600 10px var(--mono); color:var(--mute); }
+  .thumb{ position:relative; width:64px; height:64px; border:1px solid var(--line); background:var(--thumb); display:flex; align-items:center; justify-content:center; overflow:hidden; font:600 10px var(--mono); color:var(--mute); }
   .thumb img{ width:100%; height:100%; object-fit:cover; }
-  .thumb button{ position:absolute; top:0; right:0; width:20px; height:20px; border:none; background:rgba(7,10,20,.85); color:var(--ink); cursor:pointer; font-size:13px; line-height:1; }
+  .thumb button{ position:absolute; top:0; right:0; width:20px; height:20px; border:none; background:color-mix(in srgb, var(--bg) 85%, transparent); color:var(--ink); cursor:pointer; font-size:13px; line-height:1; }
 
   /* ---------- barra de registro ---------- */
-  .dock{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, rgba(7,10,20,.94) 38%); }
+  .dock{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, color-mix(in srgb, var(--bg) 94%, transparent) 38%); }
   .dock .in{ max-width:640px; margin:0 auto; }
   .dock .btn{ margin:0; padding:16px 14px; font-size:13.5px; }
   .dock .estado{ font:400 10.5px var(--mono); letter-spacing:.1em; color:var(--mute); text-align:center; margin-bottom:6px; text-transform:uppercase; }
   .dock .estado.falta{ color:var(--danger); }
 
   /* ---------- registrado ---------- */
-  .done{ text-align:center; padding:26px 16px 18px; border-color:rgba(129,178,154,.55); background:radial-gradient(circle at 50% 0%, rgba(129,178,154,.16), transparent 70%), var(--panel); }
+  .done{ text-align:center; padding:26px 16px 18px; border-color:color-mix(in srgb, var(--sage) 55%, transparent); background:radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--sage) 16%, transparent), transparent 70%), var(--panel); }
   .done .tag{ font:600 10.5px var(--mono); letter-spacing:.22em; color:var(--sage); text-transform:uppercase; }
-  .done .code{ font:800 30px var(--disp); letter-spacing:.06em; color:var(--sand); margin:10px 0 6px; text-shadow:0 0 22px rgba(242,204,143,.45); min-height:38px; }
+  .done .code{ font:800 30px var(--disp); letter-spacing:.06em; color:var(--sand); margin:10px 0 6px; text-shadow:0 0 22px color-mix(in srgb, var(--sand) 45%, transparent); min-height:38px; }
   .check{ width:62px; height:62px; margin:0 auto 6px; }
   .check circle{ stroke-dasharray:190; stroke-dashoffset:190; animation:trazo .7s ease-out forwards; }
   .check path{ stroke-dasharray:40; stroke-dashoffset:40; animation:trazo .45s .55s ease-out forwards; }
@@ -121,8 +139,8 @@
   .proj.old{ opacity:.6; }
   .proj .der{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
   .bdg{ font:600 10px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); border:1px solid var(--line); padding:3px 7px; white-space:nowrap; }
-  .bdg.ambar{ color:#e0a43a; border-color:#e0a43a; }
-  .bdg.rojo{ color:#e5584f; border-color:#e5584f; }
+  .bdg.ambar{ color:var(--ambar); border-color:var(--ambar); }
+  .bdg.rojo{ color:var(--rojo); border-color:var(--rojo); }
   .vseg{ display:flex; gap:0; margin:12px 0 0; border:1px solid var(--line); }
   .vseg button{ flex:1; background:transparent; border:0; color:var(--mute); padding:10px 8px; font:600 10.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
   .vseg button + button{ border-left:1px solid var(--line); }
@@ -135,19 +153,19 @@
   .linea small{ display:block; color:var(--mute); font:400 11px var(--mono); margin-top:2px; }
 
   /* ---------- resumen de cotización ---------- */
-  .sum{ border:1px solid var(--line-hi); background:linear-gradient(160deg, rgba(224,122,95,.14), rgba(16,23,44,.9)); padding:16px; margin-top:12px; }
+  .sum{ border:1px solid var(--line-hi); background:linear-gradient(160deg, color-mix(in srgb, var(--terra) 14%, transparent), var(--sum-b)); padding:16px; margin-top:12px; }
   .sum .l{ display:flex; justify-content:space-between; font:400 12.5px var(--mono); color:var(--mute); padding:3px 0; }
   .sum .l.g{ color:var(--sage); font-weight:600; }
-  .sum .tot{ font:800 28px var(--disp); color:var(--sand); margin:8px 0 4px; text-shadow:0 0 20px rgba(242,204,143,.35); }
+  .sum .tot{ font:800 28px var(--disp); color:var(--sand); margin:8px 0 4px; text-shadow:0 0 20px color-mix(in srgb, var(--sand) 35%, transparent); }
   .split{ display:flex; gap:10px; margin:10px 0 4px; }
-  .split div{ flex:1; background:rgba(255,255,255,.05); padding:9px 11px; font:400 10px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
+  .split div{ flex:1; background:color-mix(in srgb, var(--ink) 5%, transparent); padding:9px 11px; font:400 10px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
   .split strong{ display:block; font:800 16px var(--disp); color:var(--ink); letter-spacing:0; margin-top:3px; }
   .box{ padding:10px 12px; font-size:12.5px; margin:10px 0; line-height:1.45; border:1px solid; }
-  .box.err{ background:rgba(255,130,114,.10); border-color:rgba(255,130,114,.5); color:#FFB4A9; font-weight:600; }
-  .box.warn{ background:rgba(242,204,143,.08); border-color:rgba(242,204,143,.4); color:var(--sand); }
+  .box.err{ background:color-mix(in srgb, var(--danger) 10%, transparent); border-color:color-mix(in srgb, var(--danger) 50%, transparent); color:var(--err-ink); font-weight:600; }
+  .box.warn{ background:color-mix(in srgb, var(--sand) 8%, transparent); border-color:color-mix(in srgb, var(--sand) 40%, transparent); color:var(--sand); }
 
   /* ---------- candado y arranque ---------- */
-  .lock{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:radial-gradient(700px 500px at 50% 30%, #1B2547, var(--bg) 70%); }
+  .lock{ position:fixed; inset:0; z-index:90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:radial-gradient(700px 500px at 50% 30%, var(--glow), var(--bg) 70%); }
   .lock h2{ font:800 18px var(--disp); letter-spacing:.14em; margin:0; }
   .lock p{ font:400 12px var(--mono); letter-spacing:.08em; color:var(--mute); margin:0; max-width:34ch; line-height:1.6; }
   .lock-form{ display:flex; gap:8px; width:100%; max-width:320px; } .lock-form input{ flex:1; text-align:center; letter-spacing:.3em; }
@@ -158,21 +176,87 @@
   .boot .core-logo{ width:96px; height:96px; }
   .boot pre{ margin:0; font:400 12px/1.9 var(--mono); color:var(--sage); letter-spacing:.08em; min-width:240px; }
   .boot pre i{ color:var(--sand); font-style:normal; }
-  .toast{ position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:10px 16px; font:500 12.5px 'Inter',sans-serif; z-index:70; display:none; max-width:90vw; box-shadow:0 0 24px rgba(224,122,95,.3); }
+  .toast{ position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--solid); border:1px solid var(--line-hi); color:var(--ink); padding:10px 16px; font:500 12.5px 'Inter',sans-serif; z-index:70; display:none; max-width:90vw; box-shadow:0 0 24px color-mix(in srgb, var(--terra) 30%, transparent); }
   .saludo{ font:800 21px var(--disp); margin:2px 0 4px; } .saludo + .hint{ margin-bottom:16px; }
   a{ color:var(--terra); }
   button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visible{ outline:2px solid var(--sand); outline-offset:2px; }
   @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
+
+  /* ---------- CSS moderno ---------- */
+  html{ scrollbar-gutter:stable; accent-color:var(--terra); }
+  body{ min-height:100dvh; }
+  .saludo{ font-size:clamp(19px, 1.1vw + 15px, 26px); text-wrap:balance; }
+  .ficha-name{ font-size:clamp(18px, 1vw + 14px, 24px); text-wrap:balance; }
+  .done .code{ font-size:clamp(26px, 3vw + 14px, 38px); }
+  .sum .tot{ font-size:clamp(25px, 2vw + 16px, 34px); }
+  .bdg, .calc b, .sum, .split strong, .tot, .linea b, .col-h{ font-variant-numeric:tabular-nums; }
+  .field:has(:focus-visible) > label, .field:has(:focus) > label{ color:var(--sand); }
+  .hud{ container-type:inline-size; }
+  @container (max-width:300px){ .row, .row3{ grid-template-columns:1fr; } }
+  .btn:not(.go):not(:disabled):active{ transform:translateY(1px); }
+  .toast{ animation:entra .22s ease both; }
+  .proj.sel{ border-color:var(--line-hi); box-shadow:-3px 0 0 var(--terra); background:color-mix(in srgb, var(--terra) 9%, var(--panel)); }
+  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .skip{ position:absolute; left:12px; top:-60px; z-index:200; background:var(--solid); color:var(--ink); border:1px solid var(--terra); padding:10px 14px; font:600 12px var(--mono); }
+  .skip:focus{ top:10px; }
+  .nota-off{ font:400 11px var(--mono); letter-spacing:.08em; color:var(--ambar); margin:0 0 10px; text-transform:uppercase; }
+
+  /* ---------- esqueletos de carga ---------- */
+  .skel{ display:grid; gap:8px; }
+  .skel i{ display:block; height:56px; border:1px solid var(--line); background-color:var(--panel);
+    background-image:linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--sand) 12%, transparent) 50%, transparent 70%); background-size:240% 100%; animation:brillo 1.5s linear infinite; }
+  .skel i.s{ height:16px; width:42%; border:0; }
+  .skel i.t{ height:110px; }
+  @keyframes brillo{ from{ background-position:140% 0; } to{ background-position:-40% 0; } }
+
+  /* ---------- transiciones de vista ---------- */
+  @supports (view-transition-name:none){ .pane.on{ animation:none; } }
+  ::view-transition-old(root), ::view-transition-new(root){ animation-duration:.18s; }
+
+  /* ---------- escritorio: aprovecha el ancho ---------- */
+  #fichaVacia{ display:none; }
+  @media (min-width:1000px){
+    .wrap{ max-width:1120px; padding-inline:28px; }
+    .tabs{ margin-inline:-28px; padding-inline:20px; justify-content:flex-start; gap:6px; }
+    .tab{ flex:0 0 auto; padding:13px 26px; }
+    #formNuevo{ columns:2; column-gap:20px; }
+    #formNuevo > *{ break-inside:avoid; }
+    #formNuevo > .saludo, #formNuevo > .saludo + .hint{ column-span:all; }
+    #pane-proyectos.on{ display:grid; grid-template-columns:minmax(340px, 420px) minmax(0, 1fr); gap:28px; align-items:start; }
+    #pane-proyectos #listaVista{ grid-column:1; grid-row:1; position:sticky; top:58px; max-height:calc(100dvh - 76px); overflow:auto; padding:0 6px 24px 0; }
+    #pane-proyectos #listaVista[hidden]{ display:block !important; }
+    #pane-proyectos #fichaVista, #pane-proyectos #fichaVacia{ grid-column:2; grid-row:1; min-width:0; }
+    #fichaVista:not([hidden]) ~ #fichaVacia{ display:none; }
+    #fichaVista[hidden] ~ #fichaVacia{ display:flex; }
+    #fichaVacia{ align-items:center; justify-content:center; min-height:260px; border:1px dashed var(--line); color:var(--mute); font:400 12px var(--mono); letter-spacing:.14em; text-transform:uppercase; }
+    #fichaVista .back{ display:none; }
+    #pane-mas.on{ columns:2; column-gap:20px; }
+    #pane-mas .hud{ break-inside:avoid; }
+    .dock .in{ max-width:640px; }
+  }
+
+  /* ---------- accesibilidad ---------- */
+  @media (prefers-contrast:more){
+    :root{ --line:color-mix(in srgb, var(--sand) 55%, transparent); --mute:#C3C9DE; }
+    :root[data-tema="claro"]{ --mute:#363D54; }
+    input, select, textarea, .btn, .proj{ border-color:var(--sand); }
+  }
+  @media (forced-colors:active){
+    .btn.go{ clip-path:none; border:1px solid ButtonText; }
+    .tab.on::after{ background:Highlight; }
+    .skel i{ background-image:none; }
+  }
 </style>
 </head>
 <body>
+<a class="skip" href="#app">Saltar al contenido</a>
 
 <!-- ============ CANDADO ============ -->
 <div class="lock" id="lockScreen">
   <svg class="core-logo" style="width:78px;height:78px" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
   <div><h2>JOART CORE</h2><p style="margin-top:10px">Acceso restringido. Escribe tu clave para entrar.</p></div>
-  <div class="lock-form"><input type="password" id="lockInput" placeholder="••••••" autocomplete="current-password"><button type="button" class="btn go" id="lockBtn">Entrar</button></div>
-  <div class="lock-err" id="lockError"></div>
+  <div class="lock-form"><input type="password" id="lockInput" aria-label="Clave" placeholder="••••••" autocomplete="current-password"><button type="button" class="btn go" id="lockBtn">Entrar</button></div>
+  <div class="lock-err" id="lockError" role="alert"></div>
 </div>
 
 <!-- ============ ARRANQUE ============ -->
@@ -183,12 +267,12 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <radialGradient id="gCore" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF6DC"/><stop offset=".45" stop-color="#F2CC8F"/><stop offset="1" stop-color="#E07A5F" stop-opacity=".15"/></radialGradient>
+    <radialGradient id="gCore" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF6DC"/><stop offset=".45" style="stop-color:var(--sand)"/><stop offset="1" style="stop-color:var(--terra)" stop-opacity=".15"/></radialGradient>
     <symbol id="reactor" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="29" fill="none" stroke="#F2CC8F" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 5"/>
-      <g class="rot" style="transform-origin:32px 32px;animation:gira 22s linear infinite"><path d="M32 6 A26 26 0 0 1 58 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/><path d="M32 58 A26 26 0 0 1 6 32" fill="none" stroke="#E07A5F" stroke-width="2.4" stroke-linecap="round"/></g>
-      <circle cx="32" cy="32" r="19" fill="none" stroke="#F2CC8F" stroke-width="1.4" stroke-opacity=".8"/>
-      <g stroke="#F2CC8F" stroke-width="2" stroke-linecap="round" stroke-opacity=".9"><path d="M32 17v6M32 41v6M17 32h6M41 32h6"/></g>
+      <circle cx="32" cy="32" r="29" fill="none" style="stroke:var(--sand)" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 5"/>
+      <g class="rot" style="transform-origin:32px 32px;animation:gira 22s linear infinite"><path d="M32 6 A26 26 0 0 1 58 32" fill="none" style="stroke:var(--terra)" stroke-width="2.4" stroke-linecap="round"/><path d="M32 58 A26 26 0 0 1 6 32" fill="none" style="stroke:var(--terra)" stroke-width="2.4" stroke-linecap="round"/></g>
+      <circle cx="32" cy="32" r="19" fill="none" style="stroke:var(--sand)" stroke-width="1.4" stroke-opacity=".8"/>
+      <g style="stroke:var(--sand)" stroke-width="2" stroke-linecap="round" stroke-opacity=".9"><path d="M32 17v6M32 41v6M17 32h6M41 32h6"/></g>
       <circle cx="32" cy="32" r="9" fill="url(#gCore)"/>
     </symbol>
   </defs>
@@ -198,17 +282,17 @@
   <div class="top">
     <svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
     <div><b>JOART CORE</b><small>centro de pedidos</small></div>
-    <div class="online" id="online"><i></i><span>EN LÍNEA</span></div>
+    <div class="online" id="online" role="status"><i></i><span>EN LÍNEA</span></div>
   </div>
-  <div class="tabs">
-    <button class="tab on" data-tab="nuevo">Nuevo</button>
-    <button class="tab" data-tab="proyectos">Proyectos</button>
-    <button class="tab" data-tab="produccion">Producción</button>
-    <button class="tab" data-tab="mas">Más</button>
+  <div class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab on" data-tab="nuevo" id="tab-nuevo" role="tab" aria-selected="true" aria-controls="pane-nuevo">Nuevo</button>
+    <button class="tab" data-tab="proyectos" id="tab-proyectos" role="tab" aria-selected="false" aria-controls="pane-proyectos" tabindex="-1">Proyectos</button>
+    <button class="tab" data-tab="produccion" id="tab-produccion" role="tab" aria-selected="false" aria-controls="pane-produccion" tabindex="-1">Producción</button>
+    <button class="tab" data-tab="mas" id="tab-mas" role="tab" aria-selected="false" aria-controls="pane-mas" tabindex="-1">Más</button>
   </div>
 
   <!-- ============ NUEVO PEDIDO ============ -->
-  <section class="pane on" id="pane-nuevo">
+  <section class="pane on" id="pane-nuevo" role="tabpanel" aria-labelledby="tab-nuevo">
     <div id="doneBox" hidden class="hud done">
       <svg class="check" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="none" stroke="#81B29A" stroke-width="2.5"/><path d="M18 33l9 9 19-20" fill="none" stroke="#81B29A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div class="tag">Pedido registrado · ya está en Sheets y ClickUp</div>
@@ -256,7 +340,7 @@
 
       <div class="hud">
         <div class="lbl">Logo e imágenes</div>
-        <div class="drop" id="drop"><b>Toca, arrastra o pega (Ctrl+V)</b>Logo, referencias, pantallazos · hasta 5</div>
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Agregar logo o imágenes"><b>Toca, arrastra o pega (Ctrl+V)</b>Logo, referencias, pantallazos · hasta 5</div>
         <input id="fLogo" type="file" multiple accept="image/*,.pdf,.ai,.eps,.svg" hidden>
         <div class="thumbs" id="thumbs"></div>
       </div>
@@ -264,22 +348,23 @@
   </section>
 
   <!-- ============ PROYECTOS ============ -->
-  <section class="pane" id="pane-proyectos">
+  <section class="pane" id="pane-proyectos" role="tabpanel" aria-labelledby="tab-proyectos">
     <div id="listaVista">
-      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="busca" type="search" placeholder="Buscar cliente o código…" autocomplete="off"></div>
-      <div class="vseg" id="vSeg"><button type="button" data-v="semana">Por semana</button><button type="button" data-v="todas">Todas</button><button type="button" data-v="estado">Por estado</button></div>
-      <div id="pLista" class="hint">Cargando proyectos…</div>
+      <div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="busca" type="search" aria-label="Buscar proyecto" placeholder="Buscar cliente o código…" autocomplete="off"></div>
+      <div class="vseg" id="vSeg" role="group" aria-label="Vista de proyectos"><button type="button" data-v="semana">Por semana</button><button type="button" data-v="todas">Todas</button><button type="button" data-v="estado">Por estado</button></div>
+      <div id="pLista" aria-live="polite"><div class="skel" role="status"><span class="sr">Cargando proyectos…</span><i class="s"></i><i></i><i></i><i></i></div></div>
     </div>
-    <div id="fichaVista" hidden></div>
+    <div id="fichaVista" hidden aria-live="polite"></div>
+    <div id="fichaVacia">Elige un proyecto</div>
   </section>
 
   <!-- ============ PRODUCCIÓN ============ -->
-  <section class="pane" id="pane-produccion">
-    <div id="prodVista" class="hint">Cargando producción…</div>
+  <section class="pane" id="pane-produccion" role="tabpanel" aria-labelledby="tab-produccion">
+    <div id="prodVista"><div class="skel" role="status"><span class="sr">Cargando producción…</span><i class="s"></i><i></i><i></i></div></div>
   </section>
 
   <!-- ============ MÁS ============ -->
-  <section class="pane" id="pane-mas">
+  <section class="pane" id="pane-mas" role="tabpanel" aria-labelledby="tab-mas">
     <div class="hud">
       <div class="lbl">Herramientas</div>
       <a class="btn" href="asistente.html">🤖 Asistente</a>
@@ -288,7 +373,12 @@
     </div>
     <div class="hud">
       <div class="lbl">Láminas</div>
-      <div class="hint" id="lamLista" style="margin-bottom:12px">Cargando…</div>
+      <div id="lamLista" style="margin-bottom:12px"><div class="skel" role="status"><span class="sr">Cargando…</span><i class="s"></i><i class="s"></i></div></div>
+    </div>
+    <div class="hud">
+      <div class="lbl">Apariencia</div>
+      <div class="vseg" id="temaSeg" role="group" aria-label="Apariencia"><button type="button" data-t="auto">Automática</button><button type="button" data-t="claro">Clara</button><button type="button" data-t="oscuro">Oscura</button></div>
+      <button type="button" class="btn" id="instalarBtn" hidden>📲 Instalar Joart Core</button>
     </div>
     <div class="hud"><div class="lbl">Sesión</div><button type="button" class="btn" id="salirBtn">Cerrar sesión en este dispositivo</button></div>
   </section>
@@ -296,9 +386,9 @@
 
 <div class="dock" id="dock"><div class="in">
   <div class="estado" id="dockEstado">Falta el nombre del cliente</div>
-  <button type="button" class="btn go" id="regBtn">⚡ Registrar pedido</button>
+  <button type="button" class="btn go" id="regBtn" aria-describedby="dockEstado">⚡ Registrar pedido</button>
 </div></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="jspdf.umd.min.js"></script>
 <script>if(!window.jspdf){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"><\/script>'); }</script>
@@ -344,7 +434,11 @@ async function intentarAcceso(pw){
     const result = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ accion:"verificarConexion", password: intento }) })).json();
     if(result.ok){ passwordActual = intento; try{ localStorage.setItem("joart_sheet_key", intento); }catch(e){} $("lockScreen").style.display = "none"; iniciarApp(); }
     else{ $("lockError").textContent = auto ? "" : "Clave incorrecta."; if(auto){ try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} } }
-  }catch(e){ console.error(e); $("lockError").textContent = "No se pudo verificar. Intenta de nuevo."; }
+  }catch(e){
+    console.error(e);
+    if(auto){ passwordActual = intento; $("lockScreen").style.display = "none"; iniciarApp(); }   // sin red: entra con lo último guardado
+    else $("lockError").textContent = "No se pudo verificar. Intenta de nuevo.";
+  }
   finally{ $("lockBtn").disabled = false; $("lockBtn").textContent = "Entrar"; $("lockScreen").style.visibility = ""; }
 }
 $("lockBtn").addEventListener("click", () => intentarAcceso());
@@ -493,6 +587,7 @@ function pintarThumbs(){
 }
 function sumarArchivos(lista){ const nuevos = Array.from(lista || []); if(!nuevos.length) return; archivos = archivos.concat(nuevos).slice(0, 5); pintarThumbs(); }
 $("drop").addEventListener("click", () => $("fLogo").click());
+$("drop").addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); $("fLogo").click(); } });
 $("fLogo").addEventListener("change", (e) => { sumarArchivos(e.target.files); e.target.value = ""; });
 $("thumbs").addEventListener("click", (e) => { const q = e.target.dataset && e.target.dataset.q; if(q === undefined) return; archivos.splice(+q, 1); pintarThumbs(); });
 ["dragenter","dragover"].forEach(ev => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); }));
@@ -585,20 +680,35 @@ function diasDe(txt){
 const ORDEN_ESTADO = ["imprimir", "enviar", "enviado", "hacer render", "corregir render", "yo", "en revision"];
 const ESTADOS_SEMANA = ["imprimir", "hacer render", "corregir render", "enviar"], MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const domingoDe = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - x.getDay()); return x; };   // la semana empieza en domingo
+const SKEL = (n) => `<div class="skel" role="status"><span class="sr">Cargando…</span><i class="s"></i>${"<i></i>".repeat(n)}</div>`;
+function armarLista(proyectos){
+  todosProyectos = proyectos || [];
+  // En la lista del panel solo van los pedidos con código (los que se pueden abrir); el Asistente busca en todos.
+  listaCache = todosProyectos.filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido, fecha: p.fechaLimite, dias: diasDe(p.fechaLimite) }));
+}
 async function cargarLista(){
   const box = $("pLista");
+  if(!box.querySelector(".proj")) box.innerHTML = SKEL(4);
   try{
     const r = await post("listarProyectos");
     if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return 0; }
-    todosProyectos = r.proyectos || []; ultimaCarga = Date.now();
-    // En la lista del panel solo van los pedidos con código (los que se pueden abrir); el Asistente busca en todos.
-    listaCache = todosProyectos.filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido, fecha: p.fechaLimite, dias: diasDe(p.fechaLimite) }));
+    ultimaCarga = Date.now(); armarLista(r.proyectos);
+    try{ localStorage.setItem("jc_lista", JSON.stringify({ t: Date.now(), proyectos: r.proyectos || [] })); }catch(e){}
     pintarLista(); return listaCache.length;
-  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; return 0; }
+  }catch(e){
+    console.error(e);
+    let c = null; try{ c = JSON.parse(localStorage.getItem("jc_lista") || "null"); }catch(_){}
+    if(c && c.proyectos){
+      armarLista(c.proyectos); pintarLista();
+      box.insertAdjacentHTML("afterbegin", `<div class="nota-off">Sin conexión · última lectura ${new Date(c.t).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</div>`);
+      return listaCache.length;
+    }
+    box.textContent = "No se pudo conectar."; return 0;
+  }
 }
 function pintarLista(){
   const q = normNom($("busca").value), box = $("pLista");
-  document.querySelectorAll("#vSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === vistaLista));
+  document.querySelectorAll("#vSeg button").forEach(b => { const on = b.dataset.v === vistaLista; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
   const cuentaCod = {}; listaCache.forEach(t => { if(t.codigo) cuentaCod[t.codigo] = (cuentaCod[t.codigo] || 0) + 1; });
   const entregado = (t) => (t.estatus || "").trim().toLowerCase() === "entregado";
   const coincide = (t) => !q || normNom(t.nombre).includes(q) || normNom(t.codigo).includes(q);
@@ -667,7 +777,8 @@ $("pLista").addEventListener("click", (e) => {
 let ped = null, abrirTok = 0, cot = null;
 async function abrirProyecto(cod, nombreEsperado){
   cod = String(cod || "").trim().toUpperCase(); const tok = ++abrirTok;
-  $("listaVista").hidden = true; $("fichaVista").hidden = false; $("fichaVista").innerHTML = `<div class="hint" style="padding:30px 0;text-align:center">ABRIENDO ${esc(cod)}…</div>`; window.scrollTo(0, 0);
+  vt(() => { $("listaVista").hidden = true; $("fichaVista").hidden = false; $("fichaVista").innerHTML = `<div class="skel" role="status"><span class="sr">Abriendo ${esc(cod)}…</span><i class="s"></i><i class="t"></i><i></i></div>`; window.scrollTo(0, 0); });
+  marcarSel(cod);
   const falla = (m) => { $("fichaVista").innerHTML = `<button class="back" id="volver">‹ Proyectos</button><div class="box err">${esc(m)}</div>`; };
   try{
     const p = await post("buscarPedido", { codigo: cod, nombre: nombreEsperado || "" });
@@ -702,7 +813,7 @@ function pintarFicha(){
   if(cot) pintarCot();
 }
 $("fichaVista").addEventListener("click", (e) => {
-  if(e.target.id === "volver"){ abrirTok++; $("fichaVista").hidden = true; $("listaVista").hidden = false; ped = null; cot = null; window.scrollTo(0, 0); return; }
+  if(e.target.id === "volver"){ abrirTok++; vt(() => { $("fichaVista").hidden = true; $("listaVista").hidden = false; ped = null; cot = null; window.scrollTo(0, 0); }); marcarSel(""); return; }
   if(e.target.id === "armarCot"){ armarCot(); }
   if(e.target.id === "verProd"){ verProduccion(e.target); }
   if(e.target.id === "cartaPdf"){
@@ -739,7 +850,7 @@ async function verProduccion(btn){
 let prodCache = null;
 async function cargarProduccion(){
   const box = $("prodVista");
-  if(!prodCache) box.textContent = "Cargando producción…";
+  if(!prodCache) box.innerHTML = SKEL(3);
   try{
     const r = await post("produccionResumen");
     if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return; }
@@ -921,10 +1032,27 @@ $("fichaVista").addEventListener("click", async (e) => {
 // ===================== PESTAÑAS Y ARRANQUE =====================
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => abrirTab(b.dataset.tab)));
 function abrirTab(t){
-  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === t));
-  document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
-  $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); if(t === "proyectos") cargarLista(); if(t === "produccion") cargarProduccion(); if(t === "mas") cargarLaminas(); window.scrollTo(0, 0);
+  vt(() => {
+    document.querySelectorAll(".tab").forEach(x => { const on = x.dataset.tab === t; x.classList.toggle("on", on); x.setAttribute("aria-selected", on); x.tabIndex = on ? 0 : -1; });
+    document.querySelectorAll(".pane").forEach(x => x.classList.toggle("on", x.id === "pane-" + t));
+    $("dock").hidden = !(t === "nuevo" && $("doneBox").hidden); window.scrollTo(0, 0);
+  });
+  if(t === "proyectos") cargarLista(); if(t === "produccion") cargarProduccion(); if(t === "mas") cargarLaminas();
 }
+// Transición de vista (donde el navegador la ofrece; sin ella, cambio directo)
+function vt(fn){
+  if(document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches){ try{ document.startViewTransition(fn); return; }catch(e){} }
+  fn();
+}
+// Flechas, Inicio y Fin entre pestañas
+$("pane-nuevo").parentElement.querySelector(".tabs").addEventListener("keydown", (e) => {
+  const tabs = Array.from(document.querySelectorAll(".tab")), i = tabs.indexOf(document.activeElement); if(i < 0) return;
+  const k = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
+  if(k === undefined) return; e.preventDefault(); tabs[k].focus(); abrirTab(tabs[k].dataset.tab);
+});
+// Proyecto seleccionado (en escritorio la lista queda visible junto a la ficha)
+function marcarSel(cod){ document.querySelectorAll("#pLista .proj").forEach(b => { const on = !!cod && b.dataset.cod === cod; b.classList.toggle("sel", on); if(on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); }); }
+new MutationObserver(() => marcarSel(ped && ped.codigo)).observe($("pLista"), { childList: true });
 
 // ===================== LÁMINAS (Más) =====================
 async function cargarLaminas(){
@@ -936,6 +1064,37 @@ async function cargarLaminas(){
       + (r.ultimoConteo ? `<div class="hint" style="margin-top:8px">Último conteo: ${esc(r.ultimoConteo)}</div>` : "");
   }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
 }
+
+// ===================== APARIENCIA · INSTALACIÓN · ETIQUETAS =====================
+function aplicarTema(p){
+  try{ localStorage.setItem("jc_tema", p); }catch(e){}
+  const claro = p === "claro" || (p === "auto" && matchMedia("(prefers-color-scheme: light)").matches);
+  document.documentElement.dataset.tema = claro ? "claro" : "oscuro";
+  $("metaTema").content = claro ? "#F5F0E4" : "#070A14";
+  document.querySelectorAll("#temaSeg button").forEach(b => { const on = b.dataset.t === p; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+}
+$("temaSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if(b) aplicarTema(b.dataset.t); });
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { let p = "auto"; try{ p = localStorage.getItem("jc_tema") || "auto"; }catch(e){} if(p === "auto") aplicarTema("auto"); });
+(function(){ let p = "auto"; try{ p = localStorage.getItem("jc_tema") || "auto"; }catch(e){} aplicarTema(p); })();
+
+let instalador = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); instalador = e; $("instalarBtn").hidden = false; });
+window.addEventListener("appinstalled", () => { instalador = null; $("instalarBtn").hidden = true; });
+$("instalarBtn").addEventListener("click", async () => { if(!instalador) return; instalador.prompt(); try{ await instalador.userChoice; }catch(e){} instalador = null; $("instalarBtn").hidden = true; });
+
+// Cada etiqueta queda ligada a su campo (también en lo que se genera después: productos, cotización)
+let etqId = 0;
+function asociarEtiquetas(raiz){
+  (raiz || document).querySelectorAll(".field > label:not([for])").forEach(l => {
+    const c = l.parentElement.querySelector("input, select, textarea"); if(!c) return;
+    if(!c.id) c.id = "campo-" + (++etqId);
+    l.htmlFor = c.id;
+  });
+}
+asociarEtiquetas();
+new MutationObserver(() => asociarEtiquetas()).observe($("app"), { childList: true, subtree: true });
+
+if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){ window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
 $("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 // --- Conexión real
@@ -965,6 +1124,7 @@ async function iniciarApp(){
   $("saludoSub").textContent = n ? `${listaCache.filter(t => (t.estatus || "").trim().toLowerCase() !== "entregado").length} proyectos en curso` : "";
   await dormir(Math.max(0, 900 - (Date.now() - t0))); boot.classList.add("off"); setTimeout(() => boot.classList.remove("on"), 550);
   // Enlace directo desde el Asistente: panel.html?abrir=JD-XXXXX
+  try{ const hh = location.hash.slice(1); if(["proyectos", "produccion", "mas"].includes(hh)) abrirTab(hh); }catch(e){}
   try{ const ab = new URLSearchParams(location.search).get("abrir"); if(ab && /^JD-[A-Z0-9]+$/i.test(ab)){ abrirTab("proyectos"); abrirProyecto(ab, ""); history.replaceState(null, "", location.pathname); } }catch(e){}
 }
 const ZONAS = ["Aguascalientes","Baja California","Baja California Sur","Campeche","CDMX","Chiapas","Chihuahua","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Monterrey","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
