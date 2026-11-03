@@ -33,6 +33,7 @@
   .online{ margin-left:auto; display:flex; align-items:center; gap:7px; font:600 10px var(--mono); letter-spacing:.14em; color:var(--sage); }
   .online i{ width:7px; height:7px; border-radius:50%; background:var(--sage); box-shadow:0 0 10px var(--sage); animation:pulso 2.2s ease-in-out infinite; }
   @keyframes pulso{ 50%{ opacity:.35; transform:scale(.8); } }
+  .online.off{ color:var(--danger); } .online.off i{ background:var(--danger); box-shadow:0 0 10px var(--danger); animation:none; }
 
   .tabs{ display:flex; position:sticky; top:0; z-index:20; margin:0 -16px 16px; padding:0 8px; background:linear-gradient(var(--bg) 70%, transparent); backdrop-filter:blur(8px); }
   .tab{ flex:1; background:none; border:none; color:var(--mute); padding:13px 6px; font:600 11.5px var(--mono); letter-spacing:.16em; cursor:pointer; position:relative; text-transform:uppercase; }
@@ -72,22 +73,7 @@
   .btn.mini{ display:inline-block; width:auto; padding:8px 12px; margin:0; font-size:11px; }
   .link{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; cursor:pointer; padding:0; }
 
-  /* ---------- orbe de voz ---------- */
-  .orb-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:4px 0 12px; }
-  .orb{ position:relative; width:150px; height:150px; border:none; background:none; cursor:pointer; padding:0; }
-  .orb svg{ width:100%; height:100%; overflow:visible; }
-  .orb .r1{ transform-origin:75px 75px; animation:gira 28s linear infinite; }
-  .orb .r2{ transform-origin:75px 75px; animation:gira 18s linear infinite reverse; }
-  .orb .r3{ transform-origin:75px 75px; animation:gira 40s linear infinite; }
-  .orb .core{ transform-origin:75px 75px; animation:late 3.2s ease-in-out infinite; }
-  .orb.on .r1{ animation-duration:4s; } .orb.on .r2{ animation-duration:3s; } .orb.on .core{ animation:late .7s ease-in-out infinite; }
-  .orb::after{ content:""; position:absolute; inset:14px; border-radius:50%; border:1px solid var(--terra); opacity:0; }
-  .orb.on::after{ animation:onda 1.4s ease-out infinite; }
   @keyframes gira{ to{ transform:rotate(360deg); } }
-  @keyframes late{ 50%{ transform:scale(1.07); filter:brightness(1.25); } }
-  @keyframes onda{ 0%{ opacity:.8; transform:scale(.9); } 100%{ opacity:0; transform:scale(1.7); } }
-  .orb-txt{ font:600 11px var(--mono); letter-spacing:.18em; color:var(--mute); text-transform:uppercase; min-height:16px; text-align:center; }
-  .orb.on + .orb-txt{ color:var(--terra); }
   .readout{ font:400 12px/1.55 var(--mono); color:var(--mute); margin-top:10px; border-left:2px solid var(--line-hi); padding:2px 0 2px 10px; }
   .readout b{ color:var(--sand); font-weight:600; }
 
@@ -175,6 +161,7 @@
   .toast{ position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#10172C; border:1px solid var(--line-hi); color:var(--ink); padding:10px 16px; font:500 12.5px 'Inter',sans-serif; z-index:70; display:none; max-width:90vw; box-shadow:0 0 24px rgba(224,122,95,.3); }
   .saludo{ font:800 21px var(--disp); margin:2px 0 4px; } .saludo + .hint{ margin-bottom:16px; }
   a{ color:var(--terra); }
+  button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visible{ outline:2px solid var(--sand); outline-offset:2px; }
   @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition:none !important; } }
 </style>
 </head>
@@ -211,7 +198,7 @@
   <div class="top">
     <svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>
     <div><b>JOART CORE</b><small>centro de pedidos</small></div>
-    <div class="online"><i></i>EN LÍNEA</div>
+    <div class="online" id="online"><i></i><span>EN LÍNEA</span></div>
   </div>
   <div class="tabs">
     <button class="tab on" data-tab="nuevo">Nuevo</button>
@@ -233,23 +220,11 @@
 
     <div id="formNuevo">
       <div class="saludo" id="saludo">Hola, Jorge</div>
-      <div class="hint" id="saludoSub">Cuéntame el pedido o pega el chat. Yo lleno el formulario.</div>
+      <div class="hint" id="saludoSub"></div>
 
       <div class="hud">
-        <div class="lbl">Dictar o pegar chat</div>
-        <div class="orb-wrap">
-          <button type="button" class="orb" id="orb" aria-label="Dictar pedido">
-            <svg viewBox="0 0 150 150">
-              <circle cx="75" cy="75" r="71" fill="none" stroke="#F2CC8F" stroke-opacity=".18"/>
-              <g class="r1"><circle cx="75" cy="75" r="66" fill="none" stroke="#F2CC8F" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="2 9"/><path d="M75 9 A66 66 0 0 1 141 75" fill="none" stroke="#E07A5F" stroke-width="3" stroke-linecap="round"/></g>
-              <g class="r2"><circle cx="75" cy="75" r="55" fill="none" stroke="#E07A5F" stroke-opacity=".5" stroke-width="1" stroke-dasharray="14 8 3 8"/><path d="M75 130 A55 55 0 0 1 20 75" fill="none" stroke="#F2CC8F" stroke-width="2.4" stroke-linecap="round"/></g>
-              <g class="r3"><circle cx="75" cy="75" r="44" fill="none" stroke="#F2CC8F" stroke-opacity=".35" stroke-width="1"/><g stroke="#F2CC8F" stroke-width="2.2" stroke-linecap="round"><path d="M75 28v8M75 114v8M28 75h8M114 75h8"/></g></g>
-              <g class="core"><circle cx="75" cy="75" r="30" fill="url(#gCore)"/><g fill="none" stroke="#1a1020" stroke-width="3.2" stroke-linecap="round"><rect x="68" y="60" width="14" height="22" rx="7" fill="#1a1020" stroke="none"/><path d="M60 76a15 15 0 0 0 30 0M75 91v8"/></g></g>
-            </svg>
-          </button>
-          <div class="orb-txt" id="orbTxt">Toca y habla</div>
-        </div>
-        <div class="field"><textarea id="fDictado" rows="3" placeholder="…o pega aquí el chat de WhatsApp con el cliente"></textarea></div>
+        <div class="lbl">Pegar chat</div>
+        <div class="field"><textarea id="fDictado" rows="3" placeholder="Pega aquí el chat de WhatsApp con el cliente"></textarea></div>
         <button type="button" class="btn" id="llenarBtn">✨ Interpretar y llenar</button>
         <div class="readout" id="dictOut" hidden></div>
       </div>
@@ -260,10 +235,7 @@
           <div class="field"><label for="fCliente">Nombre o marca *</label><input id="fCliente" type="text" placeholder="Ej. Papas Chidas" autocomplete="off"></div>
           <div class="field"><label for="fContacto">WhatsApp</label><input id="fContacto" type="tel" placeholder="55 1234 5678" autocomplete="off"></div>
         </div>
-        <div class="row">
-          <div class="field"><label for="fZona">Estado / ciudad</label><input id="fZona" type="text" list="listaZonas" placeholder="Opcional" autocomplete="off"></div>
-          <div class="field"><label for="fFactura">¿Factura?</label><select id="fFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
-        </div>
+        <div class="field"><label for="fZona">Estado / ciudad</label><input id="fZona" type="text" list="listaZonas" placeholder="Opcional" autocomplete="off"></div>
         <datalist id="listaZonas"></datalist>
       </div>
 
@@ -295,7 +267,7 @@
   <section class="pane" id="pane-proyectos">
     <div id="listaVista">
       <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="busca" type="search" placeholder="Buscar cliente o código…" autocomplete="off"></div>
-      <div class="vseg" id="vSeg"><button type="button" data-v="semana">Esta semana</button><button type="button" data-v="todas">Todas</button><button type="button" data-v="estado">Por estado</button></div>
+      <div class="vseg" id="vSeg"><button type="button" data-v="semana">Por semana</button><button type="button" data-v="todas">Todas</button><button type="button" data-v="estado">Por estado</button></div>
       <div id="pLista" class="hint">Cargando proyectos…</div>
     </div>
     <div id="fichaVista" hidden></div>
@@ -310,7 +282,6 @@
   <section class="pane" id="pane-mas">
     <div class="hud">
       <div class="lbl">Herramientas</div>
-      <a class="btn" href="configurador.html" target="_blank" rel="noopener">🧊 Configurador 3D · para el cliente</a>
       <a class="btn" href="asistente.html">🤖 Asistente</a>
       <a class="btn" href="video-render.html">🎬 Video del render · para WhatsApp</a>
       <a class="btn" href="mi-pedido.html" target="_blank" rel="noopener">👁 Mi pedido · lo que ve el cliente</a>
@@ -318,7 +289,6 @@
     <div class="hud">
       <div class="lbl">Láminas</div>
       <div class="hint" id="lamLista" style="margin-bottom:12px">Cargando…</div>
-      <div class="hint" id="lamMov">Para cambiar el conteo, escribe en la pestaña «Láminas» del Sheets.</div>
     </div>
     <div class="hud"><div class="lbl">Sesión</div><button type="button" class="btn" id="salirBtn">Cerrar sesión en este dispositivo</button></div>
   </section>
@@ -475,10 +445,10 @@ function calcularLineas(arr, ctx){
 
 // ===================== NUEVO PEDIDO (solo registro, sin cotizar) =====================
 let items = [nuevoItem()], archivos = [], listaCache = [], todosProyectos = [], registrando = false, idemActual = null;
-const cambioNuevo = () => { actualizarDock(); };
+const cambioNuevo = () => { actualizarDock(); guardarBorrador(); };
 const pintarItems = enlazarItems($("itemsBox"), () => items, (a) => { items = a; }, false, cambioNuevo);
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); actualizarDock(); });
-["fCliente","fContacto","fZona","fFactura","fNotas","fEntrega","fCaras"].forEach(id => $(id).addEventListener("input", actualizarDock));
+["fCliente","fContacto","fZona","fNotas","fEntrega","fCaras","fDictado"].forEach(id => $(id).addEventListener("input", () => { actualizarDock(); guardarBorrador(); }));
 
 function faltantes(){
   const f = []; if(!$("fCliente").value.trim()) f.push("el nombre del cliente");
@@ -490,6 +460,30 @@ function actualizarDock(){
   e.className = "estado" + (f.length ? " falta" : "");
   e.textContent = f.length ? "Falta " + f.join(" y ") : `Listo · ${piezas} pieza${piezas === 1 ? "" : "s"}${archivos.length ? " · " + archivos.length + " archivo" + (archivos.length === 1 ? "" : "s") : ""}`;
   $("regBtn").disabled = registrando || f.length > 0;
+}
+
+// --- Borrador: lo escrito en Nuevo se conserva si se recarga o falla la conexión
+const BORRADOR_CLAVE = "jc_borrador", CAMPOS_BORRADOR = ["fCliente","fContacto","fZona","fNotas","fEntrega","fCaras","fDictado"];
+function guardarBorrador(){
+  try{
+    const b = { campos: {}, items }; CAMPOS_BORRADOR.forEach(id => { b.campos[id] = $(id).value; });
+    const vacio = !b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas && !b.campos.fDictado && items.length === 1 && !items[0].desc && !items[0].alto;
+    if(vacio) localStorage.removeItem(BORRADOR_CLAVE); else localStorage.setItem(BORRADOR_CLAVE, JSON.stringify(b));
+  }catch(e){}
+}
+function borrarBorrador(){ try{ localStorage.removeItem(BORRADOR_CLAVE); }catch(e){} }
+function recuperarBorrador(){
+  try{
+    const b = JSON.parse(localStorage.getItem(BORRADOR_CLAVE) || "null"); if(!b || !b.campos) return;
+    if(!b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas && !b.campos.fDictado) return;
+    CAMPOS_BORRADOR.forEach(id => { if(typeof b.campos[id] === "string") $(id).value = b.campos[id]; });
+    if(Array.isArray(b.items) && b.items.length){
+      items = b.items.map(x => Object.assign(nuevoItem(), x, { id: nextId++ }));
+      items.forEach(it => { if(it.modelo !== PERSONALIZADO && !MODELOS.some(m => m.nombre === it.modelo)) it.modelo = MODELOS[0].nombre; });
+      pintarItems();
+    }
+    actualizarDock(); toast("Borrador recuperado");
+  }catch(e){ borrarBorrador(); }
 }
 
 // --- Imágenes: tocar, arrastrar o pegar
@@ -518,7 +512,7 @@ function aplicarDictado(texto){
   const limpio = limpiarChat(texto), r = parsearPedidoTexto(limpio), marcados = [];
   const poner = (id, v) => { const el = $(id); el.value = v; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); marcados.push(id); };
   if(r.cliente) poner("fCliente", r.cliente);
-  if(r.entrega) poner("fEntrega", r.entrega); if(r.caras) poner("fCaras", r.caras); if(r.factura) poner("fFactura", r.factura);
+  if(r.entrega) poner("fEntrega", r.entrega); if(r.caras) poner("fCaras", r.caras);
   const tel = limpio.match(/(?:\+?\s?52\s?1?\s?)?\b(\d{2}[\s-]?\d{4}[\s-]?\d{4})\b/); if(tel && !$("fContacto").value.trim()){ poner("fContacto", tel[1].replace(/[\s-]/g, "")); actualizarZonaPorLada(); }
   if(r.items.length){
     items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
@@ -528,24 +522,11 @@ function aplicarDictado(texto){
   }
   const nom = (n) => n === PERSONALIZADO ? "Personalizado" : n;
   const partes = [r.items.length ? r.items.map(x => `<b>${x.cantidad}</b> × ${esc(nom(x.modelo))}${x.alto ? ` (${x.alto}×${x.ancho}×${x.prof}${x.tipoPers && x.tipoPers !== "niveles" ? ", " + x.niveles + " " + TIPOS_PERS[x.tipoPers].unidad[x.niveles === 1 ? 0 : 1] : ""})` : ""}`).join(" + ") : "⚠ no reconocí el modelo",
-    r.cliente ? "cliente <b>" + esc(r.cliente) + "</b>" : "⚠ falta el cliente", r.grosor && "<b>" + r.grosor + "</b>", r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta", r.factura && "con factura"].filter(Boolean);
+    r.cliente ? "cliente <b>" + esc(r.cliente) + "</b>" : "⚠ falta el cliente", r.grosor && "<b>" + r.grosor + "</b>", r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta"].filter(Boolean);
   out.innerHTML = "ENTENDÍ ▸ " + partes.join(" · ") + "<br>Revisa los campos marcados antes de registrar.";
   actualizarDock();
 }
 $("llenarBtn").addEventListener("click", () => aplicarDictado($("fDictado").value));
-(function(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, orb = $("orb"), txt = $("orbTxt");
-  if(!SR){ txt.textContent = "Escribe o pega abajo (o usa el micrófono de tu teclado)"; orb.style.opacity = .5; orb.style.cursor = "default"; return; }
-  let rec = null, oyendo = false;
-  orb.addEventListener("click", () => {
-    if(oyendo && rec){ rec.stop(); return; }
-    rec = new SR(); rec.lang = "es-MX"; rec.interimResults = true; rec.continuous = false; oyendo = true; orb.classList.add("on"); txt.textContent = "Escuchando… toca para terminar";
-    rec.onresult = (e) => { $("fDictado").value = Array.from(e.results).map(x => x[0].transcript).join(" "); };
-    rec.onerror = (e) => { txt.textContent = e.error === "not-allowed" ? "Permite el micrófono en el navegador" : "No pude escuchar (" + e.error + ")"; };
-    rec.onend = () => { oyendo = false; orb.classList.remove("on"); if(/Escuchando/.test(txt.textContent)) txt.textContent = "Toca y habla"; if($("fDictado").value.trim()) aplicarDictado($("fDictado").value); };
-    try{ rec.start(); }catch(err){ oyendo = false; orb.classList.remove("on"); txt.textContent = "Toca y habla"; }
-  });
-})();
 
 // --- Registrar
 async function registrar(){
@@ -562,13 +543,14 @@ async function registrar(){
   const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
   const lineas = items.map(it => ({ modelo: nombreDe(it), medidas: medidasDe(it), cantidad: parseInt(it.cantidad, 10) || 1, grosor: it.grosor, precioUnitario: 0, personalizado: esPers(it), hpPorPieza: esPers(it) ? hpDe(it) : null }));
   if(!idemActual) idemActual = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
-  const order = { idem: idemActual, cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: $("fFactura").value === "si", fechaLimite: "", notas, items: lineas };
+  const order = { idem: idemActual, cliente: $("fCliente").value.trim(), contacto: $("fContacto").value.trim(), zona: $("fZona").value.trim(), requiereFactura: false, fechaLimite: "", notas, items: lineas };
   registrando = true; $("regBtn").disabled = true; $("regBtn").textContent = "Registrando…";
   try{
     let logos = []; if(archivos.length){ try{ logos = await Promise.all(archivos.map(async f => ({ nombre: f.name, tipo: f.type, contenido: await fileToB64(f) }))); }catch(e){ console.error(e); } }
     const res = await (await fetch(BACKEND_URL, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify({ accion: "crearPedido", order, logos, password: passwordActual }) })).json();
     if(!res.ok){ alert("No se pudo registrar: " + (res.error || "error desconocido")); return; }
     idemActual = null;   // el siguiente pedido es otro
+    borrarBorrador();
     mostrarRegistrado(res, order);
     cargarLista();
   }catch(e){ console.error(e); alert("No se pudo conectar. No se registró nada; intenta de nuevo."); }
@@ -583,8 +565,8 @@ function mostrarRegistrado(res, order){
 }
 $("regBtn").addEventListener("click", registrar);
 $("againBtn").addEventListener("click", () => {
-  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fZona").dataset.auto = "0"; $("fFactura").value = "no"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
-  archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); $("dictOut").hidden = true;
+  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fZona").dataset.auto = "0"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
+  archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); $("dictOut").hidden = true; borrarBorrador();
   $("doneBox").hidden = true; $("formNuevo").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); actualizarDock();
 });
 
@@ -601,12 +583,14 @@ function diasDe(txt){
   return Math.round((d - h0) / 86400000);
 }
 const ORDEN_ESTADO = ["imprimir", "enviar", "enviado", "hacer render", "corregir render", "yo", "en revision"];
+const ESTADOS_SEMANA = ["imprimir", "hacer render", "corregir render", "enviar"], MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const domingoDe = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - x.getDay()); return x; };   // la semana empieza en domingo
 async function cargarLista(){
   const box = $("pLista");
   try{
     const r = await post("listarProyectos");
     if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return 0; }
-    todosProyectos = r.proyectos || [];
+    todosProyectos = r.proyectos || []; ultimaCarga = Date.now();
     // En la lista del panel solo van los pedidos con código (los que se pueden abrir); el Asistente busca en todos.
     listaCache = todosProyectos.filter(p => p.codigo).map(p => ({ nombre: p.cliente, codigo: p.codigo, estatus: p.estatus, repetido: p.repetido, fecha: p.fechaLimite, dias: diasDe(p.fechaLimite) }));
     pintarLista(); return listaCache.length;
@@ -629,7 +613,6 @@ function pintarLista(){
   const fila = (t) => `<button type="button" class="proj${entregado(t) ? " old" : ""}" data-cod="${esc(t.codigo || "")}" data-nom="${esc(t.nombre || "")}"><span>${esc(t.nombre || "(sin nombre)")}<small>${esc(t.codigo || "sin código")}${t.estatus ? " · " + esc(t.estatus) : ""}${t.codigo && cuentaCod[t.codigo] > 1 ? " · ⚠ código repetido" : ""}</small></span><span class="der">${badge(t)}<span class="go-arrow">›</span></span></button>`;
   if(!listaCache.length){ box.textContent = "Aún no hay proyectos."; return; }
   const refrescar = `<button type="button" class="link" id="pRefrescar">Actualizar</button>`;
-  const hastaDom = (7 - new Date().getDay()) % 7;   // igual que la plataforma de Daniela: hasta el domingo
   const vivos = listaCache.filter(t => !entregado(t) && coincide(t));
   const viejos = listaCache.filter(t => entregado(t) && coincide(t));
   const cabViejos = viejos.length ? (q || !vivos.length ? `<div class="col-h"><span>Entregados · ${viejos.length}</span></div>` + viejos.slice(0, 40).map(fila).join("") : `<div class="col-h"><span>Entregados · ${viejos.length}</span><span>escribe para buscarlos</span></div>`) : "";
@@ -641,9 +624,27 @@ function pintarLista(){
       h += `<div class="col-h"><span>${esc(k)} · ${grupos[k].length}</span>${i ? "" : refrescar}</div>` + grupos[k].sort(urg).map(fila).join("");
     });
   }else{
-    const lista = (vistaLista === "semana" && !q ? vivos.filter(t => t.dias === null || t.dias <= hastaDom) : vivos).slice().sort(urg);
-    if(lista.length) h += `<div class="col-h"><span>${vistaLista === "semana" && !q ? "Esta semana" : "En curso"} · ${lista.length}</span>${refrescar}</div>` + lista.map(fila).join("");
-    else h += `<div class="hint">${q ? "" : vistaLista === "semana" ? "Nada para esta semana. Toca “Todas” para ver lo que sigue." : "No hay proyectos en curso."}</div>`;
+    if(vistaLista === "semana" && !q){
+      const hoy = new Date(), dom0 = domingoDe(hoy), grupos = {}, sinFecha = [];
+      vivos.filter(t => ESTADOS_SEMANA.includes(normNom(t.estatus))).forEach(t => {
+        if(t.dias === null){ sinFecha.push(t); return; }
+        const w = Math.round((domingoDe(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + t.dias)) - dom0) / 604800000);
+        if(w >= 0) (grupos[w] = grupos[w] || []).push(t);
+      });
+      const claves = Object.keys(grupos).map(Number).sort((x, y) => x - y);
+      claves.forEach((w, i) => {
+        const ini = new Date(dom0.getFullYear(), dom0.getMonth(), dom0.getDate() + 7 * w), fin = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6);
+        const rango = ini.getMonth() === fin.getMonth() ? `${ini.getDate()}–${fin.getDate()} ${MES3[fin.getMonth()]}` : `${ini.getDate()} ${MES3[ini.getMonth()]} – ${fin.getDate()} ${MES3[fin.getMonth()]}`;
+        const nombre = w === 0 ? "Esta semana" : w === 1 ? "Próxima semana" : "Semana";
+        h += `<div class="col-h"><span>${nombre} · ${rango} · ${grupos[w].length}</span>${i ? "" : refrescar}</div>` + grupos[w].sort(urg).map(fila).join("");
+      });
+      if(sinFecha.length) h += `<div class="col-h"><span>Sin fecha · ${sinFecha.length}</span>${claves.length ? "" : refrescar}</div>` + sinFecha.map(fila).join("");
+      if(!h) h = `<div class="hint">Sin pedidos pendientes para esta semana ni las próximas.</div>`;
+    }else{
+      const lista = vivos.slice().sort(urg);
+      if(lista.length) h += `<div class="col-h"><span>En curso · ${lista.length}</span>${refrescar}</div>` + lista.map(fila).join("");
+      else h += `<div class="hint">${q ? "" : "No hay proyectos en curso."}</div>`;
+    }
   }
   h += cabViejos;
   if(!vivos.length && !viejos.length) h = `<div class="hint">Nada con “${esc($("busca").value)}”.</div>`;
@@ -690,7 +691,7 @@ function pintarFicha(){
       ${ped.alerta ? `<div class="box err" style="white-space:pre-line">${esc(ped.alerta)}</div>` : ""}
       <div class="lbl" style="margin-top:16px">Lo que se registró</div>
       ${lista || `<div class="hint">Sin productos registrados.</div>`}
-      ${ped.notas ? `<div class="hint" style="margin-top:8px">📝 ${esc(ped.notas)}</div>` : ""}
+      <div class="hint" id="fichaNotas" style="margin-top:8px"${ped.notas ? "" : " hidden"}>📝 ${esc(ped.notas)}</div>
       <button type="button" class="btn go" id="armarCot">${cot ? "Cotización abierta ↓" : "📄 Generar cotización"}</button>
       <a class="btn" target="_blank" rel="noopener" href="${esc(waUrl(ped.contacto, `Hola ${ped.cliente} 👋 Aquí puedes ver el estatus de tu pedido en vivo: ${PORTAL_URL}?codigo=${ped.codigo}`))}">🔗 Mandar enlace de seguimiento</a>
       <button type="button" class="btn" id="cartaPdf">💌 Carta de agradecimiento (para el empaque)</button>
@@ -813,7 +814,7 @@ function itemDesdeRegistro(x){
 function armarCot(){
   if(!cot){
     const txt = (ped.notas || "").toLowerCase();
-    cot = { items: ped.items.map(itemDesdeRegistro), entrega: /urgente/.test(txt) ? "urgente" : /expres|exprés/.test(txt) ? "expres" : "estandar", caras: /frente y vuelta/.test(txt) ? "dos" : "una", factura: ped.factura ? "si" : "no", envio: "" };
+    cot = { items: ped.items.map(itemDesdeRegistro), entrega: /urgente/.test(txt) ? "urgente" : /expres|exprés/.test(txt) ? "expres" : "estandar", caras: /frente y vuelta/.test(txt) ? "dos" : "una", factura: ped.factura ? "si" : "no", envio: "", notas: "" };
     if(!cot.items.length) cot.items = [nuevoItem()];
   }
   pintarFicha(); $("cotBox").scrollIntoView({ behavior:"smooth", block:"start" });
@@ -832,13 +833,14 @@ function pintarCot(){
       <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
       <div class="field"><label>Envío (si ≤ $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
     </div>
+    <div class="field"><label for="cNotas">Notas del pedido · no salen en el PDF</label><textarea id="cNotas" rows="2" placeholder="Se agregan al registro en Sheets y ClickUp"></textarea></div>
     <div id="cotRes"></div>
   </div>`;
-  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio;
+  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio; $("cNotas").value = cot.notas;
   const cambio = () => calcCot(); cambio.ctx = () => ({ caras: cot.caras });
   repintarCot = enlazarItems($("cotItems"), () => cot.items, (a) => { cot.items = a; }, true, cambio);
   $("cotAdd").addEventListener("click", () => { cot.items.push(nuevoItem()); repintarCot(); calcCot(); });
-  ["cEntrega","cCaras","cFactura","cEnvio"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; if(id === "cCaras") repintarCot(); calcCot(); }));
+  ["cEntrega","cCaras","cFactura","cEnvio","cNotas"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; cot.notas = $("cNotas").value; if(id === "cCaras") repintarCot(); calcCot(); }));
   repintarCot(); calcCot();
 }
 function calcCot(){
@@ -894,8 +896,15 @@ async function guardarCot(){
   const c = cot.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
   const itemsG = c.lineas.map(l => Object.assign({}, l.it.extra || {}, { modelo: nombreDe(l.it), medidas: medidasDe(l.it), cantidad: l.q, grosor: l.it.grosor, precioUnitario: Math.round(l.unit * factor * 100) / 100, personalizado: esPers(l.it), hpPorPieza: esPers(l.it) ? hpDe(l.it) : null }));
   if(c.envio) itemsG.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
-  const r = await post("guardarCobro", { codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si" });
+  const nota = (cot.notas || "").trim();
+  const r = await post("guardarCobro", Object.assign({ codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si" }, nota ? { notaNueva: nota } : {}));
   if(!r.ok) throw new Error(r.error || "error");
+  if(nota){
+    if(r.notaGuardada){ ped.notas = [ped.notas, nota].filter(Boolean).join(" | "); cot.notas = ""; const el = $("cNotas"); if(el) el.value = ""; const fn = $("fichaNotas"); if(fn){ fn.textContent = "📝 " + ped.notas; fn.hidden = false; } toast("Guardado en Sheets y ClickUp"); return; }
+    toast("Guardado, pero la nota no se registró: falta actualizar el Apps Script");
+    return;
+  }
+  toast("Guardado en Sheets");
 }
 $("fichaVista").addEventListener("click", async (e) => {
   const id = e.target.id; if(!cot || !["cotEnviar","cotPdf","cotGuardar"].includes(id)) return;
@@ -904,7 +913,7 @@ $("fichaVista").addEventListener("click", async (e) => {
   const d = datosCot();
   if(id === "cotPdf"){ if(!window.jspdf){ alert("No cargó la librería de PDF."); return; } if(!cuentaListaParaPDF(d)) return; construirCotizacionPDF(window.jspdf.jsPDF, d, LOGO_DATA_URL).save(nombreArchivo(d)); return; }
   b.disabled = true; b.textContent = "Guardando…";
-  try{ await guardarCot(); toast("Guardado en Sheets"); if(id === "cotEnviar") await compartirPDF(d, mensajeCot(d), ped.contacto); }
+  try{ await guardarCot(); if(id === "cotEnviar") await compartirPDF(d, mensajeCot(d), ped.contacto); }
   catch(err){ console.error(err); alert("No se pudo guardar: " + (err.message || "error de conexión") + ". No se envió nada."); }
   finally{ b.disabled = false; b.textContent = orig; }
 });
@@ -929,12 +938,31 @@ async function cargarLaminas(){
 }
 $("salirBtn").addEventListener("click", () => { try{ localStorage.removeItem("joart_sheet_key"); }catch(e){} location.reload(); });
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
+// --- Conexión real
+function pintarConexion(){ const on = navigator.onLine, el = $("online"); el.classList.toggle("off", !on); el.querySelector("span").textContent = on ? "EN LÍNEA" : "SIN CONEXIÓN"; }
+window.addEventListener("online", pintarConexion); window.addEventListener("offline", pintarConexion); pintarConexion();
+// --- Al volver a la ventana, actualiza lo que se ve si ya pasó más de un minuto
+let ultimaCarga = Date.now();
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden || !passwordActual || Date.now() - ultimaCarga < 60000) return;
+  if($("pane-proyectos").classList.contains("on") && !$("listaVista").hidden){ ultimaCarga = Date.now(); cargarLista(); }
+  else if($("pane-produccion").classList.contains("on")){ ultimaCarga = Date.now(); cargarProduccion(); }
+});
+// --- Atajos de teclado: Ctrl/⌘+Enter registra · / busca · Esc regresa de una ficha
+document.addEventListener("keydown", (e) => {
+  const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ""));
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter" && $("pane-nuevo").classList.contains("on") && !$("formNuevo").hidden){ e.preventDefault(); if(!$("regBtn").disabled) registrar(); return; }
+  if(escribiendo) return;
+  if(e.key === "/" && $("pane-proyectos").classList.contains("on") && !$("listaVista").hidden){ e.preventDefault(); $("busca").focus(); }
+  if(e.key === "Escape" && !$("fichaVista").hidden){ const v = $("volver"); if(v) v.click(); }
+});
 async function iniciarApp(){
+  recuperarBorrador();
   const boot = $("boot"), log = $("bootLog"), t0 = Date.now(); boot.classList.remove("off"); boot.classList.add("on");
   const lines = ["<i>▸</i> ACCESO AUTORIZADO ........ OK", "<i>▸</i> LEYENDO PROYECTOS …"], dibuja = () => { log.innerHTML = lines.join("\n"); }; dibuja();
   const n = await cargarLista(); lines[1] = `<i>▸</i> PROYECTOS ................ ${n}`; dibuja();
   const h = new Date().getHours(); $("saludo").textContent = (h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches") + ", Jorge";
-  $("saludoSub").textContent = n ? `${listaCache.filter(t => (t.estatus || "").trim().toLowerCase() !== "entregado").length} proyectos en curso. Cuéntame el pedido nuevo o pega el chat.` : "Cuéntame el pedido o pega el chat. Yo lleno el formulario.";
+  $("saludoSub").textContent = n ? `${listaCache.filter(t => (t.estatus || "").trim().toLowerCase() !== "entregado").length} proyectos en curso` : "";
   await dormir(Math.max(0, 900 - (Date.now() - t0))); boot.classList.add("off"); setTimeout(() => boot.classList.remove("on"), 550);
   // Enlace directo desde el Asistente: panel.html?abrir=JD-XXXXX
   try{ const ab = new URLSearchParams(location.search).get("abrir"); if(ab && /^JD-[A-Z0-9]+$/i.test(ab)){ abrirTab("proyectos"); abrirProyecto(ab, ""); history.replaceState(null, "", location.pathname); } }catch(e){}
