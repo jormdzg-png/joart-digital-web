@@ -900,7 +900,7 @@ async function guardarCot(){
   const r = await post("guardarCobro", Object.assign({ codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si" }, nota ? { notaNueva: nota } : {}));
   if(!r.ok) throw new Error(r.error || "error");
   if(nota){
-    if(r.notaGuardada){ ped.notas = [ped.notas, nota].filter(Boolean).join(" | "); cot.notas = ""; const el = $("cNotas"); if(el) el.value = ""; const fn = $("fichaNotas"); if(fn){ fn.textContent = "📝 " + ped.notas; fn.hidden = false; } toast("Guardado en Sheets y ClickUp"); return; }
+    if(r.notaGuardada){ ped.notas = [ped.notas, nota].filter(Boolean).join(" | "); cot.notas = ""; const el = $("cNotas"); if(el) el.value = ""; const fn = $("fichaNotas"); if(fn){ fn.textContent = "📝 " + ped.notas; fn.hidden = false; } toast(r.notaClickUp === false ? "Nota guardada en Sheets; no se pudo agregar en ClickUp" : "Guardado en Sheets y ClickUp"); return; }
     toast("Guardado, pero la nota no se registró: falta actualizar el Apps Script");
     return;
   }
