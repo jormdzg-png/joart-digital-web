@@ -80,9 +80,6 @@
   textarea{ font-size:16px; min-height:84px; margin-top:8px; resize:vertical; }
   input::placeholder, textarea::placeholder{ color:rgba(142,150,178,.7); }
   input:focus, textarea:focus{ outline:none; border-color:var(--terra); box-shadow:0 0 0 3px rgba(var(--terra-rgb),.16), 0 0 18px rgba(var(--terra-rgb),.18); background:rgba(255,255,255,.06); }
-  .paq-n{ margin:14px 0 6px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; }
-  .paq-mas, .paq-quitar{ background:none; border:none; color:var(--terra); font:600 11px var(--mono); letter-spacing:.08em; cursor:pointer; padding:10px 0 0; min-height:36px; text-transform:uppercase; }
-  .paq-quitar{ padding:0; min-height:0; color:var(--mute); }
   .grid4{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .grid4 label{ display:block; margin-bottom:5px; font:600 10.5px var(--mono); letter-spacing:.12em; color:var(--mute); text-transform:uppercase; }
   .seg{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -191,7 +188,7 @@ const nom = () => (String(P.nombre || '').trim() || 'Daniela');
 aplicarPref();
 
 const RENDERS = {};
-const S = { pin: store.get('jp_pin') || '', items: [], tab: 'producir', filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
+const S = { pin: store.get('jp_pin') || '', items: [], tab: (P.inicio === 'entregar' ? 'entregar' : 'producir'), filtro: 'semana', cargando: false, online: null, laminas: null, conteo: {}, aviso: { tipo: '', folio: '', nota: '' }, abierto: null, form: {}, preview: {}, errPin: '' };
 let saveTimer = null;
 const REACTOR = '<svg class="core-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#reactor"/></svg>';
 
@@ -292,7 +289,8 @@ function vistaMas(){
       <div class="opts">${tipos.map(t => `<button class="chip ${S.aviso.tipo === t[0] ? 'on' : ''}" data-act="avTipo" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>
       <select id="avFolio"><option value="">Sin pedido en particular</option>${opts}</select>
       <textarea id="avNota" placeholder="Nota (obligatoria si eliges Otro)">${esc(S.aviso.nota)}</textarea>
-      <div class="gap"></div><button class="btn go" data-act="enviarAviso">Enviar aviso</button></section>`;
+      <div class="gap"></div><button class="btn go" data-act="enviarAviso">Enviar aviso</button></section>
+    <p class="nota-pie">Versión de la página: 5 nov 2026 · fotos con galería y HEIC</p>`;
 }
 
 function ordenar(a){
@@ -303,7 +301,7 @@ function ordenar(a){
 }
 function vacioMsg(){
   if (P.sobrio || S.cargando) return 'Nada pendiente aquí';
-  return 'Todo al día, ' + esc(nom()) + '. Tómate un respiro ☕';
+  return S.tab === 'entregar' ? 'Nada por entregar, ' + esc(nom()) + '. Buen momento para un respiro.' : 'Todo al día, ' + esc(nom()) + '. Tómate un respiro ☕';
 }
 function bloqueCalido(){
   if (P.sobrio) return '';
@@ -330,6 +328,8 @@ function vistaYo(){
       <p class="ayuda">Una frase para ti (en lugar de las mías)</p>
       <input id="pf-frase" type="text" maxlength="80" autocomplete="off" placeholder="Algo que quieras leer cada día" value="${esc(P.frase)}"></section>
     <section class="bloque"><h3>A tu manera</h3>
+      <p class="ayuda">Al abrir, quiero ver primero</p>
+      <div class="opts">${chip('pfInicio', 'producir', P.inicio !== 'entregar', 'Producir')}${chip('pfInicio', 'entregar', P.inicio === 'entregar', 'Entregar')}</div>
       <p class="ayuda">Ordenar los pedidos</p>
       <div class="opts">${chip('pfOrden', 'fecha', P.orden !== 'cliente', 'Lo más urgente primero')}${chip('pfOrden', 'cliente', P.orden === 'cliente', 'Por cliente (A-Z)')}</div>
       <p class="ayuda">Tu cumpleaños, para saludarte ese día</p>
@@ -346,6 +346,7 @@ function vistaLista(app){
   const lista0 = (S.tab === 'producir' && S.filtro === 'semana') ? base.filter(i => i.dias === null || i.dias <= hastaDom) : base;
   const lista = ordenar(lista0);
   const nP = S.items.filter(i => i.etapa === 'producir').length;
+  const nE = S.items.filter(i => i.etapa === 'entregar').length;
   const cards = lista.map(it => {
     const [txt, cls] = badge(it);
     const d = it.datos || {};
@@ -353,6 +354,7 @@ function vistaLista(app){
     if (it.nuevo) tags.push('<span class="badge b-gris">Nuevo / personalizado</span>');
     if (it.tieneRender && it.etapa === 'producir') tags.push('<span class="badge b-gris">🖼 Render aprobado</span>');
     if (d.alerta) tags.push('<span class="badge b-rojo">Incidencia abierta</span>');
+    if (it.etapa === 'entregar') tags.push(it.liberado ? '<span class="badge b-ok">Liberado para enviar</span>' : '<span class="badge b-ambar">En espera</span>');
     if (it.adelantado) tags.push('<span class="badge b-ambar">Falta cerrar tu revisión</span>');
     return `<button class="proj" data-act="abrir" data-folio="${esc(it.folio)}">
       <div class="r1"><div><b>${esc(it.negocio)}</b><div class="sub">${esc(it.tipo)}</div></div><span class="badge b-${cls}">${esc(txt)}</span></div>
@@ -373,6 +375,7 @@ function vistaLista(app){
     <div class="tools"><button class="link" data-act="tab" data-v="yo">${(!P.sobrio && P.emoji) ? esc(P.emoji) + ' ' : ''}Mi espacio</button><button class="link" data-act="recargar">↻ Actualizar</button><button class="link" data-act="salir">Salir</button></div>
     <div class="tabs">
       <button class="tab ${S.tab==='producir'?'on':''}" data-act="tab" data-v="producir">Producir (${nP})</button>
+      <button class="tab ${S.tab==='entregar'?'on':''}" data-act="tab" data-v="entregar">Entregar (${nE})</button>
       <button class="tab ${S.tab==='mas'?'on':''}" data-act="tab" data-v="mas">Más</button></div>
     ${bienvenida()}${banner}
     <div class="pane">${cuerpo}</div>`;
@@ -387,21 +390,29 @@ function faltantes(it, f){
   if (f.corte !== 'OK') m.push('corte OK');
   if (it.nuevo && f.armado !== 'OK') m.push('armado OK');
   if (!f.fotoFinal) m.push('foto final');
-  if (['alto','ancho','largo'].some(k => !(Number(f[k]) > 0))) m.push('medidas del paquete' + ((f.extras || []).length ? ' 1' : ''));
-  (f.extras || []).forEach((e, i) => { if (['alto','ancho','largo'].some(k => !(Number(e[k]) > 0))) m.push('medidas del paquete ' + (i + 2)); });
+  if (['alto','ancho','largo'].some(k => !(Number(f[k]) > 0))) m.push('medidas del paquete');
   return m;
 }
+function faltantesEntrega(it, f){
+  const m = [];
+  if (!it.liberado) m.push('liberación de pago');
+  if (!f.fotoEntrega) m.push('foto del paquete cerrado');
+  return m;
+}
+
 function seg(k, f){
   return `<div class="seg" data-k="${k}">
     <button data-act="seg" data-k="${k}" data-v="OK" aria-pressed="${f[k]==='OK'}">✔ OK</button>
     <button data-act="seg" data-k="${k}" data-v="FALLA" aria-pressed="${f[k]==='FALLA'}">✖ Falla</button></div>`;
 }
-function fotoBloque(tipo, tiene, titulo){
+function fotoBloque(tipo, f, flag, titulo){
   return `<div class="foto">
     ${S.preview[tipo] ? `<img src="${S.preview[tipo]}" alt="">` : ''}
-    <div style="flex:1"><button class="btn" data-act="foto" data-tipo="${tipo}">${tiene ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
-    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:8px 0 0">${tiene ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
-    <input type="file" id="file-${tipo}" accept="image/*" capture="environment" hidden></div>`;
+    <div style="flex:1"><button class="btn" data-act="foto" data-tipo="${tipo}">${f[flag] ? '📷 Cambiar foto' : '📷 ' + titulo}</button>
+    <button class="link" data-act="galeria" data-tipo="${tipo}" style="margin-top:6px;padding:8px 0">o elegir una imagen de la galería</button>
+    <div class="ayuda" id="fotoEstado-${tipo}" style="margin:8px 0 0">${f[flag] ? '✓ Foto guardada' : 'Falta la foto'}</div></div>
+    <input type="file" id="file-${tipo}" accept="image/*" capture="environment" hidden>
+    <input type="file" id="file-${tipo}-g" accept="image/*,.heic,.heif" hidden></div>`;
 }
 
 function bloqueRender(it){
@@ -430,27 +441,31 @@ function vistaDetalle(app){
       <section class="bloque"><h3>2 · Calidad de impresión</h3>${seg('impresion', f)}</section>
       <section class="bloque"><h3>3 · Calidad de corte</h3>${seg('corte', f)}</section>
       ${it.nuevo ? `<section class="bloque"><h3>4 · Armado de prueba</h3><p class="ayuda">Modelo nuevo/personalizado: ármalo y verifica acoples y holguras.</p>${seg('armado', f)}</section>` : ''}
-      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f.fotoFinal, 'Tomar foto')}</section>
-      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3>${bloquePaquetes(f)}</section>
+      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f, 'fotoFinal', 'Tomar foto')}</section>
+      <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3><div class="grid4">
+        <div><label for="alto">Alto</label><input id="alto" type="number" inputmode="decimal" min="0" value="${esc(f.alto)}"></div>
+        <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
+        <div><label for="largo">Largo</label><input id="largo" type="number" inputmode="decimal" min="0" value="${esc(f.largo)}"></div></div></section>
       ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
       <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
         <button class="btn go" id="btnCompletar" data-act="completar" disabled>Completar producción</button></div></div>`;
+  } else {
+    app.innerHTML = `<div class="pane">` + cab + `
+      <div class="guardado" id="guardado"></div>
+      ${bloqueRender(it)}
+      ${it.liberado ? '<div class="aviso b-ok">✅ Liberado: ya puedes entregarlo a paquetería.</div>'
+                    : '<div class="aviso b-ambar">⏳ Todavía no está liberado. No lo entregues hasta que aparezca como liberado; Jorge te avisa.</div>'}
+      <section class="bloque"><h3>Paquete registrado</h3><p class="ayuda" style="margin:0">${esc(f.alto)} × ${esc(f.ancho)} × ${esc(f.largo)} cm</p></section>
+      <section class="bloque"><h3>Foto del paquete cerrado</h3><p class="ayuda">Con la guía ya pegada, antes de entregarlo a la paquetería.</p>${fotoBloque('entrega', f, 'fotoEntrega', 'Tomar foto')}</section>
+      ${bloqueAvisos(it)}${bloqueProblema(it)}</div>
+      <div class="dock"><div class="in"><div class="estado" id="faltan"></div>
+        <button class="btn go" id="btnEntregar" data-act="entregar" disabled>Entregado a paquetería</button></div></div>`;
   }
   actualizarGate();
 }
-function bloquePaquetes(f){
-  const ex = f.extras || [], campo = (id, et, v) => `<div><label for="${id}">${et}</label><input id="${id}" type="number" inputmode="decimal" min="0" value="${esc(v)}"></div>`;
-  let h = ex.length ? '<div class="paq-n"><span>Paquete 1</span></div>' : '';
-  h += `<div class="grid4">${campo('alto','Alto',f.alto)}${campo('ancho','Ancho',f.ancho)}${campo('largo','Largo',f.largo)}</div>`;
-  ex.forEach((e, i) => {
-    h += `<div class="paq-n"><span>Paquete ${i + 2}</span>${i === ex.length - 1 ? '<button class="paq-quitar" data-act="quitarPaquete">Quitar</button>' : ''}</div>
-      <div class="grid4">${campo('ex-' + i + '-alto','Alto',e.alto)}${campo('ex-' + i + '-ancho','Ancho',e.ancho)}${campo('ex-' + i + '-largo','Largo',e.largo)}</div>`;
-  });
-  if (ex.length < 4) h += '<button class="paq-mas" data-act="agregarPaquete">+ Otro paquete</button>';
-  return h;
-}
 function bloqueAvisos(it){
   const b = [];
+  if (it.etapa === 'entregar' && !it.liberado) b.push(['pago', '💬 Recordarle a Jorge: falta el pago']);
   if (!b.length) return '';
   return `<section class="bloque"><h3>Avisar a Jorge</h3>` +
     b.map(x => `<button class="btn" style="margin-bottom:10px" data-act="avisoRapido" data-tipo="${x[0]}" data-folio="${esc(it.folio)}">${x[1]}</button>`).join('') + `</section>`;
@@ -473,16 +488,18 @@ function actualizarGate(){
     txt = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
     if (f.impresion === 'FALLA' || f.corte === 'FALLA' || f.armado === 'FALLA')
       txt += ' · Hay una falla marcada: repórtala y corrígela antes de completar';
+  } else {
+    m = faltantesEntrega(it, f);
+    $('#btnEntregar').disabled = m.length > 0;
+    txt = m.length ? 'Falta: ' + m.join(', ') : 'Todo listo ✓';
   }
   const el = $('#faltan'); el.textContent = txt; el.className = 'estado' + (m.length ? ' falta' : '');
 }
 
 /* ───────── Guardado ───────── */
-function it_etapaProducir(){ const it = S.items.find(i => i.folio === S.abierto); return !!it && it.etapa === 'producir'; }
 function camposActuales(){
   const f = S.form, o = {};
   ['contadas','notaConteo','impresion','corte','armado','alto','ancho','largo'].forEach(k => { if (f[k] !== undefined) o[k] = f[k]; });
-  if (it_etapaProducir()) o.extras = (f.extras || []).map(e => ({ alto: e.alto, ancho: e.ancho, largo: e.largo }));
   return o;
 }
 function programarGuardado(){
@@ -499,21 +516,48 @@ async function guardarYa(){
 }
 
 /* ───────── Fotos ───────── */
-function comprimir(file){
-  return new Promise((res, rej) => {
-    const u = URL.createObjectURL(file), img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(u);
-      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      const url = c.toDataURL('image/jpeg', 0.72);
-      res({ b64: url.split(',')[1], preview: url });
-    };
-    img.onerror = () => rej(new Error('No pude leer la foto'));
+function cargarScript(src){
+  return new Promise((res, rej) => { const t = document.createElement('script'); t.src = src; t.onload = res; t.onerror = () => rej(new Error('sin conexión')); document.head.appendChild(t); });
+}
+// Decodifica la foto ya reducida (más ligero para el teléfono) y respeta la orientación
+async function decodificar(blob){
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch (_) { /* se intenta de otra forma */ }
+  }
+  return await new Promise((res, rej) => {
+    const u = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => { URL.revokeObjectURL(u); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('decode')); };
     img.src = u;
   });
+}
+function esHeic(file){ return /hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || ''); }
+async function comprimir(file){
+  let origen = file, img;
+  try { img = await decodificar(origen); }
+  catch (_) {
+    if (esHeic(file)) {   // fotos de iPhone en formato HEIC: se convierten aquí mismo
+      try {
+        if (!window.heic2any) await cargarScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+        const out = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+        origen = Array.isArray(out) ? out[0] : out;
+        img = await decodificar(origen);
+      } catch (_2) { throw new Error('Esa foto está en formato HEIC y no se pudo convertir. Tómala directo con el botón "Tomar foto" o, en el iPhone, Ajustes → Cámara → Formatos → "Más compatible".'); }
+    } else {
+      throw new Error('No pude leer esa imagen (' + (file.type || (file.name || '').split('.').pop() || 'formato desconocido') + '). Prueba con "Tomar foto" o con otra imagen JPG o PNG.');
+    }
+  }
+  const w = img.width || img.naturalWidth, h = img.height || img.naturalHeight;
+  const k = Math.min(1, 1280 / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  const cx = c.getContext('2d');
+  cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);   // PNG con transparencia
+  cx.drawImage(img, 0, 0, c.width, c.height);
+  if (img.close) img.close();
+  const url = c.toDataURL('image/jpeg', 0.72);
+  if (url.length < 1000) throw new Error('No pude procesar la foto. Prueba con otra.');
+  return { b64: url.split(',')[1], preview: url };
 }
 async function subirFoto(tipo, file){
   const est = $('#fotoEstado-' + tipo);
@@ -522,7 +566,7 @@ async function subirFoto(tipo, file){
     const { b64, preview } = await comprimir(file);
     await api('foto', { folio: S.abierto, tipo, b64 });
     S.preview[tipo] = preview;
-    S.form.fotoFinal = true;
+    S.form[tipo === 'final' ? 'fotoFinal' : 'fotoEntrega'] = true;
     vistaDetalle($('#app'));
     toast('Foto guardada ✓');
   } catch (e) {
@@ -536,9 +580,8 @@ function abrir(folio){
   const it = S.items.find(i => i.folio === folio); if (!it) return;
   S.abierto = folio; S.preview = {};
   const d = it.datos || {};
-  S.form = Object.assign({ contadas:'', notaConteo:'', impresion:'', corte:'', armado:'', alto:'', ancho:'', largo:'', fotoFinal:false }, d);
+  S.form = Object.assign({ contadas:'', notaConteo:'', impresion:'', corte:'', armado:'', alto:'', ancho:'', largo:'', fotoFinal:false, fotoEntrega:false }, d);
   Object.keys(S.form).forEach(k => { if (S.form[k] == null) S.form[k] = ''; });
-  S.form.extras = (d.extras || []).map(e => Object.assign({}, e));
   window.scrollTo(0, 0); render();
 }
 async function cerrarDetalle(){
@@ -580,14 +623,7 @@ document.addEventListener('click', async ev => {
     document.querySelectorAll('.seg[data-k="' + k + '"] button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.form[k]));
     actualizarGate(); programarGuardado();
   }
-  else if (a === 'agregarPaquete') {
-    if ((S.form.extras || []).length < 4) {
-      S.form.extras.push({ alto: '', ancho: '', largo: '', foto: false });
-      vistaDetalle($('#app')); actualizarGate(); programarGuardado();
-      const i = $('#ex-' + (S.form.extras.length - 1) + '-alto'); if (i) i.focus();
-    }
-  }
-  else if (a === 'quitarPaquete') { S.form.extras.pop(); vistaDetalle($('#app')); actualizarGate(); programarGuardado(); }
+  else if (a === 'galeria') { const i = $('#file-' + b.dataset.tipo + '-g'); if (i) i.click(); }
   else if (a === 'foto') { const i = $('#file-' + b.dataset.tipo); if (i) i.click(); }
   else if (a === 'problema') { $('#probWrap').hidden = !$('#probWrap').hidden; }
   else if (a === 'enviarProblema') {
@@ -629,13 +665,13 @@ document.addEventListener('click', async ev => {
       render();
     } catch (e) { toast(e.message, true); b.disabled = false; }
   }
-  else if (a === 'completar') {
+  else if (a === 'completar' || a === 'entregar') {
     b.disabled = true;
     try {
       await guardarYa();
       const itx = S.items.find(i => i.folio === S.abierto);
       await api(a, { folio: S.abierto });
-      toast(P.sobrio ? 'Producción completa ✓ Jorge ya recibió el aviso'
+      toast(P.sobrio ? (a === 'completar' ? 'Producción completa ✓ Jorge ya recibió el aviso' : 'Entregado a paquetería ✓')
         : celebra(a, itx && itx.negocio) + (a === 'completar' ? ' Jorge ya recibió el aviso ✓' : ' ✓'));
       S.abierto = null; cargar();
     } catch (e) { toast(e.message, true); actualizarGate(); }
@@ -649,8 +685,6 @@ document.addEventListener('input', ev => {
   if (ev.target.id === 'pf-nombre') { P.nombre = ev.target.value; guardarPref(); return; }
   if (ev.target.id === 'pf-frase') { P.frase = ev.target.value; guardarPref(); return; }
   const id = ev.target.id; if (!S.abierto || !id) return;
-  const mx = /^ex-(\d)-(alto|ancho|largo)$/.exec(id);
-  if (mx && S.form.extras[+mx[1]]) { S.form.extras[+mx[1]][mx[2]] = ev.target.value; actualizarGate(); programarGuardado(); return; }
   if (['contadas','notaConteo','alto','ancho','largo'].indexOf(id) >= 0) {
     S.form[id] = ev.target.value; actualizarGate(); programarGuardado();
   }
@@ -658,8 +692,8 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', ev => {
   if (ev.target.id === 'avFolio') { S.aviso.folio = ev.target.value; return; }
   if (ev.target.id === 'pf-cumple') { P.cumple = ev.target.value; guardarPref(); render(); return; }
-  const m = /^file-final$/.exec(ev.target.id || '');
-  if (m && ev.target.files && ev.target.files[0]) subirFoto(m[1], ev.target.files[0]);
+  const m = /^file-(final|entrega)(-g)?$/.exec(ev.target.id || '');
+  if (m && ev.target.files && ev.target.files[0]) { const fl = ev.target.files[0]; ev.target.value = ''; subirFoto(m[1], fl); }
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'pin') document.querySelector('[data-act=entrar]').click(); });
 
