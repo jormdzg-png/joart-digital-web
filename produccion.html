@@ -290,7 +290,7 @@ function vistaMas(){
       <select id="avFolio"><option value="">Sin pedido en particular</option>${opts}</select>
       <textarea id="avNota" placeholder="Nota (obligatoria si eliges Otro)">${esc(S.aviso.nota)}</textarea>
       <div class="gap"></div><button class="btn go" data-act="enviarAviso">Enviar aviso</button></section>
-    <p class="nota-pie">Versión de la página: 5 nov 2026 · fotos con galería y HEIC</p>`;
+    <p class="nota-pie">Versión de la página: 5 nov 2026 (b) · hasta 4 fotos</p>`;
 }
 
 function ordenar(a){
@@ -405,6 +405,17 @@ function seg(k, f){
     <button data-act="seg" data-k="${k}" data-v="OK" aria-pressed="${f[k]==='OK'}">✔ OK</button>
     <button data-act="seg" data-k="${k}" data-v="FALLA" aria-pressed="${f[k]==='FALLA'}">✖ Falla</button></div>`;
 }
+function fotoFinalBloque(f){
+  const n = Number(f.nFinal) || (f.fotoFinal ? 1 : 0), prev = S.preview.finalList || [];
+  return `<div class="foto" style="flex-direction:column;align-items:stretch">
+    ${prev.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${prev.map(src => `<img src="${src}" alt="">`).join('')}</div>` : ''}
+    <div class="ayuda" id="fotoEstado-final" style="margin:0">${n ? '✓ ' + n + (n === 1 ? ' foto guardada' : ' fotos guardadas') + ' · máximo 4' : 'Falta la foto. Puedes subir hasta 4 desde distintos ángulos.'}</div>
+    ${n < 4 ? `<button class="btn" data-act="foto" data-tipo="final">📷 ${n ? 'Agregar otra foto' : 'Tomar foto'}</button>
+      <button class="link" data-act="galeria" data-tipo="final" style="padding:8px 0">o elegir imágenes de la galería</button>` : '<div class="ayuda" style="margin:0">Ya están las 4 fotos.</div>'}
+    ${n ? `<button class="link" data-act="quitarFoto" style="padding:8px 0">Quitar la última foto</button>` : ''}
+    <input type="file" id="file-final" accept="image/*" capture="environment" hidden>
+    <input type="file" id="file-final-g" accept="image/*,.heic,.heif" multiple hidden></div>`;
+}
 function fotoBloque(tipo, f, flag, titulo){
   return `<div class="foto">
     ${S.preview[tipo] ? `<img src="${S.preview[tipo]}" alt="">` : ''}
@@ -441,7 +452,7 @@ function vistaDetalle(app){
       <section class="bloque"><h3>2 · Calidad de impresión</h3>${seg('impresion', f)}</section>
       <section class="bloque"><h3>3 · Calidad de corte</h3>${seg('corte', f)}</section>
       ${it.nuevo ? `<section class="bloque"><h3>4 · Armado de prueba</h3><p class="ayuda">Modelo nuevo/personalizado: ármalo y verifica acoples y holguras.</p>${seg('armado', f)}</section>` : ''}
-      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Foto final de la pieza</h3>${fotoBloque('final', f, 'fotoFinal', 'Tomar foto')}</section>
+      <section class="bloque"><h3>${it.nuevo ? '5' : '4'} · Fotos de la pieza terminada</h3>${fotoFinalBloque(f)}</section>
       <section class="bloque"><h3>${it.nuevo ? '6' : '5'} · Paquete (medidas en cm)</h3><div class="grid4">
         <div><label for="alto">Alto</label><input id="alto" type="number" inputmode="decimal" min="0" value="${esc(f.alto)}"></div>
         <div><label for="ancho">Ancho</label><input id="ancho" type="number" inputmode="decimal" min="0" value="${esc(f.ancho)}"></div>
@@ -565,8 +576,8 @@ async function subirFoto(tipo, file){
     if (est) est.textContent = 'Subiendo…';
     const { b64, preview } = await comprimir(file);
     await api('foto', { folio: S.abierto, tipo, b64 });
-    S.preview[tipo] = preview;
-    S.form[tipo === 'final' ? 'fotoFinal' : 'fotoEntrega'] = true;
+    if (tipo === 'final') { S.preview.finalList = (S.preview.finalList || []).concat(preview); S.form.nFinal = (Number(S.form.nFinal) || 0) + 1; S.form.fotoFinal = true; }
+    else { S.preview[tipo] = preview; S.form.fotoEntrega = true; }
     vistaDetalle($('#app'));
     toast('Foto guardada ✓');
   } catch (e) {
@@ -622,6 +633,11 @@ document.addEventListener('click', async ev => {
     const k = b.dataset.k; S.form[k] = b.dataset.v;
     document.querySelectorAll('.seg[data-k="' + k + '"] button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === S.form[k]));
     actualizarGate(); programarGuardado();
+  }
+  else if (a === 'quitarFoto') {
+    try { await api('foto_quitar', { folio: S.abierto }); S.form.nFinal = Math.max(0, (Number(S.form.nFinal) || 1) - 1); S.form.fotoFinal = S.form.nFinal > 0;
+      if (S.preview.finalList) S.preview.finalList.pop(); vistaDetalle($('#app')); toast('Foto quitada'); }
+    catch (e) { toast(e.message, true); }
   }
   else if (a === 'galeria') { const i = $('#file-' + b.dataset.tipo + '-g'); if (i) i.click(); }
   else if (a === 'foto') { const i = $('#file-' + b.dataset.tipo); if (i) i.click(); }
@@ -693,7 +709,14 @@ document.addEventListener('change', ev => {
   if (ev.target.id === 'avFolio') { S.aviso.folio = ev.target.value; return; }
   if (ev.target.id === 'pf-cumple') { P.cumple = ev.target.value; guardarPref(); render(); return; }
   const m = /^file-(final|entrega)(-g)?$/.exec(ev.target.id || '');
-  if (m && ev.target.files && ev.target.files[0]) { const fl = ev.target.files[0]; ev.target.value = ''; subirFoto(m[1], fl); }
+  if (m && ev.target.files && ev.target.files[0]) {
+    let fls = Array.from(ev.target.files); ev.target.value = '';
+    if (m[1] === 'final') {
+      const libres = 4 - (Number(S.form.nFinal) || 0);
+      if (fls.length > libres) { toast('Solo caben ' + libres + ' foto' + (libres === 1 ? '' : 's') + ' más; subo las primeras ' + libres, true); fls = fls.slice(0, libres); }
+    } else fls = fls.slice(0, 1);
+    (async () => { for (const fl of fls) { const ant = S.abierto; if (S.abierto !== ant) break; await subirFoto(m[1], fl); } })();
+  }
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'pin') document.querySelector('[data-act=entrar]').click(); });
 
