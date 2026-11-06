@@ -21,6 +21,10 @@ const TABLA_POR_MODELO = {
   "Floor stand — 5 niveles": "floor5",
   "Floor stand chico — 3 niveles": "floor3",
   "Floor stand con ganchos": "floor3",
+  // Navidad (nov 2026)
+  "Display box árbol": "displaybox",
+  "Floor stand árbol — 3 niveles": "floor3",
+  "Isla árbol — 4 niveles": "isla",
 };
 const PRECIOS = {
   counter: { "4 mm": [250,215,180,160,150,145,140,130,120,110,100] },
@@ -64,6 +68,11 @@ const PRECIOS = {
     "4 mm": [665,630,595,560,525,490,455,420,385,350,315],
     "5 mm": [815,780,745,710,675,640,605,570,535,500,465],
     "6 mm": [1065,1030,995,960,925,890,855,820,785,750,715],
+  },
+  isla: {
+    "4 mm": [1350,1245,1190,1090,1040,985,955,925,885,860,835],
+    "5 mm": [1500,1395,1340,1240,1190,1135,1105,1075,1035,1010,985],
+    "6 mm": [1750,1645,1590,1490,1440,1385,1355,1325,1285,1260,1235],
   },
   escalonado3: {
     "4 mm": [570,545,515,485,455,430,400,370,345,315,285],
@@ -138,6 +147,9 @@ const MODELOS = [
   { nombre: "Floor stand — 5 niveles", medidas: "160 x 51.5 x 41.5 cm", piso: true },
   { nombre: "Floor stand chico — 3 niveles", medidas: "120 x 50 x 26.5 cm", piso: true },
   { nombre: "Floor stand con ganchos", medidas: "140 x 52 x 42.5 cm", piso: true },
+  { nombre: "Display box árbol", medidas: "61 x 56 x 31.5 cm", piso: false },
+  { nombre: "Floor stand árbol — 3 niveles", medidas: "150 x 76 x 35.5 cm", piso: true },
+  { nombre: "Isla árbol — 4 niveles", medidas: "150 x 76 x 76 cm", piso: true },
 ];
 const PERSONALIZADO = "__personalizado__";
 
@@ -165,6 +177,9 @@ const GEOM = {
   "Floor stand — 5 niveles":                  { d: [160, 51.5, 41.5], tipo: "niveles", n: 5 },
   "Floor stand chico — 3 niveles":            { d: [120, 50, 26.5], tipo: "niveles", n: 3 },
   "Floor stand con ganchos":                  { d: [140, 52, 42.5], tipo: "pegboard", n: 1 },
+  "Display box árbol":                        { d: [61, 56, 31.5], tipo: "niveles", n: 1 },
+  "Floor stand árbol — 3 niveles":            { d: [150, 76, 35.5], tipo: "niveles", n: 3 },
+  "Isla árbol — 4 niveles":                   { d: [150, 76, 76], tipo: "niveles", n: 4 },   // estimación: 2 árboles cruzados, 1 lámina por pieza (dato de taller)
 };
 // Geometría de un renglón (catálogo o personalizado). Devuelve null si faltan medidas.
 function geomDe(modelo, pers){
@@ -272,6 +287,9 @@ function numerosAPalabras(t){   // "treinta y cinco" -> "35", "cien" -> "100"
 const _N = "(?:3|tres)", _N4 = "(?:4|cuatro)", _N5 = "(?:5|cinco)", _N2 = "(?:2|dos)";
 // Orden = prioridad (lo más específico primero).
 const ALIAS_MODELO = [
+  ["Isla árbol — 4 niveles",         "isla(?: de)?(?: arbol)?(?: de navidad)?"],
+  ["Floor stand árbol — 3 niveles",  `floor ?stand(?: de)? (?:arbol|navidad)(?: de navidad)?(?: (?:de )?${_N} niveles)?`],
+  ["Display box árbol",              "(?:display )?box(?: de)? (?:arbol|navidad)(?: de navidad)?"],
   ["Floor stand chico — 3 niveles", "floor ?stand chic[oa](?: de 3 niveles| 3 niveles)?"],
   ["Floor stand con ganchos",        "floor ?stand con ganchos"],
   ["Floor stand — 5 niveles",        `floor ?stand (?:de )?${_N5} niveles`],

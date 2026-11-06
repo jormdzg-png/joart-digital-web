@@ -111,9 +111,9 @@
   const RES = new Set(("pendiente pendientes atrasado atrasados retrasado retrasados vencido vencidos cobrar debe deben saldo adeudo entregado entregados enviado enviados enviar imprimir " +
     "render revision cancelado cancelados factura facturas telefono whatsapp contacto estatus status fecha entrega entregas precio costo cotiza cotizar " +
     "laminas lamina inventario stock modelos modelo piezas hojas anticipo pagado pagados pago pagaron semana hoy manana urgente resumen ventas total " +
-    "floor stand pop display box escalonado repisas separadores pegboard counter personalizado ganchos compacto cenefa mega nivel niveles " +
+    "floor stand pop display box arbol isla navidad escalonado repisas separadores pegboard counter personalizado ganchos compacto cenefa mega nivel niveles " +
     "cuanto cuantos cuantas cuales como cuando esos esas ellos hola gracias ayuda").split(" "));
-  const MODELOS_CLAVE = ["floor stand", "pop display", "display box", "display con separadores", "escalonado", "repisas", "separadores", "pegboard", "counter", "personalizado", "ganchos", "compacto", "cosmetic", "cenefa", "mega"];
+  const MODELOS_CLAVE = ["arbol", "isla", "navidad", "floor stand", "pop display", "display box", "display con separadores", "escalonado", "repisas", "separadores", "pegboard", "counter", "personalizado", "ganchos", "compacto", "cosmetic", "cenefa", "mega"];
   const GENERICAS = new Set(["tienda", "tiendas", "display", "floor", "stand", "pop", "box", "super", "mini", "grupo", "casa", "dulces", "farmacia", "salsa", "salsas", "carne", "seca", "productos", "natural", "naturales", "store", "mix", "sweets", "don", "dona", "del", "mama", "papa"]);
   // Palabras que se corrigen si vienen mal escritas.
   const VOCAB = ("pendientes pendiente atrasados atrasado retrasado vencidos entregados entregado imprimir imprimiendo factura facturas telefono whatsapp proyectos proyecto pedidos " +

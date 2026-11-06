@@ -395,6 +395,10 @@ const RENDIMIENTO_POR_LAMINA = {
   "Floor stand con ganchos": 1,
   "Floor stand - 4 niveles": 0.75,
   "Floor stand - 5 niveles": 0.5,
+  // Navidad (nov 2026)
+  "Display box árbol": 5,
+  "Floor stand árbol - 3 niveles": 1,
+  "Isla árbol - 4 niveles": 1,
 };
 
 const claveModelo = (s) => String(s || "").toLowerCase().replace(/[—–-]/g, " ").replace(/\s+/g, " ").trim();
