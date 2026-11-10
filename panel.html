@@ -307,13 +307,6 @@
       <div class="hint" id="saludoSub"></div>
 
       <div class="hud">
-        <div class="lbl">Pegar chat</div>
-        <div class="field"><textarea id="fDictado" rows="3" placeholder="Pega aquí el chat de WhatsApp con el cliente"></textarea></div>
-        <button type="button" class="btn" id="llenarBtn">✨ Interpretar y llenar</button>
-        <div class="readout" id="dictOut" hidden></div>
-      </div>
-
-      <div class="hud">
         <div class="lbl">Cliente</div>
         <div class="row">
           <div class="field"><label for="fCliente">Nombre o marca *</label><input id="fCliente" type="text" placeholder="Ej. Papas Chidas" autocomplete="off"></div>
@@ -332,10 +325,6 @@
       <div class="hud">
         <div class="lbl">Detalles</div>
         <div class="field"><label for="fNotas">Lo que pidió el cliente</label><textarea id="fNotas" rows="3" placeholder="Colores, rejillas, impresión en laterales, medidas especiales, referencias…"></textarea></div>
-        <div class="row">
-          <div class="field"><label for="fEntrega">Entrega que pidió</label><select id="fEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés</option><option value="urgente">Urgente</option></select></div>
-          <div class="field"><label for="fCaras">Impresión</label><select id="fCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
-        </div>
       </div>
 
       <div class="hud">
@@ -542,7 +531,7 @@ let items = [nuevoItem()], archivos = [], listaCache = [], todosProyectos = [], 
 const cambioNuevo = () => { actualizarDock(); guardarBorrador(); };
 const pintarItems = enlazarItems($("itemsBox"), () => items, (a) => { items = a; }, false, cambioNuevo);
 $("addBtn").addEventListener("click", () => { items.push(nuevoItem()); pintarItems(); actualizarDock(); });
-["fCliente","fContacto","fZona","fNotas","fEntrega","fCaras","fDictado"].forEach(id => $(id).addEventListener("input", () => { actualizarDock(); guardarBorrador(); }));
+["fCliente","fContacto","fZona","fNotas"].forEach(id => $(id).addEventListener("input", () => { actualizarDock(); guardarBorrador(); }));
 
 function faltantes(){
   const f = []; if(!$("fCliente").value.trim()) f.push("el nombre del cliente");
@@ -557,11 +546,11 @@ function actualizarDock(){
 }
 
 // --- Borrador: lo escrito en Nuevo se conserva si se recarga o falla la conexión
-const BORRADOR_CLAVE = "jc_borrador", CAMPOS_BORRADOR = ["fCliente","fContacto","fZona","fNotas","fEntrega","fCaras","fDictado"];
+const BORRADOR_CLAVE = "jc_borrador", CAMPOS_BORRADOR = ["fCliente","fContacto","fZona","fNotas"];
 function guardarBorrador(){
   try{
     const b = { campos: {}, items }; CAMPOS_BORRADOR.forEach(id => { b.campos[id] = $(id).value; });
-    const vacio = !b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas && !b.campos.fDictado && items.length === 1 && !items[0].desc && !items[0].alto;
+    const vacio = !b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas && items.length === 1 && !items[0].desc && !items[0].alto;
     if(vacio) localStorage.removeItem(BORRADOR_CLAVE); else localStorage.setItem(BORRADOR_CLAVE, JSON.stringify(b));
   }catch(e){}
 }
@@ -569,7 +558,7 @@ function borrarBorrador(){ try{ localStorage.removeItem(BORRADOR_CLAVE); }catch(
 function recuperarBorrador(){
   try{
     const b = JSON.parse(localStorage.getItem(BORRADOR_CLAVE) || "null"); if(!b || !b.campos) return;
-    if(!b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas && !b.campos.fDictado) return;
+    if(!b.campos.fCliente && !b.campos.fContacto && !b.campos.fNotas) return;
     CAMPOS_BORRADOR.forEach(id => { if(typeof b.campos[id] === "string") $(id).value = b.campos[id]; });
     if(Array.isArray(b.items) && b.items.length){
       items = b.items.map(x => Object.assign(nuevoItem(), x, { id: nextId++ }));
@@ -595,34 +584,6 @@ $("thumbs").addEventListener("click", (e) => { const q = e.target.dataset && e.t
 $("drop").addEventListener("drop", (e) => sumarArchivos(e.dataTransfer.files));
 document.addEventListener("paste", (e) => { if(!$("pane-nuevo").classList.contains("on")) return; const fs = Array.from((e.clipboardData && e.clipboardData.files) || []); if(fs.length){ e.preventDefault(); sumarArchivos(fs); toast("Imagen agregada"); } });
 
-// --- Dictado y chat pegado
-function limpiarChat(t){
-  return String(t || "")
-    .replace(/^\s*\[?\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s?[ap]\.?\s?m\.?)?\]?\s*(?:-\s*)?[^:\n]{1,40}:\s*/gim, "")
-    .replace(/<Multimedia omitido>|<Media omitted>|imagen omitida|archivo adjunto:?[^\n]*/gi, " ").replace(/\n+/g, ". ");
-}
-function aplicarDictado(texto){
-  const out = $("dictOut"); out.hidden = false;
-  if(!String(texto || "").trim()){ out.textContent = "Dicta o pega algo primero."; return; }
-  const limpio = limpiarChat(texto), r = parsearPedidoTexto(limpio), marcados = [];
-  const poner = (id, v) => { const el = $(id); el.value = v; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); marcados.push(id); };
-  if(r.cliente) poner("fCliente", r.cliente);
-  if(r.entrega) poner("fEntrega", r.entrega); if(r.caras) poner("fCaras", r.caras);
-  const tel = limpio.match(/(?:\+?\s?52\s?1?\s?)?\b(\d{2}[\s-]?\d{4}[\s-]?\d{4})\b/); if(tel && !$("fContacto").value.trim()){ poner("fContacto", tel[1].replace(/[\s-]/g, "")); actualizarZonaPorLada(); }
-  if(r.items.length){
-    items = r.items.map(x => { const it = nuevoItem(); it.modelo = x.modelo; it.cantidad = x.cantidad;
-      if(x.modelo === PERSONALIZADO){ it.alto = x.alto; it.ancho = x.ancho; it.prof = x.prof; it.niveles = x.niveles; it.tipoPers = x.tipoPers || "niveles"; }
-      if(r.grosor && (x.modelo === PERSONALIZADO || grosoresDeModelo(x.modelo).includes(r.grosor))){ it.grosor = r.grosor; it.grosorTocado = true; } return it; });
-    pintarItems(); document.querySelectorAll("#itemsBox .item").forEach(c => c.classList.add("flash"));
-  }
-  const nom = (n) => n === PERSONALIZADO ? "Personalizado" : n;
-  const partes = [r.items.length ? r.items.map(x => `<b>${x.cantidad}</b> × ${esc(nom(x.modelo))}${x.alto ? ` (${x.alto}×${x.ancho}×${x.prof}${x.tipoPers && x.tipoPers !== "niveles" ? ", " + x.niveles + " " + TIPOS_PERS[x.tipoPers].unidad[x.niveles === 1 ? 0 : 1] : ""})` : ""}`).join(" + ") : "⚠ no reconocí el modelo",
-    r.cliente ? "cliente <b>" + esc(r.cliente) + "</b>" : "⚠ falta el cliente", r.grosor && "<b>" + r.grosor + "</b>", r.entrega && ({ expres: "exprés", urgente: "urgente" })[r.entrega], r.caras && "frente y vuelta"].filter(Boolean);
-  out.innerHTML = "ENTENDÍ ▸ " + partes.join(" · ") + "<br>Revisa los campos marcados antes de registrar.";
-  actualizarDock();
-}
-$("llenarBtn").addEventListener("click", () => aplicarDictado($("fDictado").value));
-
 // --- Registrar
 async function registrar(){
   if(registrando) return; const f = faltantes(); if(f.length){ toast("Falta " + f.join(" y ")); return; }
@@ -632,8 +593,6 @@ async function registrar(){
   const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
   if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o un detalle, NO crees otro: ve a Proyectos, ábrelo y actualiza la cotización.\n\n¿Crear uno nuevo de todos modos?`)) return;
   const sinCant = items.some(it => !(parseInt(it.cantidad, 10) > 0)), extras = [];
-  if($("fEntrega").value !== "estandar") extras.push("Entrega " + ({ expres: "exprés (4 días háb.)", urgente: "urgente (2 días háb.; pago 100%)" })[$("fEntrega").value]);
-  if($("fCaras").value === "dos") extras.push("Impresión frente y vuelta");
   if(sinCant) extras.push("Cantidad por confirmar");
   const notas = [$("fNotas").value.trim(), ...extras].filter(Boolean).join(" | ") || "sin notas";
   const lineas = items.map(it => ({ modelo: nombreDe(it), medidas: medidasDe(it), cantidad: parseInt(it.cantidad, 10) || 1, grosor: it.grosor, precioUnitario: 0, personalizado: esPers(it), hpPorPieza: esPers(it) ? hpDe(it) : null }));
@@ -660,8 +619,8 @@ function mostrarRegistrado(res, order){
 }
 $("regBtn").addEventListener("click", registrar);
 $("againBtn").addEventListener("click", () => {
-  ["fCliente","fContacto","fZona","fNotas","fDictado"].forEach(id => $(id).value = ""); $("fZona").dataset.auto = "0"; $("fEntrega").value = "estandar"; $("fCaras").value = "una";
-  archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); $("dictOut").hidden = true; borrarBorrador();
+  ["fCliente","fContacto","fZona","fNotas"].forEach(id => $(id).value = ""); $("fZona").dataset.auto = "0";
+  archivos = []; items = [nuevoItem()]; pintarItems(); pintarThumbs(); borrarBorrador();
   $("doneBox").hidden = true; $("formNuevo").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); actualizarDock();
 });
 
