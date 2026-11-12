@@ -418,6 +418,23 @@ form#composer{ background:rgba(7,10,20,.85) !important; border-top:1px solid var
 .chip{font:500 12px var(--mono, monospace);padding:5px 10px;border:1px solid var(--terra, #E07A5F);background:transparent;color:var(--sand, #F2CC8F);cursor:pointer;border-radius:0;}
 .chip:hover{background:var(--terra, #E07A5F);color:#fff;}
 
+
+/* ---------- Asistente v3: resumen, sugerencias, borradores ---------- */
+.msg{animation:entra .22s ease-out both;}
+@keyframes entra{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.draft{margin-top:8px;padding:10px 12px;border-left:3px solid var(--terra,#E07A5F);background:rgba(128,128,128,.08);font-size:13px;line-height:1.5;}
+.bar{display:inline-block;height:8px;background:var(--terra,#E07A5F);vertical-align:middle;}
+.brief{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.brief button{display:block;width:100%;text-align:left;font:13px var(--sans);color:inherit;background:transparent;border:1px solid var(--line);border-left:4px solid var(--muted);padding:7px 10px;cursor:pointer;}
+.brief button.alta{border-left-color:var(--terra,#E07A5F);}
+.brief button.media{border-left-color:var(--sand,#F2CC8F);}
+.brief button:hover{background:rgba(128,128,128,.1);}
+#composerWrap{position:relative;}
+#sug{position:absolute;left:18px;right:18px;bottom:100%;background:var(--white);border:1.5px solid var(--ink);border-bottom:none;display:none;z-index:20;max-height:220px;overflow-y:auto;}
+#sug button{display:block;width:100%;text-align:left;border:none;background:none;color:var(--ink);font:13px var(--sans);padding:8px 12px;cursor:pointer;}
+#sug button.on,#sug button:hover{background:var(--paper-2);}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--paper);font:12px var(--mono);padding:8px 14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.on{opacity:1;}
 </style>
 </head>
 <body>
@@ -473,10 +490,12 @@ form#composer{ background:rgba(7,10,20,.85) !important; border-top:1px solid var
       <button data-q="inventario de láminas">Láminas</button>
       <button data-q="ayuda">Ayuda</button>
     </div>
+    <div id="composerWrap"><div id="sug"></div>
     <form id="composer">
       <textarea id="input" rows="1" placeholder="Pregúntame algo… ej. «¿cuánto debe Aviador?» y luego «¿y su teléfono?»"></textarea>
       <button type="submit" id="sendBtn">ENVIAR</button>
-    </form>
+    </form></div>
+    <div class="toast" id="toast"></div>
   </div>
 </main>
 
@@ -506,6 +525,9 @@ const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyjQjgrf6uc9YZ6ggQf
 let sheetUrl = BACKEND_URL;
 let sheetKey = ""; try{ sheetKey = localStorage.getItem('joart_sheet_key') || ''; const u = localStorage.getItem('joart_sheet_url'); if(u) sheetUrl = u; }catch(e){}
 let datos = { proyectos: [], inventario: [], movimientos: [] }, cargadoEn = 0, cargando = null;
+let alias = {}, historial = [], hPos = 0, resumenMostrado = false;
+try{ alias = JSON.parse(localStorage.getItem('joart_asistente_alias') || '{}'); historial = JSON.parse(localStorage.getItem('joart_asistente_hist') || '[]'); const c = JSON.parse(localStorage.getItem('joart_asistente_cache') || 'null'); if(c && c.datos && c.datos.proyectos){ datos = c.datos; cargadoEn = 0; } }catch(e){}
+function aviso(t){ const el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 1400); }
 
 const $ = (id) => document.getElementById(id);
 const log = $('log');
@@ -529,6 +551,8 @@ function cargarDatos(forzar){
       datos.proyectos = p.proyectos || [];
       if(i && i.ok){ datos.inventario = i.inventario || []; datos.movimientos = []; datos.ultimoConteo = i.ultimoConteo || ""; }
       cargadoEn = Date.now();
+      try{ localStorage.setItem('joart_asistente_cache', JSON.stringify({ t: cargadoEn, datos })); }catch(e){}
+      mostrarResumen();
       estado(true, 'actualizado ' + new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' }));
       $('statusN').textContent = datos.proyectos.length;
       return true;
@@ -547,8 +571,17 @@ function msg(role, html, esTexto){
   return bubble;
 }
 
+function mostrarResumen(){
+  if(resumenMostrado || !datos.proyectos.length) return;
+  resumenMostrado = true;
+  const lista = Motor.insights(datos, new Date());
+  if(!lista.length) return;
+  msg('assistant', 'Esto es lo que veo hoy:<div class="brief">' + lista.slice(0, 6).map(i => '<button type="button" class="' + i.nivel + '" data-q="' + i.q.replace(/"/g, '&quot;') + '">' + i.texto + '</button>').join('') + '</div>');
+}
 async function preguntar(texto){
   if(!texto.trim()) return;
+  historial = historial.filter(h => h !== texto).concat([texto]).slice(-40); hPos = historial.length; try{ localStorage.setItem('joart_asistente_hist', JSON.stringify(historial)); }catch(e){}
+  ocultarSug();
   msg('user', texto, true);
   const input = $('input'); input.value = ''; input.style.height = 'auto';
   if(!sheetKey){ msg('assistant', 'Falta la contraseña: entra primero al <a href="panel.html">panel</a> o usa el botón «Conexión».'); return; }
@@ -556,7 +589,7 @@ async function preguntar(texto){
   const ok = await cargarDatos(false);
   if(!ok && !datos.proyectos.length){ msg('assistant', 'No pude leer el Sheet ahora mismo. Revisa tu internet o la conexión (botón «Conexión») e intenta otra vez.'); return; }
   const core = { parsearPedidoTexto, precioCatalogo, cotizarPersonalizado, geomPers, hpExhibidor, MODELOS, PERSONALIZADO, grosoresDeModelo };
-  let r; try{ r = Motor.responder(texto, datos, { core }); }catch(err){ console.error(err); r = { html: 'Algo salió mal al buscar. Intenta con otras palabras.' }; }
+  let r; try{ r = Motor.responder(texto, datos, { core, alias }); }catch(err){ console.error(err); r = { html: 'Algo salió mal al buscar. Intenta con otras palabras.' }; }
   msg('assistant', r.html);
 }
 
@@ -577,10 +610,37 @@ $('composer').addEventListener('submit', (e) => { e.preventDefault(); preguntar(
 $('input').addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); $('composer').requestSubmit(); } });
 $('input').addEventListener('input', () => { const el = $('input'); el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
 document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => preguntar(b.getAttribute('data-q'))));
-log.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if(b){ preguntar(b.getAttribute('data-q')); } });
+log.addEventListener('click', (e) => {
+  const b = e.target.closest('.chip, .brief button'); if(!b) return;
+  const cp = b.getAttribute('data-copy');
+  if(cp != null){ (navigator.clipboard ? navigator.clipboard.writeText(cp) : Promise.reject()).then(() => aviso('Copiado'), () => aviso('No se pudo copiar')); return; }
+  const l = b.getAttribute('data-learn');
+  if(l){ const i = l.lastIndexOf('|'), f = l.slice(0, i), k = l.slice(i + 1); if(f && k){ alias[f] = k; try{ localStorage.setItem('joart_asistente_alias', JSON.stringify(alias)); }catch(e){} } }
+  preguntar(b.getAttribute('data-q'));
+});
+
+// sugerencias al escribir, historial con flechas, atajo "/"
+let sugPos = -1, sugItems = [];
+function ocultarSug(){ $('sug').style.display = 'none'; sugItems = []; sugPos = -1; }
+function pintarSug(){
+  const box = $('sug'); if(!sugItems.length){ ocultarSug(); return; }
+  box.innerHTML = sugItems.map((x, i) => '<button type="button" data-i="' + i + '"' + (i === sugPos ? ' class="on"' : '') + '></button>').join('');
+  box.querySelectorAll('button').forEach((bt, i) => { bt.textContent = sugItems[i][0]; });
+  box.style.display = 'block';
+}
+$('input').addEventListener('input', () => { sugItems = Motor.sugerir($('input').value, datos); sugPos = -1; pintarSug(); });
+$('sug').addEventListener('mousedown', (e) => { const b = e.target.closest('button'); if(b){ e.preventDefault(); preguntar(sugItems[+b.dataset.i][1]); } });
+$('input').addEventListener('keydown', (e) => {
+  if(sugItems.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){ e.preventDefault(); sugPos = (sugPos + (e.key === 'ArrowDown' ? 1 : -1) + sugItems.length) % sugItems.length; pintarSug(); return; }
+  if(sugItems.length && e.key === 'Enter' && sugPos > -1){ e.preventDefault(); preguntar(sugItems[sugPos][1]); return; }
+  if(e.key === 'Escape'){ ocultarSug(); return; }
+  if(e.key === 'ArrowUp' && !$('input').value && historial.length){ e.preventDefault(); hPos = Math.max(0, hPos - 1); $('input').value = historial[hPos]; }
+  else if(e.key === 'ArrowDown' && hPos < historial.length && !sugItems.length){ e.preventDefault(); hPos = Math.min(historial.length, hPos + 1); $('input').value = historial[hPos] || ''; }
+}, true);
+document.addEventListener('keydown', (e) => { if(e.key === '/' && document.activeElement !== $('input') && !e.ctrlKey && !e.metaKey){ e.preventDefault(); $('input').focus(); } });
 
 msg('assistant', (function(){ const h = new Date().getHours(); return (h < 12 ? '¡Buenos días' : h < 19 ? '¡Buenas tardes' : '¡Buenas noches') + ', Jorge!'; })() + ' ¿Qué necesitas saber? Pregúntame como a alguien del equipo, o toca un botón.');
-if(sheetKey){ cargarDatos(true); } else { estado(false, 'sin clave'); setTimeout(abrir, 400); }
+if(sheetKey){ if(datos.proyectos.length){ $('statusN').textContent = datos.proyectos.length; } cargarDatos(true); } else { estado(false, 'sin clave'); setTimeout(abrir, 400); }
 })();
 </script>
 </body>

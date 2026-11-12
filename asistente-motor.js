@@ -249,7 +249,8 @@
 
   /* ===================== presentación ===================== */
   const detalle = (html, etiqueta) => `<details style="margin-top:8px"><summary style="cursor:pointer;color:#888">${etiqueta || "Ver detalle"}</summary>${html}</details>`;
-  const chips = (arr) => arr.length ? `<div class="chips">${arr.map(([t, q]) => `<button type="button" class="chip" data-q="${esc(q)}">${esc(t)}</button>`).join("")}</div>` : "";
+  const chips = (arr) => arr.length ? `<div class="chips">${arr.map(([t, q, l]) => `<button type="button" class="chip" data-q="${esc(q)}"${l ? ` data-learn="${esc(l)}"` : ""}>${esc(t)}</button>`).join("")}</div>` : "";
+  const copiable = (txt, etiqueta) => `<div class="draft">${esc(txt).replace(/\n/g, "<br>")}</div><div class="chips"><button type="button" class="chip" data-copy="${esc(txt)}">${esc(etiqueta || "Copiar mensaje")}</button></div>`;
   const entendi = (partes) => partes.length ? `<div class="mut">Entendí: ${esc(partes.join(" · "))}</div>` : "";
   function saludo(hoy) { const h = hoy.getHours(); return h < 12 ? "¡Buenos días!" : h < 19 ? "¡Buenas tardes!" : "¡Buenas noches!"; }
 
@@ -526,6 +527,91 @@ Puedes encadenar: «¿cómo va Match?» → «¿y cuánto debe?» → «de esos,
     return chips([["¿Cuánto debe?", "cuánto debe " + nombre], ["¿Cuándo se entrega?", "cuándo se entrega " + nombre], ["Contacto", "contacto de " + nombre], ["Ficha completa", "ficha de " + nombre]]);
   }
 
+
+  /* ===================== extras: aprendizaje, redacción, ranking de búsqueda, insights ===================== */
+  function fraseClave(qn) { return tokens(qn).filter((t) => !STOP.has(t) && !RES.has(t) && t.length >= 3).join(" "); }
+
+  // Búsqueda por relevancia (estilo BM25 simplificado) con tolerancia a errores de dedo.
+  function buscarRelevancia(palabras, proyectos) {
+    const docs = proyectos.map((p) => ({ p, t: tokens([p.cliente, p.cliente, p.tipo, p.zona, p.contacto, p.notas, p.codigo].join(" ")) }));
+    const N = docs.length || 1, df = {};
+    palabras.forEach((w) => { df[w] = docs.filter((d) => d.t.some((x) => x === w || simil(x, w))).length; });
+    const out = [];
+    docs.forEach((d) => {
+      let sc = 0, hits = 0;
+      palabras.forEach((w) => {
+        const tf = d.t.filter((x) => x === w || simil(x, w)).length;
+        if (!tf) return;
+        hits++; sc += Math.log(1 + (N - df[w] + 0.5) / (df[w] + 0.5)) * ((tf * 2.2) / (tf + 1.2));
+      });
+      if (hits && hits >= Math.ceil(palabras.length / 2)) out.push({ p: d.p, sc: sc * (hits / palabras.length) });
+    });
+    return out.sort((a, b) => b.sc - a.sc).map((x) => x.p);
+  }
+
+  // Mensajes listos para mandar por WhatsApp (plantillas, sin IA).
+  function mensajeCliente(p, tipo, hoy) {
+    const nombre = String(p.cliente || "").trim();
+    const ped = limpio(p.tipo) || "pedido";
+    const saldo = saldoDe(p), pr = precioDe(p);
+    if (tipo === "cobro") {
+      if (!pr) return `Hola ${nombre}, te escribe Jorge de Joart Digital. Tu pedido (${ped}) todavía no tiene cotización; ¿te la preparo con las cantidades finales?`;
+      if (saldo <= 0) return `Hola ${nombre}, te escribe Jorge de Joart Digital. Tu pedido (${ped}) ya está liquidado. ¡Gracias!`;
+      const pc = pagoPct(p);
+      return `Hola ${nombre}, te escribe Jorge de Joart Digital. ` + (pc ? `Hemos recibido ${pc}% de tu pedido (${ped}) y ` : `Para avanzar con tu pedido (${ped}) `) + `queda pendiente ${fmt(saldo)}. ¿Te comparto los datos para la transferencia? En cuanto se refleje, seguimos con tu pedido.\nJorge Gama`;
+    }
+    const e = estatusDe(p);
+    const frase = e === "imprimir" ? "ya está en producción" : e === "enviar" ? "ya está listo para enviarse" : e === "enviado" ? "ya va en camino" : e === "entregado" ? "ya fue entregado" : /render/.test(e) ? "está en la etapa de diseño del render" : e === "en revision" ? "está esperando tu aprobación" : "va en proceso";
+    const f = limpio(p.fechaLimite);
+    return `Hola ${nombre}, te escribe Jorge de Joart Digital. Te cuento cómo va tu pedido (${ped}): ${frase}` + (f && esVivo(p) ? `, con entrega estimada el ${f}` : "") + `. Cualquier duda, aquí estoy.\nJorge Gama`;
+  }
+
+  // Aprende de patrones: lo que de verdad conviene revisar hoy.
+  function insights(datos, hoy) {
+    const todos = ((datos && datos.proyectos) || []).filter(esProyectoReal);
+    const vivos = todos.filter(esVivo);
+    const out = [];
+    const atr = vivos.map((p) => ({ p, d: diasPara(p, hoy) })).filter((x) => x.d !== null && x.d < 0).sort((a, b) => a.d - b.d);
+    if (atr.length) out.push({ nivel: "alta", texto: `<b>${plural(atr.length, "pedido atrasado", "pedidos atrasados")}</b>: ${atr.slice(0, 3).map((x) => esc(x.p.cliente)).join(", ")}${atr.length > 3 ? "…" : ""}`, q: "proyectos atrasados" });
+    const hoyM = vivos.filter((p) => { const d = diasPara(p, hoy); return d === 0 || d === 1; });
+    if (hoyM.length) out.push({ nivel: "media", texto: `<b>${plural(hoyM.length, "entrega", "entregas")}</b> hoy o mañana: ${hoyM.slice(0, 3).map((p) => esc(p.cliente)).join(", ")}`, q: "entregas de hoy y mañana" });
+    const riesgo = vivos.filter((p) => { const d = diasPara(p, hoy); return d !== null && d >= 0 && d <= 5 && precioDe(p) > 0 && (pagoPct(p) === null || pagoPct(p) === 0) && ["imprimir", "enviar", "yo"].indexOf(estatusDe(p)) > -1; });
+    if (riesgo.length) out.push({ nivel: "alta", texto: `<b>${plural(riesgo.length, "pedido sin anticipo", "pedidos sin anticipo")}</b> y con entrega en 5 días o menos: ${riesgo.slice(0, 3).map((p) => esc(p.cliente)).join(", ")}`, q: "sin anticipo" });
+    const cobrarPostEntrega = todos.filter((p) => !esVivo(p) && estatusDe(p) !== "cancelado" && precioDe(p) > 0 && pagoPct(p) !== null && saldoDe(p) > 1);
+    if (cobrarPostEntrega.length) out.push({ nivel: "media", texto: `<b>${fmt(cobrarPostEntrega.reduce((s, p) => s + saldoDe(p), 0))}</b> pendientes en ${plural(cobrarPostEntrega.length, "pedido ya enviado/entregado", "pedidos ya enviados/entregados")}`, q: "cuánto me deben los enviados" });
+    const dup = {};
+    vivos.forEach((p) => { const k = norm(p.cliente) + "|" + norm(p.tipo); (dup[k] = dup[k] || []).push(p); });
+    const dups = Object.keys(dup).filter((k) => dup[k].length > 1);
+    if (dups.length) out.push({ nivel: "media", texto: `Posible pedido duplicado: ${dups.slice(0, 3).map((k) => esc(dup[k][0].cliente)).join(", ")}`, q: "cómo va " + dup[dups[0]][0].cliente });
+    const inv = (datos && datos.inventario) || [];
+    const faltan = inv.filter((i) => i.enCola > i.laminas);
+    if (faltan.length) out.push({ nivel: "alta", texto: `No alcanzan las láminas de <b>${faltan.map((i) => esc(i.grosor)).join(" y ")}</b>`, q: "¿alcanzan las láminas?" });
+    const cobrar = vivos.reduce((s, p) => s + saldoDe(p), 0);
+    if (cobrar > 0) out.push({ nivel: "info", texto: `Por cobrar en curso: <b>${fmt(cobrar)}</b>`, q: "por cobrar" });
+    const orden = { alta: 0, media: 1, info: 2 };
+    return out.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
+  }
+
+  // Sugerencias mientras se escribe.
+  function sugerir(texto, datos) {
+    const qn = norm(texto);
+    if (qn.length < 2) return [];
+    const todos = ((datos && datos.proyectos) || []).filter(esProyectoReal);
+    const out = [];
+    const ult = tokens(qn).pop() || "";
+    const nombres = unico(todos.map((p) => p.cliente)).filter((n) => { const nn = norm(n); return nn.indexOf(qn) > -1 || (ult.length >= 2 && tokens(nn).some((t) => t.indexOf(ult) === 0)); }).slice(0, 4);
+    nombres.forEach((n) => out.push(["cómo va " + n, "cómo va " + n]));
+    [["por cobrar", "por cobrar"], ["proyectos atrasados", "proyectos atrasados"], ["qué hay en imprimir", "proyectos en imprimir"], ["resumen del día", "resumen"], ["¿alcanzan las láminas?", "¿alcanzan las láminas?"], ["ventas por mes", "ventas por mes"], ["sin anticipo", "sin anticipo"], ["los que piden factura", "los que piden factura"]]
+      .filter(([t]) => norm(t).split(" ").some((w) => ult.length >= 2 && w.indexOf(ult) === 0)).forEach((x) => out.push(x));
+    return out.slice(0, 6);
+  }
+
+  function ventasPorMes(todos, hoy) {
+    const m = {};
+    todos.forEach((p) => { const f = fechaDe(p.fechaLimite, hoy), pr = precioDe(p); if (!f || !pr || estatusDe(p) === "cancelado") return; const k = f.getFullYear() * 12 + f.getMonth(); const o = m[k] || (m[k] = { y: f.getFullYear(), m: f.getMonth(), total: 0, n: 0 }); o.total += pr; o.n++; });
+    return Object.keys(m).map((k) => m[k]).sort((a, b) => (a.y * 12 + a.m) - (b.y * 12 + b.m));
+  }
+
   /* ===================== respuesta principal ===================== */
   function responder(pregunta, datos, opts) {
     opts = opts || {};
@@ -571,11 +657,34 @@ Puedes encadenar: «¿cómo va Match?» → «¿y cuánto debe?» → «de esos,
     const filtros = leerFiltros(qn, todos, hoy);
     const hit = buscarClientes(qn, idx);
     let clientes = hit.fuertes;
+    if (!clientes.length && opts.alias) {
+      const ak = Object.keys(opts.alias).find((k) => k && (" " + qn + " ").indexOf(" " + k + " ") > -1);
+      const g = ak && idx.mapa.get(opts.alias[ak]);
+      if (g) clientes = [g];
+    }
     const campos = camposPedidos(qn);
 
     // 3a) inventario / láminas (solo si no hablan de un cliente ni de una lista)
     const pideLaminas = /\b(lamina|laminas|inventario|stock)\b/.test(qn) || (/\b(hoja|hojas)\b/.test(qn) && /(alcanz|quedan|tenemos|tengo|hay|faltan|sobran|comprar|surtir)/.test(qn));
     if (pideLaminas && !clientes.length && !hayFiltros(filtros)) return { html: inventarioHTML(datos || {}) };
+
+
+    // 3c) redactar mensajes para el cliente
+    const pideMsg = /\b(redacta\w*|escribe\w*|mensaje|texto|recordatorio|recordarle|avisale|avisarle|manda\w*)\b/.test(qn) && /\b(cobro|cobrar|pago|pagar|saldo|anticipo|debe|avance|estatus|como va|actualiza\w*|seguimiento|recordatorio|mensaje)\b/.test(qn);
+    if (pideMsg && clientes.length) {
+      const tipoM = /\b(avance|estatus|como va|actualiza\w*|seguimiento)\b/.test(qn) && !/\b(cobro|cobrar|pago|pagar|saldo|anticipo|debe)\b/.test(qn) ? "avance" : "cobro";
+      const g = clientes[0];
+      const vivosG = g.proyectos.filter(esVivo);
+      const p = (vivosG.length ? vivosG : g.proyectos).slice().sort((a, b) => saldoDe(b) - saldoDe(a))[0];
+      recordar({ cliente: p, lista: g.proyectos });
+      return { html: `Borrador para <b>${esc(g.nombre)}</b> (${tipoM === "cobro" ? "cobro" : "avance"}):` + copiable(mensajeCliente(p, tipoM, hoy)) + entendi(["mensaje de " + tipoM, "cliente " + g.nombre]) };
+    }
+    if (/\bventas por mes\b|\bpor mes\b.*\b(vend|ventas|ingresos)\b|\bmes por mes\b/.test(qn) && !clientes.length) {
+      const vm = ventasPorMes(todos, hoy);
+      if (!vm.length) return { html: "No hay pedidos cotizados con fecha para armar el resumen." };
+      const max = Math.max.apply(null, vm.map((x) => x.total));
+      return { html: `<b>Ventas por mes</b> (por fecha de entrega):<table><thead><tr><th>Mes</th><th>Pedidos</th><th>Total</th><th></th></tr></thead><tbody>` + vm.map((x) => `<tr><td>${MESES_TXT[x.m]} ${x.y}</td><td>${x.n}</td><td>${fmt(x.total)}</td><td><span class="bar" style="width:${Math.max(4, Math.round(x.total / max * 100))}px"></span></td></tr>`).join("") + `</tbody></table>` + entendi(["ventas agrupadas por mes de entrega"]) };
+    }
 
     // 3b) seguimiento de la conversación
     const refLista = /\b(esos|esas|ellos|ellas|estos|estas|de la lista|de ahi|de los anteriores|ese grupo)\b/.test(qn);
@@ -632,7 +741,7 @@ Puedes encadenar: «¿cómo va Match?» → «¿y cuánto debe?» → «de esos,
 
     // 7) varios candidatos parecidos → pregunto
     if (hit.candidatos.length) {
-      return { html: `Hay varios clientes que se parecen a eso. ¿Cuál de estos?` + chips(hit.candidatos.map((c) => [c.nombre, q0 + " (" + c.nombre + ")"])) };
+      return { html: `Hay varios clientes que se parecen a eso. ¿Cuál de estos?` + chips(hit.candidatos.map((c) => [c.nombre, q0 + " (" + c.nombre + ")", fraseClave(qn) + "|" + c.key])) };
     }
 
     // 7b) piden precio pero no pude cotizar: pido lo que falta en vez de listar cualquier cosa
@@ -666,14 +775,16 @@ Puedes encadenar: «¿cómo va Match?» → «¿y cuánto debe?» → «de esos,
       return { html: `En los ${plural(v.length, "proyecto en curso", "proyectos en curso")} hay unas <b>${v.reduce((s, p) => s + piezasDe(p), 0)}</b> piezas.` };
     }
 
-    // 11) búsqueda libre, pero estricta: TODAS las palabras deben aparecer
+    // 11) búsqueda libre por relevancia: primero exacta (todas las palabras), si no, las más parecidas
     const palabras = tokens(qn).filter((t) => !STOP.has(t) && !RES.has(t) && t.length >= 3);
     if (palabras.length) {
       const tb = (p) => tokens([p.cliente, p.tipo, p.zona, p.contacto, p.notas, p.codigo].join(" "));
-      const lista = todos.filter((p) => { const t = tb(p); return palabras.every((w) => t.some((x) => x === w || simil(x, w))); });
+      let lista = todos.filter((p) => { const t = tb(p); return palabras.every((w) => t.some((x) => x === w || simil(x, w))); });
+      const exacta = lista.length > 0;
+      if (!exacta) lista = buscarRelevancia(palabras, todos).slice(0, 8);
       if (lista.length && lista.length <= 40) {
         recordar({ lista, cliente: lista.length === 1 ? lista[0] : undefined });
-        return { html: (lista.length === 1 ? fraseProyecto(lista[0]) + detalle(ficha(lista[0])) : frase(lista, hoy) + detalle(tabla(lista), "Ver lista")) + entendi(["búsqueda de «" + palabras.join(" ") + "» en cliente, pedido, zona y notas"]) };
+        return { html: (lista.length === 1 ? fraseProyecto(lista[0]) + detalle(ficha(lista[0])) : (exacta ? "" : "No hay coincidencia exacta; esto es lo más parecido.<br>") + frase(lista, hoy) + detalle(tabla(lista), "Ver lista")) + entendi(["búsqueda de «" + palabras.join(" ") + "» en cliente, pedido, zona y notas"]) };
       }
     }
 
@@ -684,7 +795,7 @@ Puedes encadenar: «¿cómo va Match?» → «¿y cuánto debe?» → «de esos,
       chips([["¿Qué hay pendiente?", "resumen"], ["Atrasados", "proyectos atrasados"], ["Por cobrar", "por cobrar"], ["¿Qué puedo preguntar?", "ayuda"]]) };
   }
 
-  const Motor = { responder, norm, AYUDA: AYUDA_HTML(), reset: () => { ctx.cliente = null; ctx.lista = null; ctx.t = 0; } };
+  const Motor = { responder, norm, insights, sugerir, mensajeCliente, fraseClave, AYUDA: AYUDA_HTML(), reset: () => { ctx.cliente = null; ctx.lista = null; ctx.t = 0; } };
   if (typeof module !== "undefined" && module.exports) module.exports = Motor;
   else root.Motor = Motor;
 })(typeof window !== "undefined" ? window : globalThis);
