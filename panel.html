@@ -761,7 +761,7 @@ async function abrirProyecto(cod, nombreEsperado){
     if(nombreEsperado && p.cliente){ const a = normNom(nombreEsperado), b = normNom(p.cliente); if(a && b && a !== b && !a.includes(b) && !b.includes(a)) alerta = `⚠ Tocaste «${nombreEsperado}» pero en el Sheets el código ${cod} es de «${p.cliente}». Revisa que el código no esté repetido o que no hayas movido filas.`; }
     if(p.desfase) alerta += (alerta ? "\n" : "") + "⚠ " + p.desfase;
     if(p.repetido) alerta += (alerta ? "\n" : "") + "⚠ Este código está en más de una fila del Sheets (se copió una fila). Borra la nota de la copia.";
-    ped = { codigo: cod, cliente: p.cliente || nombreEsperado || "", contacto: p.contacto || "", notas: p.notas || "", items: (p.items || []).filter(i => i.modelo !== "Envío"), factura: !!p.requiereFactura, alerta };
+    ped = { codigo: cod, cliente: p.cliente || nombreEsperado || "", contacto: p.contacto || "", notas: p.notas || "", items: (p.items || []).filter(i => i.modelo !== "Envío"), factura: !!p.requiereFactura, promo: p.promo || null, alerta };
     cot = null; pintarFicha();
   }catch(e){ console.error(e); falla("No se pudo conectar."); }
 }
@@ -901,7 +901,11 @@ function itemDesdeRegistro(x){
 function armarCot(){
   if(!cot){
     const txt = (ped.notas || "").toLowerCase();
-    cot = { items: ped.items.map(itemDesdeRegistro), entrega: /urgente/.test(txt) ? "urgente" : /expres|exprés/.test(txt) ? "expres" : "estandar", caras: /frente y vuelta/.test(txt) ? "dos" : "una", factura: ped.factura ? "si" : "no", envio: "", notas: "" };
+    cot = { items: ped.items.map(itemDesdeRegistro), entrega: /urgente/.test(txt) ? "urgente" : /expres|exprés/.test(txt) ? "expres" : "estandar", caras: /frente y vuelta/.test(txt) ? "dos" : "una", factura: ped.factura ? "si" : "no", envio: "", notas: "",
+      promo: ped.promo ? ped.promo.opcion : (promoVigente(hoyMX()) ? "elegir" : "") };   // Días de Descuento: dentro de las fechas se ofrece por defecto
+    // Los precios manuales se guardaron ya con el descuento de Días de Descuento (15%): se regresan al precio de lista para no descontar dos veces
+    const rd = ped.promo && ped.promo.opcion === "15" && ped.promo.totalLista > 0 && ped.promo.total > 0 ? ped.promo.totalLista / ped.promo.total : 1;
+    if(rd !== 1) cot.items.forEach(it => { if(it.manual) it.manual = Math.round(Number(it.manual) * rd * 100) / 100; });
     if(!cot.items.length) cot.items = [nuevoItem()];
   }
   pintarFicha(); $("cotBox").scrollIntoView({ behavior:"smooth", block:"start" });
@@ -916,6 +920,7 @@ function pintarCot(){
       <div class="field"><label>Entrega</label><select id="cEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +15%</option><option value="urgente">Urgente +25%</option></select></div>
       <div class="field"><label>Impresión</label><select id="cCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
     </div>
+    <div class="field"><label for="cPromo">🏷️ Días de Descuento · el cliente elige UNA opción</label><select id="cPromo"><option value="">Sin promoción</option><option value="elegir">Ofrecer las dos (aún no elige)</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option></select><div class="hint" id="cPromoInfo"></div></div>
     <div class="row">
       <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
       <div class="field"><label>Envío (si ≤ $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
@@ -923,29 +928,39 @@ function pintarCot(){
     <div class="field"><label for="cNotas">Notas del pedido · no salen en el PDF</label><textarea id="cNotas" rows="2" placeholder="Se agregan al registro en Sheets y ClickUp"></textarea></div>
     <div id="cotRes"></div>
   </div>`;
-  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio; $("cNotas").value = cot.notas;
+  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cPromo").value = cot.promo || ""; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio; $("cNotas").value = cot.notas;
   const cambio = () => calcCot(); cambio.ctx = () => ({ caras: cot.caras });
   repintarCot = enlazarItems($("cotItems"), () => cot.items, (a) => { cot.items = a; }, true, cambio);
   $("cotAdd").addEventListener("click", () => { cot.items.push(nuevoItem()); repintarCot(); calcCot(); });
-  ["cEntrega","cCaras","cFactura","cEnvio","cNotas"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; cot.notas = $("cNotas").value; if(id === "cCaras") repintarCot(); calcCot(); }));
+  ["cEntrega","cCaras","cPromo","cFactura","cEnvio","cNotas"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.promo = $("cPromo").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; cot.notas = $("cNotas").value; if(id === "cCaras") repintarCot(); calcCot(); }));
   repintarCot(); calcCot();
 }
 function calcCot(){
   const lineas = calcularLineas(cot.items, { caras: cot.caras }), piezas = lineas.reduce((s, l) => s + l.q, 0);
   const pctEntrega = cot.entrega === "expres" ? 0.15 : cot.entrega === "urgente" ? 0.25 : 0;
   const subtotal = lineas.reduce((s, l) => s + l.importe, 0), recargo = Math.round(subtotal * pctEntrega);
-  const envioAplica = (subtotal + recargo) <= 1000, envio = envioAplica ? (parseFloat(cot.envio) || 0) : 0, total = subtotal + recargo + envio;
+  // Días de Descuento: se calcula sobre productos + recargo de entrega. Como el mínimo es $1,500, el envío siempre es gratis y no entra.
+  const base = subtotal + recargo, promo = aplicarPromo(base, cot.promo), descuento = promo.descuento;
+  const envioAplica = base <= 1000, envio = envioAplica ? (parseFloat(cot.envio) || 0) : 0, total = base - descuento + envio;
   const pctA = cot.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
   const err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
   const avisos = [];
   if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
   if(cot.entrega !== "estandar" && piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas.`);
   if(cot.entrega !== "estandar" && cot.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
-  cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err };
+  const hoy = hoyMX(), fueraDeFechas = !promoVigente(hoy);
+  const infoPromo = !cot.promo ? (promoVigente(hoy) && !promo.elegible && base > 0 ? `Días de Descuento aplica desde ${fmt(DIAS_DESCUENTO.minimo)}: faltan ${fmt(promo.falta)}.` : "")
+    : !promo.elegible ? `No aplica: Días de Descuento es desde ${fmt(DIAS_DESCUENTO.minimo)} (faltan ${fmt(promo.falta)}).`
+    : (fueraDeFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Úsalo solo si el cliente pidió su cotización en esas fechas.` : "");
+  const pi = $("cPromoInfo"); if(pi){ pi.textContent = infoPromo; pi.hidden = !infoPromo; }
+  cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, promo, descuento, totalLista: base + envio };
   $("cotRes").innerHTML = `<div class="sum">
     ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
     <div class="l"><span>${piezas} pieza${piezas === 1 ? "" : "s"}</span><span>${fmt(subtotal)}</span></div>
     ${recargo ? `<div class="l"><span>Recargo ${cot.entrega === "expres" ? "exprés" : "urgente"}</span><span>${fmt(recargo)}</span></div>` : ""}
+    ${descuento ? `<div class="l g"><span>🏷️ Días de Descuento (${promo.texto})</span><span>−${fmt(descuento)}</span></div>` : ""}
+    ${promo.opcion === "msi" ? `<div class="l g"><span>🏷️ Días de Descuento: ${promo.texto}</span><span></span></div>` : ""}
+    ${promo.opcion === "elegir" ? `<div class="box warn">🏷️ Días de Descuento: el cliente elige 15% (≈${fmt(promo.descuentoEstimado)} → ${fmt(promo.totalConDescuento)}) o 3 meses sin intereses. El total de abajo es el de lista.</div>` : ""}
     ${envio ? `<div class="l"><span>Envío</span><span>${fmt(envio)}</span></div>` : ""}
     ${(subtotal + recargo) > 1000 ? `<div class="l g"><span>🚚 Envío nacional GRATIS</span><span></span></div>` : (subtotal > 0 && !envio ? `<div class="box warn">Pedido de $1,000 o menos: el envío no va incluido. Escribe el costo si lo cobras.</div>` : "")}
     <div class="tot">${fmt(total)} <small style="font:600 11px var(--mono);color:var(--mute)">MXN · IVA incluido</small></div>
@@ -961,6 +976,7 @@ function datosCot(){
   return { folio: ped.codigo, cliente: ped.cliente, contacto: ped.contacto, fecha: fechaTexto(hoy), vigencia: fechaTexto(vence), notas: "",
     entrega: cot.entrega, dosCaras: cot.caras === "dos", requiereFactura: cot.factura === "si", soloPrecios: false, envioGratis: (c.subtotal + c.recargo) > 1000,
     items: c.lineas.map(l => ({ nombre: esPers(l.it) ? nombreDe(l.it) + " (a medida)" : l.it.modelo, medidas: medidasDe(l.it), cantidad: l.q, precioUnitario: l.unit, personalizado: esPers(l.it), grosor: l.it.grosor })),
+    promo: c.promo.opcion ? { opcion: c.promo.opcion, texto: c.promo.texto, descuento: c.descuento, pct: Math.round(DIAS_DESCUENTO.pctDescuento * 100), estimado: c.promo.descuentoEstimado, totalConDescuento: c.promo.totalConDescuento, totalLista: c.totalLista, meses: DIAS_DESCUENTO.mesesMSI, limite: DIAS_DESCUENTO.limitePagoTexto, limiteLargo: fechaTexto(new Date(DIAS_DESCUENTO.limitePago + "T12:00:00")) } : null,
     subtotal: c.subtotal, envio: c.envio, recargoEntrega: c.recargo, pctEntrega: c.pctEntrega, total: c.total, pctAnticipo: c.pctA, anticipo: c.anticipo, saldo: c.saldo,
     cuenta: cuentaDe(cot.factura === "si"), opcionesExtra: extrasCot(cot.items, cot.caras, c.pctEntrega) };
 }
@@ -971,7 +987,12 @@ function waUrl(tel, texto){
 const GRAMAJE = { "4 mm": "700 g/m²", "5 mm": "1000 g/m²", "6 mm": "1300 g/m²" };
 const matDet = (g) => g ? " de " + g + (GRAMAJE[g] ? ", " + GRAMAJE[g] : "") : "";
 const lineaEnvio = (d) => d.envio ? `Envío: ${fmt(d.envio)}\n` : (d.envioGratis ? "Envío nacional: gratis 🚚\n" : "");
-const mensajeCot = (d) => `Hola ${d.cliente} 👋 Te comparto la cotización de tu pedido *${d.folio}*; el detalle, las condiciones y los datos de pago van en el PDF.\n\n${lineaEnvio(d)}Total: ${fmt(d.total)} MXN (IVA incluido) · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n${otrasMsg(d)}Vigencia: hasta el ${d.vigencia}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
+const lineaPromo = (d) => { const p = d.promo; if(!p) return "";
+  const lim = `Aprueba tu render y paga el anticipo antes del ${p.limite}.`;
+  if(p.opcion === "15") return `🏷️ Días de Descuento ${p.pct}%: −${fmt(p.descuento)} (precio de lista ${fmt(p.totalLista)}). ${lim}\n`;
+  if(p.opcion === "msi") return `🏷️ Días de Descuento: pagas tu total a ${p.meses} meses sin intereses. ${lim}\n`;
+  return `🏷️ Días de Descuento: elige ${p.pct}% de descuento (≈${fmt(p.estimado)}, total ≈${fmt(p.totalConDescuento)}) o ${p.meses} meses sin intereses. ${lim} ¿Cuál prefieres?\n`; };
+const mensajeCot = (d) => `Hola ${d.cliente} 👋 Te comparto la cotización de tu pedido *${d.folio}*; el detalle, las condiciones y los datos de pago van en el PDF.\n\n${lineaEnvio(d)}${lineaPromo(d)}Total: ${fmt(d.total)} MXN (IVA incluido) · Anticipo (${Math.round(d.pctAnticipo * 100)}%): ${fmt(d.anticipo)}\n${otrasMsg(d)}Vigencia: hasta el ${d.vigencia}\n\nSigue tu pedido en vivo: ${PORTAL_URL}?codigo=${d.folio}`;
 async function compartirPDF(d, texto, tel){
   if(!window.jspdf){ alert("No cargó la librería de PDF. Recarga la página."); return; }
   if(!cuentaListaParaPDF(d)) return;
@@ -980,12 +1001,14 @@ async function compartirPDF(d, texto, tel){
   doc.save(nombreArchivo(d)); window.open(waUrl(tel, texto), "_blank");   // escritorio: baja el PDF y abre WhatsApp con el texto
 }
 async function guardarCot(){
-  const c = cot.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo) / c.subtotal : 1;
+  const c = cot.calc, factor = c.subtotal > 0 ? (c.subtotal + c.recargo - c.descuento) / c.subtotal : 1;   // lo guardado es lo que el cliente paga (recargo y descuento incluidos)
   const itemsG = c.lineas.map(l => Object.assign({}, l.it.extra || {}, { modelo: nombreDe(l.it), medidas: medidasDe(l.it), cantidad: l.q, grosor: l.it.grosor, precioUnitario: Math.round(l.unit * factor * 100) / 100, personalizado: esPers(l.it), hpPorPieza: esPers(l.it) ? hpDe(l.it) : null }));
   if(c.envio) itemsG.push({ modelo: "Envío", medidas: "", cantidad: 1, grosor: "", precioUnitario: c.envio, personalizado: false, hpPorPieza: null });
   const nota = (cot.notas || "").trim();
-  const r = await post("guardarCobro", Object.assign({ codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si" }, nota ? { notaNueva: nota } : {}));
+  const promo = c.promo.opcion ? { opcion: c.promo.opcion, texto: c.promo.texto, descuento: c.descuento, totalLista: c.totalLista, total: c.total, limite: DIAS_DESCUENTO.limitePagoTexto } : null;
+  const r = await post("guardarCobro", Object.assign({ codigo: ped.codigo, items: itemsG, requiereFactura: cot.factura === "si", promo }, nota ? { notaNueva: nota } : {}));
   if(!r.ok) throw new Error(r.error || "error");
+  ped.promo = promo;
   if(nota){
     if(r.notaGuardada){ ped.notas = [ped.notas, nota].filter(Boolean).join(" | "); cot.notas = ""; const el = $("cNotas"); if(el) el.value = ""; const fn = $("fichaNotas"); if(fn){ fn.textContent = "📝 " + ped.notas; fn.hidden = false; } toast(r.notaClickUp === false ? "Nota guardada en Sheets; no se pudo agregar en ClickUp" : "Guardado en Sheets y ClickUp"); return; }
     toast("Guardado, pero la nota no se registró: falta actualizar el Apps Script");
@@ -1272,11 +1295,15 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   // --- Totales ---
   nuevaPagina(44);
   const xL = 122;
-  if(d.recargoEntrega || d.envio){
+  if(d.recargoEntrega || d.envio || (d.promo && d.promo.descuento)){
     texto("Subtotal", xL, y, { size: 10 }); texto(money(d.subtotal), R, y, { size: 10, align: "right" }); y += 5.5;
     if(d.recargoEntrega){
       texto("Recargo " + (d.entrega === "expres" ? "exprés" : "urgente") + " (" + Math.round(d.pctEntrega * 100) + "%)", xL, y, { size: 10 });
       texto(money(d.recargoEntrega), R, y, { size: 10, align: "right" }); y += 5.5;
+    }
+    if(d.promo && d.promo.descuento){
+      texto("Días de Descuento (" + d.promo.pct + "%)", xL, y, { size: 10, color: [58, 125, 90] });
+      texto("-" + money(d.promo.descuento), R, y, { size: 10, align: "right", color: [58, 125, 90] }); y += 5.5;
     }
     if(d.envio){ texto("Envío", xL, y, { size: 10 }); texto(money(d.envio), R, y, { size: 10, align: "right" }); y += 5.5; }
     y += 1.5;
@@ -1294,6 +1321,18 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
   y += 6;
 
   }
+  if(d.promo){
+    const p = d.promo, lim = "Para conservar la promoción, aprueba tu render y paga el anticipo a más tardar el " + p.limiteLargo + "; después se pierde. No se acumulan las opciones.";
+    const cuerpo = p.opcion === "15" ? "Descuento de " + p.pct + "% aplicado: -" + money(p.descuento) + " sobre el total de lista de " + money(p.totalLista) + ". " + lim
+      : p.opcion === "msi" ? "Tu total se paga a " + p.meses + " meses sin intereses (sin descuento: pagas el 100% del total). " + lim
+      : "Elige UNA opción: (a) " + p.pct + "% de descuento (aprox. -" + money(p.estimado) + "; total aprox. " + money(p.totalConDescuento) + ") o (b) " + p.meses + " meses sin intereses, pagando el 100% del total. " + lim + " El equipo confirma el monto final al registrar tu pedido.";
+    const ln = doc.splitTextToSize(cuerpo, R - M - 8);
+    nuevaPagina(ln.length * 4.4 + 16);
+    doc.setFillColor(...CREAM); doc.rect(M, y - 5, R - M, ln.length * 4.4 + 10, "F");
+    texto("Días de Descuento" + (p.opcion === "elegir" ? "" : ": " + p.texto), M + 4, y + 1, { bold: true, size: 10, color: TERRA });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...NAVY); doc.text(ln, M + 4, y + 7);
+    y += ln.length * 4.4 + 12;
+  }
   if(d.opcionesExtra && d.opcionesExtra.length){
     nuevaPagina(22 + d.opcionesExtra.length * 6);
     texto("Otras cantidades (precio por pieza, IVA incluido)", M, y, { bold: true, size: 10 }); y += 5;
@@ -1306,7 +1345,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
       texto(moneyS(x.precioUnitario), cPU, y, { size: 9.5, align: "right" }); texto(moneyS(x.precioUnitario * x.cantidad), cImp - 3, y, { size: 9.5, align: "right", bold: true });
       y += 6;
     });
-    texto("Referencia: estas cantidades no se suman al total de arriba.", M, y, { size: 8.5, color: MUTED }); y += 8;
+    texto("Referencia: estas cantidades no se suman al total de arriba." + (d.promo ? " Precios de lista; la promoción se calcula sobre el total del pedido." : ""), M, y, { size: 8.5, color: MUTED }); y += 8;
   }
   if(d.notas){
     const ln = doc.splitTextToSize(d.notas, R - M - 6);
@@ -1351,6 +1390,7 @@ function construirCotizacionPDF(jsPDF, d, logoDataUrl){
     ["Factura", "Solicítala antes de pagar el anticipo y dentro del mismo mes del pago."],
     ["Excepciones", "Solo el responsable de Joart Digital puede autorizar condiciones distintas a las aquí descritas."],
   ];
+  if(d.promo) terminos.splice(1, 0, ["Días de Descuento", "Una sola opción por pedido: " + d.promo.pct + "% de descuento sobre el total o " + d.promo.meses + " meses sin intereses (sin descuento). Aplica a pedidos desde $" + DIAS_DESCUENTO.minimo.toLocaleString("es-MX") + " cotizados del " + fechaTexto(new Date(DIAS_DESCUENTO.desde + "T12:00:00")) + " al " + fechaTexto(new Date(DIAS_DESCUENTO.hasta + "T12:00:00")) + ", con render aprobado y anticipo pagado a más tardar el " + d.promo.limiteLargo + ". No acumulable con otras promociones."]);
   nuevaPagina(20);
   texto("Términos y condiciones", M, y, { bold: true, size: 10.5 });
   y += 6;

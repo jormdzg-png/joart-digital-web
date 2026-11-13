@@ -129,7 +129,7 @@ function doPost(e) {
       case "verificarConexion": return jsonOutput({ ok: true });
       case "crearPedido":       return crearPedido(body);
       case "buscarPedido":      return buscarPedidoPorCodigo(body.codigo);
-      case "guardarCobro":      return guardarCobroEnFila(body.codigo, body.items, body.requiereFactura, body.notaNueva);
+      case "guardarCobro":      return guardarCobroEnFila(body.codigo, body.items, body.requiereFactura, body.notaNueva, body.promo);
       case "listarProyectos":   return listarProyectos();
       case "inventario":        return leerPestanaLaminas();
       case "ajustarInventario":
@@ -750,6 +750,7 @@ function buscarPedidoPorCodigo(codigoCrudo) {
       pagado: String(fila[COL.PAGADO] || ""), zona: String(fila[COL.ZONA] || datos.zona || ""),
       desfase: desfase, repetido: loc.repetidos > 1,
       tieneEnvio: envios.length > 0,
+      promo: datos.promo || null,
     });
   } catch (err) {
     Logger.log("ERROR buscarPedidoPorCodigo: " + String(err));
@@ -762,7 +763,7 @@ function buscarPedidoPorCodigo(codigoCrudo) {
  * productos (cantidad, modelo, medidas, grosor) también actualiza Tipo / Cantidad / Grosor.
  * Nunca toca Estatus, Pagado, Fecha límite ni Zona. Nunca agrega filas.
  */
-function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva) {
+function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva, promoCruda) {
   try {
     const codigo = String(codigoCrudo || "").trim().toUpperCase();
     const items = normalizarItems({ items: itemsNuevos });
@@ -774,7 +775,10 @@ function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva
       const loc = localizarFila(sheet, codigo, props);
       if (!loc.fila) return jsonOutput({ ok: false, error: "No encontré " + codigo + " en la hoja; no guardé nada." });
 
-      const total = totalPedido(items);
+      const promo = normalizarPromo(promoCruda);
+      let total = Math.round(totalPedido(items) * 100) / 100;
+      // Con descuento, el total que calculó el panel es en pesos exactos; los precios por pieza (a centavos) pueden desviarse unos centavos.
+      if (promo && promo.total > 0 && Math.abs(total - promo.total) < 1) total = promo.total;
       const filaActual = sheet.getRange(loc.fila, 1, 1, 11).getValues()[0];
       sheet.getRange(loc.fila, COL.PRECIO + 1).setValue(total > 0 ? total : "");
       sheet.getRange(loc.fila, COL.FACTURA + 1).setValue(requiereFactura ? "Sí" : "No");
@@ -797,7 +801,14 @@ function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva
       nuevo.items = items;
       nuevo.requiereFactura = !!requiereFactura;
       nuevo.filaSheets = loc.fila;
+      if (promo) nuevo.promo = promo; else delete nuevo.promo;
       guardarSeguimientoDatos(codigo, nuevo);
+
+      // Días de Descuento: renglón "Promo:" en la nota de la celda A y en la descripción de la tarjeta de ClickUp
+      // (se reemplaza si cambia y se quita si ya no hay promoción). Sheets manda; ClickUp es informativo.
+      const textoPromo = textoPromoLinea(promo);
+      fijarLineaEnCelda(sheet, loc.fila, "Promo:", textoPromo);
+      const promoClickUp = fijarLineaClickUp(nuevo.taskId, "Promo:", textoPromo);
 
       const nota = String(notaNueva || "").replace(/\s*\n\s*/g, " ").trim().substring(0, 1000);
       let notaGuardada = false, notaClickUp = false;
@@ -806,12 +817,73 @@ function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva
         notaClickUp = agregarNotaClickUp(nuevo.taskId, nota);
       }
 
-      return jsonOutput({ ok: true, total: total, fila: loc.fila, actualizoProductos: actualizoProductos, notaGuardada: notaGuardada, notaClickUp: notaClickUp });
+      return jsonOutput({ ok: true, total: total, fila: loc.fila, actualizoProductos: actualizoProductos, notaGuardada: notaGuardada, notaClickUp: notaClickUp, promo: promo ? promo.opcion : "", promoClickUp: promoClickUp });
     });
   } catch (err) {
     Logger.log("ERROR guardarCobroEnFila: " + String(err));
     return jsonOutput({ ok: false, error: String(err) });
   }
+}
+
+// ============ DÍAS DE DESCUENTO (promoción del buen fin 2026) ============
+// Las reglas (fechas, mínimo $1,500, 15% o 3 MSI) y el cálculo viven en joart-core.js (aplicarPromo). Aquí solo se guarda
+// lo que decidió el panel: opción elegida, descuento y totales, para que el equipo lo vea en Sheets y ClickUp y Mi pedido no se afecte.
+
+/** Valida lo que manda el panel. Devuelve null si no hay promoción. */
+function normalizarPromo(p) {
+  if (!p || ["elegir", "15", "msi"].indexOf(String(p.opcion)) < 0) return null;
+  const num = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100) / 100);
+  return {
+    opcion: String(p.opcion), texto: String(p.texto || "").substring(0, 80),
+    descuento: p.opcion === "15" ? num(p.descuento) : 0,
+    totalLista: num(p.totalLista), total: num(p.total),
+    limite: String(p.limite || "").substring(0, 20),
+  };
+}
+
+/** Texto del renglón "Promo:" ("" si no hay promoción). */
+function textoPromoLinea(p) {
+  if (!p) return "";
+  const m = (n) => "$" + Math.round(n).toLocaleString("es-MX");
+  const lim = p.limite ? " · anticipo y render aprobado antes del " + p.limite : "";
+  if (p.opcion === "15") return "Días de Descuento: 15% (-" + m(p.descuento) + ") · lista " + m(p.totalLista) + " → total " + m(p.total) + lim;
+  if (p.opcion === "msi") return "Días de Descuento: 3 meses sin intereses (sin descuento) · total " + m(p.total) + lim;
+  return "Días de Descuento: se ofreció 15% o 3 MSI, el cliente aún no elige · total de lista " + m(p.total) + lim;
+}
+
+/** Pone, reemplaza o quita (texto "") el renglón que empieza con `prefijo` en la nota de la celda A. */
+function fijarLineaEnCelda(sheet, fila, prefijo, texto) {
+  const celda = sheet.getRange(fila, 1), lineas = String(celda.getNote() || "").split("\n");
+  const i = lineas.findIndex(l => l.indexOf(prefijo) === 0);
+  if (texto) { if (i >= 0) lineas[i] = prefijo + " " + texto; else lineas.push(prefijo + " " + texto); }
+  else if (i >= 0) lineas.splice(i, 1);
+  celda.setNote(lineas.join("\n"));
+}
+
+/** Igual, en la descripción de la tarjeta de ClickUp (antes de "Notas:" o de los logos). Devuelve true si quedó bien o no hacía falta. */
+function fijarLineaClickUp(taskId, prefijo, texto) {
+  try {
+    if (!taskId || !cfg("CLICKUP_API_TOKEN")) return !texto;
+    const tarea = obtenerTareaClickUp(taskId);
+    if (!tarea) return false;
+    const lineas = String(tarea.text_content || tarea.description || "").split("\n");
+    const i = lineas.findIndex(l => l.indexOf(prefijo) === 0);
+    if (i < 0 && !texto) return true;                       // nada que quitar
+    if (i >= 0 && lineas[i] === prefijo + " " + texto) return true;   // ya está igual
+    if (i >= 0) { if (texto) lineas[i] = prefijo + " " + texto; else lineas.splice(i, 1); }
+    else {
+      let j = lineas.findIndex(l => /^(Notas:|Logo)/.test(l));
+      if (j < 0) j = lineas.length;
+      const nuevas = [prefijo + " " + texto];
+      if (j > 0 && String(lineas[j - 1]).trim() !== "") nuevas.unshift("");
+      lineas.splice.apply(lineas, [j, 0].concat(nuevas));
+    }
+    const r = UrlFetchApp.fetch("https://api.clickup.com/api/v2/task/" + taskId, {
+      method: "put", contentType: "application/json", headers: { Authorization: cfg("CLICKUP_API_TOKEN") },
+      payload: JSON.stringify({ description: lineas.join("\n") }), muteHttpExceptions: true,
+    });
+    return r.getResponseCode() === 200;
+  } catch (err) { Logger.log("Promo no actualizada en ClickUp: " + String(err)); return false; }
 }
 
 /** Agrega una nota al renglón "Notas:" de la nota de la celda A (o lo crea). */

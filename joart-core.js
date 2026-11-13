@@ -179,6 +179,39 @@ function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor, tipo
 // Redondeo hacia arriba al siguiente múltiplo de $5 (con protección contra errores de decimales)
 const up5 = (n) => Math.ceil(Math.round(n * 100) / 100 / 5) * 5;
 
+// ===================== PROMOCIÓN: DÍAS DE DESCUENTO (buen fin 2026) =====================
+// Regla (decisión final 11 nov 2026): cotizaciones pedidas del 13 al 17 nov, total ≥ $1,500. El cliente elige UNA opción
+// (no se acumulan): 15% sobre el total, o 3 meses sin intereses (paga el 100%, sin descuento). Tiene hasta el vie 20 nov
+// para aprobar su render y pagar el anticipo. Incluye modelos de Navidad. Para cambiar fechas, mínimo o porcentaje: SOLO aquí.
+const DIAS_DESCUENTO = {
+  nombre: "Días de Descuento",
+  desde: "2026-11-13", hasta: "2026-11-17",   // fechas (inclusive) en que se pide la cotización
+  limitePago: "2026-11-20", limitePagoTexto: "vie 20 nov",   // hasta cuándo aprueba render y paga anticipo
+  minimo: 1500, pctDescuento: 0.15, mesesMSI: 3,
+};
+// "YYYY-MM-DD" de hoy en la Ciudad de México (no depende de la zona horaria del navegador).
+function hoyMX(ahora){
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(ahora || new Date());
+  const g = (t) => p.find(x => x.type === t).value;
+  return g("year") + "-" + g("month") + "-" + g("day");
+}
+function promoVigente(fechaISO, cfg){ cfg = cfg || DIAS_DESCUENTO; return fechaISO >= cfg.desde && fechaISO <= cfg.hasta; }
+// base = total de productos con recargo de entrega (antes de envío y de la promo). opcion: "" | "elegir" | "15" | "msi".
+// Devuelve { opcion, elegible, descuento, total, totalConDescuento, texto }.
+//   "elegir" = se ofrecen las dos opciones y el cliente aún no decide: NO cambia el total (solo informa el monto estimado).
+//   Sin mínimo ($1,500) no aplica nada.
+function aplicarPromo(base, opcion, cfg){
+  cfg = cfg || DIAS_DESCUENTO;
+  const b = Math.max(0, Math.round(Number(base) || 0)), est = Math.round(b * cfg.pctDescuento);
+  const r = { opcion: "", elegible: b >= cfg.minimo, descuento: 0, total: b, totalConDescuento: b - est, descuentoEstimado: est, falta: Math.max(0, cfg.minimo - b), texto: "" };
+  if(!r.elegible || !["elegir", "15", "msi"].includes(opcion)) return r;
+  r.opcion = opcion;
+  if(opcion === "15"){ r.descuento = est; r.total = b - est; r.texto = Math.round(cfg.pctDescuento * 100) + "% de descuento"; }
+  else if(opcion === "msi") r.texto = cfg.mesesMSI + " meses sin intereses";
+  else r.texto = Math.round(cfg.pctDescuento * 100) + "% de descuento o " + cfg.mesesMSI + " meses sin intereses";
+  return r;
+}
+
 const MODELOS = [
   { nombre: "Counter display compacto con organizador", medidas: "22 x 21 x 16 cm", piso: false },
   { nombre: "Display con separadores", medidas: "28.5 x 34.5 x 19 cm", piso: false },
@@ -400,4 +433,4 @@ function parsearPedidoTexto(texto){
 }
 
 
-if(typeof module !== "undefined") module.exports = { SEP_FACTOR, PARAMS_PERS, TARIFA_A, TARIFA_B, EXTRA_GROSOR, calcPersonalizado, grosorMinimoPers, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
+if(typeof module !== "undefined") module.exports = { SEP_FACTOR, PARAMS_PERS, TARIFA_A, TARIFA_B, EXTRA_GROSOR, calcPersonalizado, grosorMinimoPers, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, DIAS_DESCUENTO, hoyMX, promoVigente, aplicarPromo, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
