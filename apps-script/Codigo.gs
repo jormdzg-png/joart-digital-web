@@ -376,7 +376,6 @@ function firmaItems(items) {
 // La pestaña "Láminas" suma solo los pedidos en "Imprimir" (es una fórmula: nunca cuenta doble).
 
 const COLOR_AUTO = "#999999";
-const SEP_FACTOR = 0.33;
 
 // Cuántas piezas de cada modelo caben en UNA lámina (dato de taller, de la antigua pestaña Catálogo_Muebles).
 const RENDIMIENTO_POR_LAMINA = {
@@ -416,25 +415,52 @@ function buscarRendimiento(modelo) {
   return undefined;
 }
 
-/** Láminas por pieza de un personalizado a partir de sus medidas ("120 x 50 x 30 cm, 3 niveles"). */
+/**
+ * Láminas por pieza de un personalizado a partir de sus medidas. MISMA lógica que la hoja "Cotización Personalizada"
+ * (y que calcPersonalizado de joart-core.js; si cambian las fórmulas o parámetros de la hoja, cambiarlos en los dos).
+ * Textos que entiende: "120 x 50 x 30 cm, 3 niveles" · "..., 3 niveles, 2 rejillas" · "..., 3 escalones[, 6 soportes]" ·
+ * "..., 2 separadores" · "120 x 10 cm, tira".
+ */
+const PARAMS_PERS = { areaUtil: 26000, hojaLargo: 243, hojaAncho: 121, grosor: 0.4, letrero: 5, frenteLateral: 6.5, holguraRejilla: 0.8, copete: 21, alturaEscalones: 20, soportesDesde: 3, pesoSoportes: 0.5 };
 function hpDesdeMedidas(med) {
-  const m = String(med || "").match(/(\d+(?:[.,]\d+)?)\s*(?:cm)?\s*x\s*(\d+(?:[.,]\d+)?)\s*(?:cm)?\s*x\s*(\d+(?:[.,]\d+)?)/i);
-  if (!m) return null;
-  const A = parseFloat(m[1].replace(",", ".")), B = parseFloat(m[2].replace(",", ".")), C = parseFloat(m[3].replace(",", "."));
-  let N = 1, tipo = "niveles";
-  const mn = String(med).toLowerCase().match(/(\d+)\s*(nivel|charola|escal|separador|division|rejilla)/);
-  if (mn) {
-    N = Math.max(1, parseInt(mn[1], 10) || 1);
-    tipo = /escal/.test(mn[2]) ? "escalonado" : /separador|division|rejilla/.test(mn[2]) ? "separadores" : "niveles";
+  const P = PARAMS_PERS, txt = String(med || "").replace(/,(\d)/g, ".$1");
+  const num = "(\\d+(?:\\.\\d+)?)";
+  const m3 = txt.match(new RegExp(num + "\\s*[x×]\\s*" + num + "\\s*[x×]\\s*" + num, "i"));
+  const m2 = txt.match(new RegExp(num + "\\s*[x×]\\s*" + num + "\\s*(?:cm)?\\s*,?\\s*tira", "i"));
+  const low = txt.toLowerCase();
+  let tipo = "niveles", N = 1, opc = null;
+  const mn = low.match(/(\d+)\s*(nivel|charola|escal|separador|division)/);
+  if (mn) { N = Math.max(1, parseInt(mn[1], 10) || 1); tipo = /escal/.test(mn[2]) ? "escalonado" : /separador|division/.test(mn[2]) ? "separadores" : "niveles"; }
+  const rj = low.match(/(\d+)\s*rejilla/), so = low.match(/(\d+)\s*soporte/);
+  if (rj) { tipo = "rejilla"; opc = parseInt(rj[1], 10); } else if (so && tipo === "escalonado") opc = parseInt(so[1], 10);
+  if (/con rejilla/.test(low) && tipo === "niveles") tipo = "rejilla";
+  let HPbase;
+  if (m2 && !m3) {
+    const A = parseFloat(m2[1]), W = parseFloat(m2[2]);
+    const k = Math.max(Math.floor(P.hojaLargo / A) * Math.floor(P.hojaAncho / W), Math.floor(P.hojaLargo / W) * Math.floor(P.hojaAncho / A));
+    if (!(A > 0 && W > 0) || k === 0) return null;
+    HPbase = 1 / k;
+  } else {
+    if (!m3) return null;
+    const A = parseFloat(m3[1]), W = parseFloat(m3[2]), D = parseFloat(m3[3]);
+    let area = A * W, lat, bas, let_, sop;
+    if (tipo === "separadores") {
+      const ns = opc === null ? N : opc;   // en "N separadores" el número ES la cantidad de separadores
+      lat = D * (A + P.frenteLateral); bas = W * D; let_ = W * P.letrero;
+      sop = ns * (D - P.grosor) * (A - P.grosor + P.frenteLateral) / 2;
+    } else if (tipo === "escalonado") {
+      const ns = opc === null ? (N >= P.soportesDesde ? N * (N + 1) / 2 : 0) : opc;
+      lat = 2 * D * Math.max(A - P.copete, 0); bas = W * D * (N + 2) / 2;
+      let_ = W * (P.alturaEscalones - P.grosor * N) + W * P.letrero;
+      sop = ns * W * (P.alturaEscalones / N - P.grosor) * P.pesoSoportes;
+    } else {
+      const rej = tipo === "rejilla" ? (opc === null ? 1 : opc) : 0;
+      lat = 2 * A * D; bas = N * W * D + (rej ? rej * (W - P.holguraRejilla) * (D - P.holguraRejilla) : 0);
+      let_ = N * W * 5; sop = N < 2 ? 0 : (N - 1) * 2 * W * 3;
+    }
+    HPbase = (area + lat + bas + let_ + sop) / P.areaUtil;
   }
-  const apoyos = N >= 2 ? (N - 1) * 2 * (B * 3) : 0;
-  let area;
-  if (tipo === "escalonado") area = A * B + 2 * (A * C) + N * (B * C) + apoyos;
-  else if (tipo === "separadores") area = A * B + 2 * (A * C) + B * C + B * 5 + N * SEP_FACTOR * (A * C);
-  else area = A * B + 2 * (A * C) + N * (B * C) + N * (B * 5) + apoyos;
-  let hp = area / 26000;
-  if (hp >= 0.8 && hp < 1) hp = 1;
-  return hp;
+  return (HPbase >= 0.8 && HPbase < 1) ? 1 : HPbase;
 }
 
 /** Láminas por grosor de una lista de productos: { "4 mm": 1.5, "5 mm": 2 }. */

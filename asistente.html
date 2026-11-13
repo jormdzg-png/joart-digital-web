@@ -588,7 +588,7 @@ async function preguntar(texto){
   if(/^(ayuda|help)$/i.test(texto.trim())){ msg('assistant', Motor.AYUDA); return; }
   const ok = await cargarDatos(false);
   if(!ok && !datos.proyectos.length){ msg('assistant', 'No pude leer el Sheet ahora mismo. Revisa tu internet o la conexión (botón «Conexión») e intenta otra vez.'); return; }
-  const core = { parsearPedidoTexto, precioCatalogo, cotizarPersonalizado, geomPers, hpExhibidor, MODELOS, PERSONALIZADO, grosoresDeModelo };
+  const core = { parsearPedidoTexto, precioCatalogo, cotizarPersonalizado, geomPers, hpExhibidor, grosorMinimoPers, MODELOS, PERSONALIZADO, grosoresDeModelo };
   let r; try{ r = Motor.responder(texto, datos, { core, alias }); }catch(err){ console.error(err); r = { html: 'Algo salió mal al buscar. Intenta con otras palabras.' }; }
   msg('assistant', r.html);
 }

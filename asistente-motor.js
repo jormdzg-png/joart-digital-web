@@ -332,13 +332,14 @@
       const A = parseFloat(md[1].replace(",", ".")), B = parseFloat(md[2].replace(",", ".")), C = parseFloat(md[3].replace(",", "."));
       const nm = t.match(/(\d+)\s*(niveles?|charolas?|escalon\w*|separadores?|divisiones|rejillas?)/);
       const n = nm ? parseInt(nm[1], 10) : 1;
-      const tipo = nm && /escalon/.test(nm[2]) ? "escalonado" : nm && /separador|division|rejilla/.test(nm[2]) ? "separadores" : "niveles";
+      const tira = /\btiras?\b/.test(t);
+      const tipo = tira ? "tiras" : nm && /escalon/.test(nm[2]) ? "escalonado" : nm && /separador|division/.test(nm[2]) ? "separadores" : nm && /rejilla/.test(nm[2]) || /con rejilla/.test(t) ? "rejilla" : "niveles";
       const cant = qm ? parseInt(qm[1], 10) : 1;
-      const grosor = gm ? gm[1] + " mm" : (A >= 100 ? "5 mm" : "4 mm");
+      const grosor = gm ? gm[1] + " mm" : (core.grosorMinimoPers ? core.grosorMinimoPers(A, tipo) : (A >= 100 ? "5 mm" : "4 mm"));
       const g = core.geomPers(A, B, C, n, tipo), hp = core.hpExhibidor(g);
       if (!g || !hp) return null;
       const unit = core.cotizarPersonalizado(A, B, C, n, cant, grosor, tipo);
-      return `<b>Personalizado ${A}×${B}×${C} cm</b> · ${n} ${tipo === "escalonado" ? "escalón(es)" : tipo === "separadores" ? "separador(es)" : "nivel(es)"} · ${grosor}<br>` +
+      return `<b>Personalizado ${A}×${B}${tipo === "tiras" ? "" : "×" + C} cm</b> · ${tipo === "tiras" ? "tira" : n + " " + (tipo === "escalonado" ? "escalón(es)" : tipo === "separadores" ? "separador(es)" : tipo === "rejilla" ? "nivel(es) con rejilla" : "nivel(es)")} · ${grosor}<br>` +
         `Hojas por pieza: <b>${hp.toFixed(2)}</b> · ${cant} pz → ${(hp * cant).toFixed(2)} hojas<br>` +
         `Precio unitario: <b>${fmt(unit)}</b> · Total <b>${fmt(unit * cant)}</b> <span class="mut">(IVA incluido, entrega estándar, una cara)</span>`;
     }

@@ -92,41 +92,89 @@ function precioCatalogo(modelo, grosor, cantidad){
 const TARIFA_A = [[0,2050],[0.5,1950],[1,1850],[2,1700],[4,1550],[7,1400],[10,1300],[15,1200],[20,1100],[30,1050],[50,1000],[100,900]];
 const TARIFA_B = [[0,1300],[3,1250],[5,1200],[7,1150],[10,1100],[15,1050],[20,1000],[30,950],[50,900],[100,800]];
 const EXTRA_GROSOR = { "4 mm": 0, "5 mm": 150, "6 mm": 400 };
-function tarifaPara(tabla, ht){ let t = tabla[0][1]; for(const [min, precio] of tabla) if(ht >= min) t = precio; return t; }
-// ----- Área equivalente (cm²) de un exhibidor a medida, según su tipo -----
-//  niveles     : charolas/niveles (POP display, floor stand, box…)            n = niveles
-//  escalonado  : escalones (sin letrero por escalón)                          n = escalones
-//  separadores : una sola charola con N divisiones (rejilla de separadores)   sep = N separadores
-// Calibrado con el catálogo: 2 y 3 escalones (±7 %) y "Display con separadores" (0 %). Las divisiones miden ~⅓ de un lateral.
-const SEP_FACTOR = 0.33;
+// ----- Personalizados: MISMA lógica que la hoja "Cotización Personalizada" del Sheets "Joart Digital" (actualizada 12 nov 2026) -----
+// Si se cambia una fórmula o un parámetro en la hoja, se cambia aquí (PARAMS_PERS, TARIFA_A/B y calcPersonalizado).
+// Tipos (B6 de la hoja): niveles = "Estándar" · rejilla = "Con rejilla" · separadores = "Con separadores" · escalonado = "Escalonado" · tiras = "Tiras"
+//   cuantos (B4): niveles / escalones. Para "separadores" es el número de separadores (B7, vacío = 2). Tiras: no aplica.
+//   opc (B7, opcional): rejillas (vacío = 1) · soportes internos del escalonado (vacío = automático; 0 = sin soportes).
+// Parámetros editables de la hoja (J1:K12):
+const PARAMS_PERS = { areaUtil: 26000, hojaLargo: 243, hojaAncho: 121, grosor: 0.4, letrero: 5, frenteLateral: 6.5, holguraRejilla: 0.8, copete: 21, alturaEscalones: 20, soportesDesde: 3, pesoSoportes: 0.5 };
+const ALTO_PIEZA_PISO = 100;            // alto (cm) desde el cual la hoja fabrica en 5 mm y cobra +$150
 const TIPOS_PERS = {
-  niveles:     { etiqueta: "Niveles / charolas", unidad: ["nivel", "niveles"] },
-  escalonado:  { etiqueta: "Escalones",          unidad: ["escalón", "escalones"] },
-  separadores: { etiqueta: "Separadores (divisiones)", unidad: ["separador", "separadores"] },
+  niveles:     { etiqueta: "Estándar",        unidad: ["nivel", "niveles"] },
+  rejilla:     { etiqueta: "Con rejilla",     unidad: ["nivel", "niveles"] },
+  separadores: { etiqueta: "Con separadores", unidad: ["separador", "separadores"] },
+  escalonado:  { etiqueta: "Escalonado",      unidad: ["escalón", "escalones"] },
+  tiras:       { etiqueta: "Tiras",           unidad: ["tira", "tiras"] },
 };
-function areaExhibidor(g){
-  const [A, B, C] = g.d, N = Math.max(1, g.n || 1), tipo = g.tipo === "pegboard" ? "niveles" : (g.tipo || "niveles");
-  const apoyos = N >= 2 ? (N - 1) * 2 * (B * 3) : 0;
-  if(tipo === "escalonado")  return A*B + 2*(A*C) + N*(B*C) + apoyos;
-  if(tipo === "separadores") return A*B + 2*(A*C) + B*C + B*5 + (g.sep || 0) * SEP_FACTOR * (A*C);
-  return A*B + 2*(A*C) + N*(B*C) + N*(B*5) + apoyos;
+const sinValor = (v) => v === undefined || v === null || v === "" || (typeof v === "number" && isNaN(v));
+// Calcula el desglose de áreas de la hoja (filas 8-13) y las hojas por pieza (filas 14-16).
+// g = { d: [alto, ancho, fondo], tipo, n, sep?, opc? }  →  { AE, HP, HPbase, partes, detalle, error }
+function calcPersonalizado(g, P){
+  P = Object.assign({}, PARAMS_PERS, P || {});
+  if(!g || !g.d) return { error: "Faltan medidas" };
+  const [A, W, D] = g.d, tipo = TIPOS_PERS[g.tipo] ? g.tipo : (g.tipo === "pegboard" ? "niveles" : "niveles");
+  const n = Math.max(1, g.n || 1), opc = sinValor(g.opc) ? null : Number(g.opc);
+  let partes, detalle = "", HPbase;
+  if(tipo === "tiras"){
+    if(!(A > 0 && W > 0)) return { error: "Faltan medidas" };
+    const k = Math.max(Math.floor(P.hojaLargo / A) * Math.floor(P.hojaAncho / W), Math.floor(P.hojaLargo / W) * Math.floor(P.hojaAncho / A));
+    if(k === 0) return { error: "No cabe en la lámina", detalle: "No cabe en la lámina" };
+    HPbase = 1 / k; detalle = k + " tiras por lámina";
+    partes = { respaldo: A * W, laterales: 0, bases: 0, letreros: 0, soportes: 0 };
+  } else {
+    if(!(A > 0 && W > 0 && D > 0)) return { error: "Faltan medidas" };
+    const resp = A * W;
+    let lat, bas, let_, sop;
+    if(tipo === "separadores"){
+      const ns = sinValor(g.sep) ? (opc === null ? 2 : opc) : g.sep;
+      lat = D * (A + P.frenteLateral); bas = W * D; let_ = W * P.letrero;
+      sop = ns * (D - P.grosor) * (A - P.grosor + P.frenteLateral) / 2;
+      detalle = ns + " separadores";
+    } else if(tipo === "escalonado"){
+      const ns = opc === null ? (n >= P.soportesDesde ? n * (n + 1) / 2 : 0) : opc;
+      lat = 2 * D * Math.max(A - P.copete, 0); bas = W * D * (n + 2) / 2;
+      let_ = W * (P.alturaEscalones - P.grosor * n) + W * P.letrero;
+      sop = ns * W * (P.alturaEscalones / n - P.grosor) * P.pesoSoportes;
+      detalle = n + " escalones · " + ns + " soportes · escalón de " + (P.alturaEscalones / n - P.grosor).toFixed(1) + " cm" + (A - P.copete < P.alturaEscalones + 8 ? " · ⚠ alto bajo para este escalonado" : "");
+    } else {
+      const rej = tipo === "rejilla" ? (opc === null ? 1 : opc) : 0;
+      lat = 2 * (A * D); bas = n * (W * D) + (rej ? rej * (W - P.holguraRejilla) * (D - P.holguraRejilla) : 0);
+      let_ = n * (W * 5); sop = n < 2 ? 0 : (n - 1) * 2 * (W * 3);
+      if(tipo === "rejilla") detalle = rej + " rejilla(s)";
+    }
+    partes = { respaldo: resp, laterales: lat, bases: bas, letreros: let_, soportes: sop };
+    HPbase = (resp + lat + bas + let_ + sop) / P.areaUtil;
+  }
+  const AE = partes.respaldo + partes.laterales + partes.bases + partes.letreros + partes.soportes;
+  const HP = (HPbase >= 0.8 && HPbase < 1) ? 1 : HPbase;           // de 0.8 a 0.99 se cobra la hoja completa
+  return { AE, HPbase, HP, partes, detalle, tipo };
 }
-// Hojas por pieza (fórmula de personalizados): área / 26,000 cm², y de 0.8 a 0.99 se cobra la hoja completa.
-function hpExhibidor(g){ if(!g) return null; let HP = areaExhibidor(g) / 26000; if(HP >= 0.8 && HP < 1) HP = 1; return HP; }
-// Convierte lo capturado (alto, ancho, prof, cantidad de niveles/escalones/separadores, tipo) en la geometría estándar.
-function geomPers(alto, ancho, prof, cuantos, tipo){
+function tarifaPara(tabla, ht){ let t = tabla[0][1]; for(const [min, precio] of tabla) if(ht >= min) t = precio; return t; }
+// Convierte lo capturado (alto, ancho, prof, cuantos, tipo, opc) en la geometría estándar. Tiras no necesita fondo.
+function geomPers(alto, ancho, prof, cuantos, tipo, opc){
   const a = parseFloat(alto), b = parseFloat(ancho), c = parseFloat(prof), n = Math.max(1, parseInt(cuantos, 10) || 1);
-  if(!(a > 0 && b > 0 && c > 0)) return null;
   tipo = TIPOS_PERS[tipo] ? tipo : "niveles";
-  return tipo === "separadores" ? { d: [a, b, c], tipo, n: 1, sep: n } : { d: [a, b, c], tipo, n };
+  if(tipo === "tiras") return (a > 0 && b > 0) ? { d: [a, b, 0], tipo, n: 1 } : null;
+  if(!(a > 0 && b > 0 && c > 0)) return null;
+  const o = sinValor(opc) ? {} : { opc: Number(opc) };
+  return tipo === "separadores" ? Object.assign({ d: [a, b, c], tipo, n: 1, sep: n }, o) : Object.assign({ d: [a, b, c], tipo, n }, o);
 }
-function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor, tipo){
-  const Q = cantidad;
-  const HP = hpExhibidor(geomPers(alto, ancho, prof, niveles, tipo));
-  const HT = HP * Q;
-  const costoHoja = tarifaPara(HP < 0.8 ? TARIFA_A : TARIFA_B, HT);
+// Hojas por pieza (HP final) según la hoja de personalizados. null si no se puede calcular.
+function hpExhibidor(g){ if(!g) return null; const r = calcPersonalizado(g); return r.error ? null : r.HP; }
+const areaExhibidor = (g) => { const r = calcPersonalizado(g); return r.error ? NaN : r.AE; };
+// Grosor mínimo con el que se fabrica (la hoja fuerza 5 mm desde 100 cm de alto; tiras siempre planas en 4 mm).
+function grosorMinimoPers(alto, tipo){ return tipo !== "tiras" && parseFloat(alto) >= ALTO_PIEZA_PISO ? "5 mm" : "4 mm"; }
+// Precio por pieza: HT = HP × cantidad → tarifa A (HP < 0.8) o B → CEILING($5) → +$150 si alto ≥ 100 (5 mm) / +$400 en 6 mm
+function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor, tipo, opc){
+  const Q = cantidad, g = geomPers(alto, ancho, prof, niveles, tipo, opc), r = calcPersonalizado(g);
+  if(r.error || !(Q > 0)) return null;
+  const HT = r.HP * Q;
+  const costoHoja = tarifaPara(r.HP < 0.8 ? TARIFA_A : TARIFA_B, HT);
   const base = Math.ceil((Math.round(HT * costoHoja / Q * 100) / 100) / 5) * 5;
-  return base + (EXTRA_GROSOR[grosor] || 0);
+  let extra = EXTRA_GROSOR[grosor] || 0;
+  if(g.tipo !== "tiras" && g.d[0] >= ALTO_PIEZA_PISO) extra = Math.max(extra, EXTRA_GROSOR["5 mm"]);
+  return base + extra;
 }
 // Redondeo hacia arriba al siguiente múltiplo de $5 (con protección contra errores de decimales)
 const up5 = (n) => Math.ceil(Math.round(n * 100) / 100 / 5) * 5;
@@ -182,9 +230,11 @@ const GEOM = {
   "Isla árbol — 4 niveles":                   { d: [150, 76, 76], tipo: "niveles", n: 4 },   // estimación: 2 árboles cruzados, 1 lámina por pieza (dato de taller)
 };
 // Geometría de un renglón (catálogo o personalizado). Devuelve null si faltan medidas.
+// Solo para el planificador de hojas (estimación de las divisiones); el PRECIO usa calcPersonalizado.
+const SEP_FACTOR = 0.33;
 function geomDe(modelo, pers){
   if(modelo === PERSONALIZADO || (pers && pers.alto)){
-    return pers ? geomPers(pers.alto, pers.ancho, pers.prof, pers.niveles, pers.tipoPers) : null;
+    return pers ? geomPers(pers.alto, pers.ancho, pers.prof, pers.niveles, pers.tipoPers, pers.opc) : null;
   }
   return GEOM[modelo] || null;
 }
@@ -193,11 +243,13 @@ function geomDe(modelo, pers){
 function piezasDe(g){
   if(!g) return [];
   const [A, B, C] = g.d, N = g.n || 1, out = [];
+  if(g.tipo === "tiras"){ out.push({ n: "tira", w: A, h: B }); return out; }
   out.push({ n: "respaldo", w: A, h: B });
   out.push({ n: "laterales (par)", w: A, h: C });
   for(let i = 0; i < N; i++) out.push({ n: "base " + (i + 1), w: B, h: C });
   if(g.tipo !== "escalonado") for(let i = 0; i < N; i++) out.push({ n: "letrero " + (i + 1), w: B, h: 5 });
   if(N >= 2) for(let i = 0; i < (N - 1) * 2; i++) out.push({ n: "soporte " + (i + 1), w: B, h: 3 });
+  if(g.tipo === "rejilla") for(let i = 0; i < (sinValor(g.opc) ? 1 : g.opc); i++) out.push({ n: "rejilla " + (i + 1), w: Math.max(B - PARAMS_PERS.holguraRejilla, 1), h: Math.max(C - PARAMS_PERS.holguraRejilla, 1) });
   for(let i = 0; i < (g.sep || 0); i++) out.push({ n: "separador " + (i + 1), w: A, h: Math.round(C * SEP_FACTOR * 10) / 10 });
   return out;
 }
@@ -340,7 +392,7 @@ function parsearPedidoTexto(texto){
   // personalizado: "personalizado de 30 por 20 por 10" / "30x20x10"
   if(mp){
     const antes = zona.slice(0, zona.indexOf(mp[0])), q = (antes.match(/(\d{1,3})\s*(?:piezas?|pzs?|unidades)?\s*(?:de\s+)?$/) || [])[1];
-    hallados.push({ modelo: PERSONALIZADO, cantidad: parseInt(q, 10) || 1, alto: mp[1].replace(",", "."), ancho: mp[2].replace(",", "."), prof: mp[3].replace(",", "."), niveles: parseInt(mp[4], 10) || 1, tipoPers: /escalon/.test(mp[5] || "") ? "escalonado" : /separador|division|rejilla/.test(mp[5] || "") ? "separadores" : "niveles" });
+    hallados.push({ modelo: PERSONALIZADO, cantidad: parseInt(q, 10) || 1, alto: mp[1].replace(",", "."), ancho: mp[2].replace(",", "."), prof: mp[3].replace(",", "."), niveles: parseInt(mp[4], 10) || 1, tipoPers: /escalon/.test(mp[5] || "") ? "escalonado" : /separador|division/.test(mp[5] || "") ? "separadores" : /rejilla/.test(mp[5] || "") ? "rejilla" : "niveles" });
   }
   res.items = hallados;
   res.faltantes = [!res.cliente && "cliente", !res.items.length && "modelo"].filter(Boolean);
@@ -348,4 +400,4 @@ function parsearPedidoTexto(texto){
 }
 
 
-if(typeof module !== "undefined") module.exports = { SEP_FACTOR, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
+if(typeof module !== "undefined") module.exports = { SEP_FACTOR, PARAMS_PERS, TARIFA_A, TARIFA_B, EXTRA_GROSOR, calcPersonalizado, grosorMinimoPers, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
