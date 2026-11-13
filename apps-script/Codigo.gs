@@ -379,6 +379,7 @@ const COLOR_AUTO = "#999999";
 
 // Cuántas piezas de cada modelo caben en UNA lámina (dato de taller, de la antigua pestaña Catálogo_Muebles).
 const RENDIMIENTO_POR_LAMINA = {
+  "Mini Display": 40,
   "Counter display compacto con organizador": 12,
   "Display con separadores": 8,
   "Pegboard display": 5,

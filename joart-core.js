@@ -6,6 +6,7 @@
 // ===================== PRECIOS (misma tabla de tu Sheets "Precios") =====================
 const QUIEBRES = [1, 3, 5, 10, 15, 20, 25, 30, 50, 75, 100];
 const TABLA_POR_MODELO = {
+  "Mini Display": "mini",
   "Counter display compacto con organizador": "counter",
   "Display con separadores": "separadores",
   "Pegboard display con ganchos": "pegboard",
@@ -27,6 +28,7 @@ const TABLA_POR_MODELO = {
   "Isla árbol — 4 niveles": "isla",
 };
 const PRECIOS = {
+  mini: { "4 mm": [140,120,100,90,85,80,75,70,60,55,50] },
   counter: { "4 mm": [250,215,180,160,150,145,140,130,120,110,100] },
   displaybox: {
     "4 mm": [500,450,420,380,350,330,310,300,280,260,250],
@@ -211,6 +213,7 @@ function aplicarPromo(base, opcion, cfg){
 }
 
 const MODELOS = [
+  { nombre: "Mini Display", medidas: "11 x 12 x 9.5 cm", piso: false },
   { nombre: "Counter display compacto con organizador", medidas: "22 x 21 x 16 cm", piso: false },
   { nombre: "Display con separadores", medidas: "28.5 x 34.5 x 19 cm", piso: false },
   { nombre: "Pegboard display con ganchos", medidas: "50 x 35 x 18.5 cm", piso: false },
@@ -241,6 +244,7 @@ const GROSORES_VALIDOS = ["4 mm", "5 mm", "6 mm"];
 // ===================== GEOMETRÍA POR MODELO (alto, ancho, fondo en cm) =====================
 // tipo: niveles | escalonado | separadores | pegboard  ·  n: niveles o escalones
 const GEOM = {
+  "Mini Display":                             { d: [11, 12, 9.5], tipo: "niveles", n: 1 },
   "Counter display compacto con organizador": { d: [22, 21, 16], tipo: "niveles", n: 1 },
   "Display con separadores":                  { d: [28.5, 34.5, 19], tipo: "separadores", n: 1, sep: 2 },
   "Pegboard display con ganchos":             { d: [50, 35, 18.5], tipo: "pegboard", n: 1 },
@@ -388,6 +392,7 @@ const ALIAS_MODELO = [
   ["Pegboard display con ganchos",   "pegboard(?: display)?"],
   ["Display box — 1 nivel",          "(?:display )?box|caja"],
   ["Counter display compacto con organizador", "(?:counter(?: display)? )?compactos?|counter(?: display)?"],
+  ["Mini Display", "mini ?(?:display|exhibidor)"],
 ];
 function parsearPedidoTexto(texto){
   const t = numerosAPalabras(texto).replace(/[,;]/g, " , ").replace(/\s+/g, " ").trim();

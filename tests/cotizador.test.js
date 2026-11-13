@@ -43,4 +43,13 @@ igual("Tiras que no caben → null", precio(300, 200, 0, 1, 1, "4 mm", "tiras"),
 // Tarifas: la fila de 100 hojas totales sí aplica (A: 900 con HP<0.8 y HT≥100 · B: 800)
 const hp1 = hp(30, 20, 10, 1, "niveles"); // chico
 igual("Escalón de 100 hojas (A)", C.cotizarPersonalizado(30, 20, 10, 1, Math.ceil(100 / hp1) + 1, "4 mm", "niveles") <= C.cotizarPersonalizado(30, 20, 10, 1, 1, "4 mm", "niveles"), true);
+// Mini Display (13 nov 2026): catálogo solo 4 mm, 11×12×9.5 cm; escala 1/3/5/10/15/20/25/30/50/75/100
+igual("Mini Display 1 pz", C.precioCatalogo("Mini Display", "4 mm", 1), 140);
+igual("Mini Display 10 pzs", C.precioCatalogo("Mini Display", "4 mm", 10), 90);
+igual("Mini Display 12 pzs usa escalón 10", C.precioCatalogo("Mini Display", "4 mm", 12), 90);
+igual("Mini Display 100 pzs", C.precioCatalogo("Mini Display", "4 mm", 100), 50);
+igual("Mini Display solo 4 mm", C.grosoresDeModelo("Mini Display").join(","), "4 mm");
+igual("Mini Display no existe en 5 mm", C.precioCatalogo("Mini Display", "5 mm", 1), null);
+igual("Mini Display dictado", (C.parsearPedidoTexto("quiero 5 mini display para Kfecito").items[0] || {}).modelo, "Mini Display");
+igual("Minimex no es Mini Display", (C.parsearPedidoTexto("2 display box para Minimex 3D").items.map(i => i.modelo)).includes("Mini Display"), false);
 if (fallos) { console.log(fallos + " fallas"); process.exit(1); } console.log("Todo bien ✓");
