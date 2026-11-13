@@ -831,7 +831,7 @@ function guardarCobroEnFila(codigoCrudo, itemsNuevos, requiereFactura, notaNueva
 
 /** Valida lo que manda el panel. Devuelve null si no hay promoción. */
 function normalizarPromo(p) {
-  if (!p || ["elegir", "15", "msi"].indexOf(String(p.opcion)) < 0) return null;
+  if (!p || ["15", "msi"].indexOf(String(p.opcion)) < 0) return null;
   const num = (v) => Math.max(0, Math.round((parseFloat(v) || 0) * 100) / 100);
   return {
     opcion: String(p.opcion), texto: String(p.texto || "").substring(0, 80),
@@ -848,7 +848,6 @@ function textoPromoLinea(p) {
   const lim = p.limite ? " · anticipo y render aprobado antes del " + p.limite : "";
   if (p.opcion === "15") return "Días de Descuento: 15% (-" + m(p.descuento) + ") · lista " + m(p.totalLista) + " → total " + m(p.total) + lim;
   if (p.opcion === "msi") return "Días de Descuento: 3 meses sin intereses (sin descuento) · total " + m(p.total) + lim;
-  return "Días de Descuento: se ofreció 15% o 3 MSI, el cliente aún no elige · total de lista " + m(p.total) + lim;
 }
 
 /** Pone, reemplaza o quita (texto "") el renglón que empieza con `prefijo` en la nota de la celda A. */

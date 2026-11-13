@@ -10,7 +10,7 @@ igual("15%: total", C.aplicarPromo(base, "15").total, 5525);
 igual("15%: descuento", C.aplicarPromo(base, "15").descuento, 975);
 igual("MSI: el total no cambia", C.aplicarPromo(base, "msi").total, 6500);
 igual("MSI: descuento 0", C.aplicarPromo(base, "msi").descuento, 0);
-igual("Elegir: no cambia el total, informa estimado", [C.aplicarPromo(base, "elegir").total, C.aplicarPromo(base, "elegir").totalConDescuento], [6500, 5525]);
+igual("'elegir' ya no existe: se ignora", C.aplicarPromo(base, "elegir").opcion, "");
 igual("Sin promo", C.aplicarPromo(base, "").opcion, "");
 // Mínimo $1,500 (inclusive)
 igual("$1,499 no es elegible", C.aplicarPromo(1499, "15").elegible, false);

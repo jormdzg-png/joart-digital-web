@@ -196,19 +196,17 @@ function hoyMX(ahora){
   return g("year") + "-" + g("month") + "-" + g("day");
 }
 function promoVigente(fechaISO, cfg){ cfg = cfg || DIAS_DESCUENTO; return fechaISO >= cfg.desde && fechaISO <= cfg.hasta; }
-// base = total de productos con recargo de entrega (antes de envío y de la promo). opcion: "" | "elegir" | "15" | "msi".
+// base = total de productos con recargo de entrega (antes de envío y de la promo). opcion: "" | "15" | "msi".
 // Devuelve { opcion, elegible, descuento, total, totalConDescuento, texto }.
-//   "elegir" = se ofrecen las dos opciones y el cliente aún no decide: NO cambia el total (solo informa el monto estimado).
 //   Sin mínimo ($1,500) no aplica nada.
 function aplicarPromo(base, opcion, cfg){
   cfg = cfg || DIAS_DESCUENTO;
   const b = Math.max(0, Math.round(Number(base) || 0)), est = Math.round(b * cfg.pctDescuento);
   const r = { opcion: "", elegible: b >= cfg.minimo, descuento: 0, total: b, totalConDescuento: b - est, descuentoEstimado: est, falta: Math.max(0, cfg.minimo - b), texto: "" };
-  if(!r.elegible || !["elegir", "15", "msi"].includes(opcion)) return r;
+  if(!r.elegible || !["15", "msi"].includes(opcion)) return r;
   r.opcion = opcion;
   if(opcion === "15"){ r.descuento = est; r.total = b - est; r.texto = Math.round(cfg.pctDescuento * 100) + "% de descuento"; }
-  else if(opcion === "msi") r.texto = cfg.mesesMSI + " meses sin intereses";
-  else r.texto = Math.round(cfg.pctDescuento * 100) + "% de descuento o " + cfg.mesesMSI + " meses sin intereses";
+  else r.texto = cfg.mesesMSI + " meses sin intereses";
   return r;
 }
 
