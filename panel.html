@@ -920,7 +920,7 @@ function pintarCot(){
       <div class="field"><label>Entrega</label><select id="cEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +15%</option><option value="urgente">Urgente +25%</option></select></div>
       <div class="field"><label>Impresión</label><select id="cCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
     </div>
-    <div class="field"><label for="cPromo">🏷️ Días de Descuento · el cliente elige UNA opción</label><select id="cPromo"><option value="">Sin promoción</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option></select><div class="hint" id="cPromoInfo"></div></div>
+    <div class="field" id="cPromoBox" hidden><label for="cPromo">🏷️ Días de Descuento · la opción que eligió el cliente</label><select id="cPromo"><option value="" disabled>Elige una…</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option></select><div class="hint" id="cPromoInfo"></div></div>
     <div class="row">
       <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
       <div class="field"><label>Envío (si ≤ $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
@@ -943,16 +943,19 @@ function calcCot(){
   const base = subtotal + recargo, promo = aplicarPromo(base, cot.promo), descuento = promo.descuento;
   const envioAplica = base <= 1000, envio = envioAplica ? (parseFloat(cot.envio) || 0) : 0, total = base - descuento + envio;
   const pctA = cot.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
-  const err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
+  let err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
   const avisos = [];
   if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
   if(cot.entrega !== "estandar" && piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas.`);
   if(cot.entrega !== "estandar" && cot.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
-  const hoy = hoyMX(), fueraDeFechas = !promoVigente(hoy);
-  const infoPromo = !cot.promo ? (promoVigente(hoy) && base > 0 ? (promo.elegible ? "Días de Descuento activos: pregunta al cliente si prefiere 15% o 3 meses sin intereses." : `Días de Descuento aplica desde ${fmt(DIAS_DESCUENTO.minimo)}: faltan ${fmt(promo.falta)}.`) : "")
-    : !promo.elegible ? `No aplica: Días de Descuento es desde ${fmt(DIAS_DESCUENTO.minimo)} (faltan ${fmt(promo.falta)}).`
-    : (fueraDeFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Úsalo solo si el cliente pidió su cotización en esas fechas.` : "");
+  // El selector solo aparece cuando la promo aplica (del 13 al 17 nov, o si el pedido ya la traía guardada) y el pedido llega al mínimo.
+  const hoy = hoyMX(), enFechas = promoVigente(hoy), visible = (enFechas || !!ped.promo) && promo.elegible;
+  const errPromo = visible && !cot.promo ? "Elige la opción de Días de Descuento que escogió el cliente: 15% o 3 meses sin intereses." : "";
+  const infoPromo = (enFechas || ped.promo) && base > 0 && !promo.elegible ? `Días de Descuento aplica desde ${fmt(DIAS_DESCUENTO.minimo)}: faltan ${fmt(promo.falta)}.`
+    : visible && cot.promo && !enFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Déjalo solo si el cliente pidió su cotización en esas fechas.` : "";
+  const pb = $("cPromoBox"); if(pb) pb.hidden = !visible;
   const pi = $("cPromoInfo"); if(pi){ pi.textContent = infoPromo; pi.hidden = !infoPromo; }
+  if(!err) err = errPromo;
   cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, promo, descuento, totalLista: base + envio };
   $("cotRes").innerHTML = `<div class="sum">
     ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
