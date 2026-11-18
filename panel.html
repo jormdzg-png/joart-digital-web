@@ -920,7 +920,7 @@ function pintarCot(){
       <div class="field"><label>Entrega</label><select id="cEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +15%</option><option value="urgente">Urgente +25%</option></select></div>
       <div class="field"><label>Impresión</label><select id="cCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
     </div>
-    <div class="field" id="cPromoBox" hidden><label for="cPromo">🏷️ Días de Descuento · la opción que eligió el cliente</label><select id="cPromo"><option value="" disabled>Elige una…</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option></select><div class="hint" id="cPromoInfo"></div></div>
+    <div class="field" id="cPromoBox" hidden><label for="cPromo">🏷️ Días de Descuento · la opción que eligió el cliente</label><select id="cPromo"><option value="" disabled>Elige una…</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option><option value="ninguna">Sin promoción</option></select><div class="hint" id="cPromoInfo"></div></div>
     <div class="row">
       <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
       <div class="field"><label>Envío (si ≤ $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
@@ -950,9 +950,9 @@ function calcCot(){
   if(cot.entrega !== "estandar" && cot.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
   // El selector solo aparece cuando la promo aplica (del 13 al 17 nov, o si el pedido ya la traía guardada) y el pedido llega al mínimo.
   const hoy = hoyMX(), enFechas = promoVigente(hoy), visible = (enFechas || !!ped.promo) && promo.elegible;
-  const errPromo = visible && !cot.promo ? "Elige la opción de Días de Descuento que escogió el cliente: 15% o 3 meses sin intereses." : "";
+  const errPromo = visible && !cot.promo ? "Elige la opción de Días de Descuento que escogió el cliente: 15%, 3 meses sin intereses o sin promoción." : "";
   const infoPromo = (enFechas || ped.promo) && base > 0 && !promo.elegible ? `Días de Descuento aplica desde ${fmt(DIAS_DESCUENTO.minimo)}: faltan ${fmt(promo.falta)}.`
-    : visible && cot.promo && !enFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Déjalo solo si el cliente pidió su cotización en esas fechas.` : "";
+    : visible && cot.promo && cot.promo !== "ninguna" && !enFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Déjalo solo si el cliente pidió su cotización en esas fechas.` : "";
   const pb = $("cPromoBox"); if(pb) pb.hidden = !visible;
   const pi = $("cPromoInfo"); if(pi){ pi.textContent = infoPromo; pi.hidden = !infoPromo; }
   if(!err) err = errPromo;
