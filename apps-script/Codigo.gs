@@ -1819,7 +1819,10 @@ function prodFotoUna_(codigo, idx, tam) {
       b = f.getBlob();
     }
     return { ok: true, mime: b.getContentType(), b64: Utilities.base64Encode(b.getBytes()) };
-  } catch (e) { return { ok: false, error: 'No se pudo leer la foto' }; }
+  } catch (e) {
+    let quien = ''; try { quien = Session.getEffectiveUser().getEmail(); } catch (_) {}
+    return { ok: false, error: 'No se pudo leer la foto · el script corre como ' + (quien || 'cuenta desconocida') + ' · ' + String(e && e.message || e).slice(0, 80) };
+  }
 }
 
 function prodCarpeta_(folio) {
