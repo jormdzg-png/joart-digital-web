@@ -136,7 +136,8 @@ function doPost(e) {
       case "usarHojas":
         return jsonOutput({ ok: false, error: "El conteo se cambia en la pestaña \"Láminas\" del Sheets." });
       case "enviarRender":      return enviarRender(body.codigo, body.linkRender);
-      case "fotosProduccion":   return jsonOutput(prodFotosPanel_(body.codigo));
+      case "fotosProduccion":   return jsonOutput(prodFotosPanel_(body.codigo, body.meta));
+      case "fotoProduccion":    return jsonOutput(prodFotoUna_(body.codigo, body.idx, body.tam));
       case "produccionResumen": return jsonOutput(prodResumenPanel_());
     }
     // Compatibilidad: el panel antiguo mandaba el pedido sin "accion".
@@ -1632,7 +1633,7 @@ function prodResumenPanel_() {
       estado: enviado ? 'enviado' : (listoEl ? 'listo' : (ps.hechos > 0 ? 'proceso' : 'nuevo')),
       adelantado: est === PROD.EST_LISTO.toLowerCase() && !listoEl,
       hechos: ps.hechos, total: ps.total, pasos: ps.pasos,
-      alerta: r['ALERTA'] === 'SÍ', incidencias: String(r['INCIDENCIAS'] || ''),
+      alerta: r['ALERTA'] === 'SÍ', incidencias: String(r['INCIDENCIAS'] || ''), nFotos: prodUrls_(r['FOTO FINAL']).length,
       listoEl: fmt(listoEl), entregadoEl: fmt(r['ENTREGADO EL'])
     });
   });
@@ -1764,17 +1765,21 @@ function prodRender_(d) {
   return { ok: true, mime: b.getContentType(), b64: Utilities.base64Encode(b.getBytes()) };
 }
 
-// Para el panel de Jorge (Joart Core): lo que Daniela capturó de un pedido, con sus fotos
-function prodFotosPanel_(codigo) {
+// Para el panel de Jorge (Joart Core): lo que Daniela capturó de un pedido.
+// Con meta=true responde al instante (datos + lista de fotos sin imagen) y el panel pide cada foto aparte, en paralelo (acción "fotoProduccion").
+// Sin meta (panel viejo) mantiene el comportamiento anterior: todas las fotos dentro de la misma respuesta.
+function prodFotoId_(url) { const m = String(url || '').match(/[-\w]{25,}/); return m ? m[0] : null; }
+function prodFotosPanel_(codigo, meta) {
   const folio = String(codigo || '').trim().toUpperCase();
   if (!/^JD-[A-Z0-9]{5}$/.test(folio)) return { ok: false, error: 'Código inválido' };
   const r = prodProgresoCrudo_(folio);
   const tieneAlgo = Object.keys(r).length > 0;
   const foto = (url, etiqueta) => {
-    const m = String(url || '').match(/[-\w]{25,}/);
-    if (!m) return null;
+    const id = prodFotoId_(url);
+    if (!id) return null;
+    if (meta) return { etiqueta: etiqueta, url: String(url) };
     try {
-      const f = DriveApp.getFileById(m[0]);
+      const f = DriveApp.getFileById(id);
       if (f.getSize() > 4 * 1024 * 1024) return { etiqueta: etiqueta, grande: true, url: String(url) };
       const b = f.getBlob();
       return { etiqueta: etiqueta, mime: b.getContentType(), b64: Utilities.base64Encode(b.getBytes()), url: String(url) };
@@ -1792,6 +1797,26 @@ function prodFotosPanel_(codigo) {
       extras: extras.map(e => ({ alto: e.alto || '', ancho: e.ancho || '', largo: e.largo || '' }))
     }
   };
+}
+
+// Una sola foto de la pieza terminada. tam = "mini" (miniatura de Drive, pesa ~10 KB) o "full" (la foto completa, máx. 4 MB).
+function prodFotoUna_(codigo, idx, tam) {
+  const folio = String(codigo || '').trim().toUpperCase();
+  if (!/^JD-[A-Z0-9]{5}$/.test(folio)) return { ok: false, error: 'Código inválido' };
+  const urls = prodUrls_(prodProgresoCrudo_(folio)['FOTO FINAL']);
+  const url = urls[Number(idx)];
+  const id = prodFotoId_(url);
+  if (!id) return { ok: false, error: 'No existe esa foto' };
+  try {
+    const f = DriveApp.getFileById(id);
+    let b = null;
+    if (tam === 'mini') { try { b = f.getThumbnail(); } catch (_) { b = null; } }
+    if (!b) {
+      if (f.getSize() > 4 * 1024 * 1024) return { ok: false, grande: true, error: 'Foto pesada' };
+      b = f.getBlob();
+    }
+    return { ok: true, mime: b.getContentType(), b64: Utilities.base64Encode(b.getBytes()) };
+  } catch (e) { return { ok: false, error: 'No se pudo leer la foto' }; }
 }
 
 function prodCarpeta_(folio) {

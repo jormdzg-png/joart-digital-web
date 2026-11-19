@@ -235,6 +235,64 @@
     .dock .in{ max-width:640px; }
   }
 
+  /* ---------- producción ---------- */
+  .pk-chips{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -16px 4px; padding:2px 16px 8px; scroll-snap-type:x proximity; scroll-padding-inline:16px; }
+  .pk-chips::-webkit-scrollbar{ display:none; }
+  .chip{ flex:none; display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:0 13px; background:transparent; border:1px solid var(--line); color:var(--mute); font:600 11px var(--mono); letter-spacing:.1em; text-transform:uppercase; cursor:pointer; scroll-snap-align:start; transition:all .18s; }
+  .chip b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+  .chip:hover{ border-color:var(--line-hi); }
+  .chip.on{ background:var(--panel); color:var(--ink); border-color:var(--line-hi); box-shadow:inset 0 -2px 0 var(--terra); }
+  .chip.alerta b{ color:var(--rojo); }
+  .pk{ position:relative; display:block; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c, var(--mute)); color:var(--ink); padding:12px 14px 12px 13px; margin-bottom:6px; cursor:pointer; font:inherit; transition:background .15s, border-color .15s, transform .15s; }
+  .pk:hover{ border-color:var(--line-hi); border-left-color:var(--c, var(--mute)); transform:translateX(2px); }
+  .pk.sel{ background:color-mix(in srgb, var(--terra) 9%, var(--panel)); border-color:var(--line-hi); border-left-color:var(--c, var(--mute)); }
+  .pk > span{ display:block; }
+  .pk-h{ display:flex !important; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .pk-n{ font:600 15px/1.25 'Inter',sans-serif; min-width:0; overflow-wrap:anywhere; }
+  .pk-due{ flex:none; font:600 10.5px var(--mono); letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border:1px solid currentColor; white-space:nowrap; }
+  .pk-m{ font:400 11.5px var(--mono); color:var(--mute); margin:3px 0 10px; }
+  .pk-seg{ display:flex !important; gap:3px; }
+  .pk-seg i{ flex:1; height:5px; background:color-mix(in srgb, var(--ink) 13%, transparent); }
+  .pk-seg i.ok{ background:var(--c, var(--sage)); }
+  .pk-f{ display:flex !important; justify-content:space-between; gap:10px; margin-top:7px; font:400 11.5px var(--mono); color:var(--mute); }
+  .pk-f > span:last-child{ text-align:right; flex:none; }
+  .pk-steps{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .pk-s{ display:flex; align-items:center; gap:9px; min-height:38px; padding:0 12px; border:1px solid var(--line); font:500 13.5px 'Inter',sans-serif; color:var(--mute); }
+  .pk-s i{ font-style:normal; font:700 14px var(--mono); }
+  .pk-s.ok{ color:var(--ink); } .pk-s.ok i{ color:var(--sage); }
+  .pk-hero, .pk-th{ position:relative; display:block; width:100%; padding:0; background-color:var(--thumb); border:1px solid var(--line); cursor:zoom-in; overflow:hidden; color:var(--mute); font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase; }
+  .pk-hero{ aspect-ratio:4/3; max-height:70dvh; } .pk-th{ aspect-ratio:1; }
+  .pk-hero img{ width:100%; height:100%; object-fit:contain; display:block; }
+  .pk-th img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pk-hero:hover, .pk-th:hover{ border-color:var(--line-hi); }
+  .pk-hero.sk, .pk-th.sk{ cursor:progress; background-image:linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--sand) 14%, transparent) 50%, transparent 70%); background-size:240% 100%; animation:brillo 1.5s linear infinite; }
+  .pk-ext{ display:flex; align-items:center; justify-content:center; height:100%; padding:8px; text-align:center; }
+  .pk-n-f{ position:absolute; right:8px; bottom:8px; background:color-mix(in srgb, var(--bg) 82%, transparent); color:var(--ink); font:600 10.5px var(--mono); padding:3px 8px; }
+  .pk-ths{ display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:6px; margin-top:6px; }
+  .pk-pq{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 12px; border:1px solid var(--line); margin-bottom:6px; font:500 14px var(--mono); font-variant-numeric:tabular-nums; }
+  .pk-pq small{ display:block; font:400 10.5px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--mute); margin-bottom:2px; }
+  .pk-pq b{ font-weight:500; white-space:nowrap; }
+  .pk-pq button{ min-height:36px; }
+  #prodVacia{ display:none; }
+  #pane-produccion.det #prodVista{ display:none; }
+  .lb{ position:fixed; inset:0; z-index:95; display:flex; align-items:center; justify-content:center; background:rgba(4,6,12,.94); touch-action:pan-y pinch-zoom; }
+  .lb[hidden]{ display:none; }
+  .lb img{ max-width:100%; max-height:calc(100dvh - 120px); object-fit:contain; display:block; user-select:none; -webkit-user-drag:none; }
+  .lb-x, .lb-n{ position:absolute; z-index:2; width:48px; height:48px; border:1px solid var(--line); background:rgba(16,23,44,.8); color:#ECE8D6; font:400 22px var(--mono); cursor:pointer; }
+  .lb-x{ top:calc(10px + env(safe-area-inset-top)); right:12px; } .lb-n.prev{ left:10px; } .lb-n.next{ right:10px; } .lb-n{ top:50%; transform:translateY(-50%); }
+  .lb-bar{ position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; gap:12px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:#ECE8D6; }
+  .lb-bar a{ color:var(--sand); }
+  @media (min-width:1000px){
+    #pane-produccion.on{ display:grid; grid-template-columns:minmax(340px, 440px) minmax(0, 1fr); gap:28px; align-items:start; }
+    #pane-produccion #prodVista, #pane-produccion.det #prodVista{ display:block; grid-column:1; grid-row:1; position:sticky; top:58px; max-height:calc(100dvh - 76px); overflow:auto; padding:0 6px 24px 0; }
+    #prodDetalle, #prodVacia{ grid-column:2; grid-row:1; min-width:0; }
+    #prodDetalle:not([hidden]) ~ #prodVacia{ display:none; }
+    #prodDetalle[hidden] ~ #prodVacia{ display:flex; align-items:center; justify-content:center; min-height:260px; border:1px dashed var(--line); color:var(--mute); font:400 12px var(--mono); letter-spacing:.14em; text-transform:uppercase; }
+    #prodDetalle .back{ display:none; }
+    .pk-chips{ margin-inline:0; padding-inline:0; flex-wrap:wrap; overflow:visible; }
+  }
+  @media (forced-colors:active){ .pk{ border-left-color:Highlight; } .pk-seg i.ok{ background:Highlight; } }
+
   /* ---------- accesibilidad ---------- */
   @media (prefers-contrast:more){
     :root{ --line:color-mix(in srgb, var(--sand) 55%, transparent); --mute:#C3C9DE; }
@@ -350,6 +408,8 @@
   <!-- ============ PRODUCCIÓN ============ -->
   <section class="pane" id="pane-produccion" role="tabpanel" aria-labelledby="tab-produccion">
     <div id="prodVista"><div class="skel" role="status"><span class="sr">Cargando producción…</span><i class="s"></i><i></i><i></i></div></div>
+    <div id="prodDetalle" hidden aria-live="polite"></div>
+    <div id="prodVacia">Elige un pedido</div>
   </section>
 
   <!-- ============ MÁS ============ -->
@@ -378,6 +438,13 @@
   <button type="button" class="btn go" id="regBtn" aria-describedby="dockEstado">⚡ Registrar pedido</button>
 </div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Fotos de la pieza terminada">
+  <button type="button" class="lb-x" id="lbX" aria-label="Cerrar">✕</button>
+  <button type="button" class="lb-n prev" id="lbPrev" aria-label="Foto anterior">‹</button>
+  <img id="lbImg" alt="">
+  <button type="button" class="lb-n next" id="lbNext" aria-label="Foto siguiente">›</button>
+  <div class="lb-bar"><span id="lbCuenta"></span><a id="lbDrive" target="_blank" rel="noopener">Abrir en Drive ↗</a></div>
+</div>
 
 <script src="jspdf.umd.min.js"></script>
 <script>if(!window.jspdf){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"><\/script>'); }</script>
@@ -795,22 +862,12 @@ $("fichaVista").addEventListener("click", (e) => {
   }
 });
 
-function pintarProdDetalle(box, r){
-  if(!r.capturado){ box.innerHTML = `<div class="hint" style="margin-top:10px">Todavía no hay nada capturado en producción para este pedido.</div>`; return; }
-  const d = r.datos || {}, ok = (x) => x ? esc(x) : "—";
-  const fotos = (r.fotos || []).map(f => f.b64
-    ? `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a href="${esc(f.url)}" target="_blank" rel="noopener"><img alt="${esc(f.etiqueta)}" src="data:${esc(f.mime)};base64,${f.b64}" style="display:block;width:100%;max-height:70vh;object-fit:contain;background:#000;border:1px solid rgba(242,204,143,.2)"></a>`
-    : `<div class="lbl" style="margin-top:14px">${esc(f.etiqueta)}</div><a class="btn" target="_blank" rel="noopener" href="${esc(f.url)}">Abrir foto en Drive</a>`).join("");
-  box.innerHTML = `<div class="lbl" style="margin-top:16px">Producción</div>
-    <div class="hint">Contadas: ${ok(d.contadas)}${d.notaConteo ? " (" + esc(d.notaConteo) + ")" : ""} · Impresión: ${ok(d.impresion)} · Corte: ${ok(d.corte)}${d.armado ? " · Armado: " + esc(d.armado) : ""}</div>
-    <div class="hint">${(d.extras || []).length ? "Paquete 1" : "Paquete"}: ${ok(d.alto)} × ${ok(d.ancho)} × ${ok(d.largo)} cm${(d.extras || []).map((e, i) => `<br>Paquete ${i + 2}: ${ok(e.alto)} × ${ok(e.ancho)} × ${ok(e.largo)} cm`).join("")}</div>
-    ${fotos || `<div class="hint" style="margin-top:10px">Aún no hay fotos.</div>`}`;
-}
+function pintarProdDetalle(box, r){ prodPintarDatos(box, r.codigo, r); }
 async function verProduccion(btn){
   const box = $("prodBox"), cod = ped && ped.codigo; if(!cod) return;
   btn.disabled = true; btn.textContent = "Cargando…";
   try{
-    const r = await post("fotosProduccion", { codigo: cod });
+    const r = await post("fotosProduccion", { codigo: cod, meta: 1 });
     if(!ped || ped.codigo !== cod) return;
     if(!r.ok){ box.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; return; }
     pintarProdDetalle(box, r);
@@ -819,65 +876,206 @@ async function verProduccion(btn){
 }
 
 // ===================== PRODUCCIÓN (todo lo que Daniela va capturando) =====================
-let prodCache = null;
+let prodCache = null, prodSel = "", prodFiltro = "todo", prodHora = "", prodScroll = 0;
+const prodDet = new Map();    // folio -> { r }  (datos + lista de fotos ya leídos)
+const prodImgs = new Map();   // folio|idx|mini|full -> Promise<dataURL|null>
+const ESTADO_COL = { listo: "var(--sage)", proceso: "var(--sand)", nuevo: "var(--mute)", enviado: "var(--sage)" };
+const prodPend = (it) => it.estado === "nuevo" || it.estado === "proceso";
+const prodSinLiquidar = (it) => it.estado === "listo" && !!it.pagado && !/^100/.test(it.pagado);
+const prodAtencion = (it) => !!it.alerta || !!it.adelantado || prodSinLiquidar(it) || (prodPend(it) && it.dias !== null && it.dias <= 0);
+const PROD_FILTROS = [["todo", "Todo", () => true], ["atencion", "Atención", prodAtencion], ["listo", "Listos", (i) => i.estado === "listo"], ["proceso", "En proceso", (i) => i.estado === "proceso"], ["nuevo", "Sin empezar", (i) => i.estado === "nuevo"], ["enviado", "Enviados", (i) => i.estado === "enviado"]];
+function prodDue(it){
+  if(it.estado === "listo") return it.listoEl ? { t: "Listo " + it.listoEl.split(" ")[0], c: "var(--sage)" } : { t: "Sin revisión", c: "var(--ambar)" };
+  if(it.estado === "enviado") return { t: "Enviado", c: "var(--mute)" };
+  if(it.dias === null) return it.fechaTxt ? { t: it.fechaTxt, c: "var(--mute)" } : null;
+  if(it.dias < 0) return { t: "Vencido " + (-it.dias) + " d", c: "var(--rojo)" };
+  if(it.dias === 0) return { t: "Hoy", c: "var(--ambar)" };
+  return { t: it.dias === 1 ? "Mañana" : "En " + it.dias + " d", c: it.dias <= 2 ? "var(--ambar)" : "var(--mute)" };
+}
 async function cargarProduccion(){
   const box = $("prodVista");
   if(!prodCache) box.innerHTML = SKEL(3);
   try{
     const r = await post("produccionResumen");
-    if(!r.ok){ box.textContent = r.error || "No se pudo leer."; return; }
-    prodCache = r; pintarProduccion();
-  }catch(e){ console.error(e); box.textContent = "No se pudo conectar."; }
+    if(!r.ok){ if(!prodCache) box.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; else toast(r.error || "No se pudo actualizar"); return; }
+    prodCache = r; prodHora = new Date().toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" }); ultimaCarga = Date.now(); pintarProduccion();
+  }catch(e){ console.error(e); if(!prodCache) box.innerHTML = `<div class="box err">No se pudo conectar. <button type="button" class="link" id="prodRefrescar">Reintentar</button></div>`; else toast("Sin conexión: se muestra lo último que se leyó"); }
+}
+function prodCard(it){
+  const col = it.alerta ? "var(--rojo)" : ESTADO_COL[it.estado], due = prodDue(it), falta = it.pasos.filter(p => !p.ok).map(p => p.n.toLowerCase());
+  const pago = prodSinLiquidar(it) ? `<span style="color:var(--ambar)">Falta liquidar · ${esc(it.pagado)}</span>` : it.pagado ? `<span>${/^100/.test(it.pagado) ? "Pagado ✓" : "Pago " + esc(it.pagado)}</span>` : "<span></span>";
+  return `<button type="button" class="pk${prodSel === it.folio ? " sel" : ""}" data-f="${esc(it.folio)}" style="--c:${col}"${prodSel === it.folio ? ' aria-current="true"' : ""}>
+    <span class="pk-h"><span class="pk-n">${esc(it.negocio)}</span>${due ? `<span class="pk-due" style="color:${due.c}">${esc(due.t)}</span>` : ""}</span>
+    <span class="pk-m">${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.tipo)}</span>
+    <span class="pk-seg" aria-hidden="true">${it.pasos.map(p => `<i${p.ok ? ' class="ok"' : ""}></i>`).join("")}</span>
+    <span class="sr">${it.hechos} de ${it.total} pasos</span>
+    <span class="pk-f"><span>${it.alerta ? `<b style="color:var(--rojo)">⚠ Incidencia</b> · ` : ""}${falta.length ? "Falta " + esc(falta.join(", ")) : "Completo ✓"}</span>${pago}</span></button>`;
 }
 function pintarProduccion(){
   const r = prodCache, box = $("prodVista"); if(!r) return;
-  const abiertos = new Set(Array.from(box.querySelectorAll(".prow.open")).map(x => x.dataset.f));
+  const chips = PROD_FILTROS.map(([k, t, fn]) => { const n = r.items.filter(fn).length; return `<button type="button" class="chip${prodFiltro === k ? " on" : ""}${k === "atencion" && n ? " alerta" : ""}" data-k="${k}" aria-pressed="${prodFiltro === k}">${t} <b>${n}</b></button>`; }).join("");
+  const fn = (PROD_FILTROS.find(f => f[0] === prodFiltro) || PROD_FILTROS[0])[2], vis = r.items.filter(fn);
   const grupos = [["listo", "Listos para enviar"], ["proceso", "En proceso"], ["nuevo", "Sin empezar"], ["enviado", "Enviados · últimos 14 días"]];
-  const badge = (t, c) => `<span style="white-space:nowrap;font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:1px solid ${c};color:${c}">${esc(t)}</span>`;
-  const fila = (it) => {
-    const pct = it.total ? Math.round(100 * it.hechos / it.total) : 0;
-    const col = it.estado === "listo" || it.estado === "enviado" ? "#81B29A" : it.estado === "proceso" ? "#F2CC8F" : "#8E96B2";
-    const tags = [];
-    if(it.alerta) tags.push(badge("⚠ Incidencia", "#FF8272"));
-    if(it.adelantado) tags.push(badge("Enviar sin revisión", "#F2CC8F"));
-    const pend = it.estado === "nuevo" || it.estado === "proceso";
-    if(it.dias !== null && it.dias < 0 && pend) tags.push(badge("Vencido " + (-it.dias) + " d", "#FF8272"));
-    else if(it.dias === 0 && pend) tags.push(badge("Hoy", "#F2CC8F"));
-    else if(it.fechaTxt && pend) tags.push(badge(it.fechaTxt, "#8E96B2"));
-    if(it.pagado) tags.push(badge("Pagado " + it.pagado, /^100/.test(it.pagado) ? "#81B29A" : "#8E96B2"));
-    const pasos = it.pasos.map(p => `<span style="margin-right:10px;color:${p.ok ? "#B5DEC9" : "#8E96B2"}">${p.ok ? "✓" : "○"} ${esc(p.n)}</span>`).join("");
-    return `<div class="prow${abiertos.has(it.folio) ? " open" : ""}" data-f="${esc(it.folio)}" style="margin-bottom:6px;background:var(--panel);border:1px solid var(--line)">
-      <button type="button" class="pcab" data-f="${esc(it.folio)}" style="display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);padding:13px 14px;cursor:pointer;font:inherit">
-        <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><b style="font:600 14.5px Inter,sans-serif">${esc(it.negocio)}</b><span style="font:600 11px var(--mono);color:${col}">${it.hechos}/${it.total}</span></div>
-        <div class="hint" style="margin-top:2px">${esc(it.folio)} · ${esc(it.cantidad)} · ${esc(it.tipo)}</div>
-        <div style="height:4px;background:rgba(255,255,255,.07);margin:9px 0 8px"><div style="height:4px;width:${pct}%;background:${col}"></div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${tags.join("")}</div></button>
-      <div class="pdet" style="padding:0 14px 14px" ${abiertos.has(it.folio) ? "" : "hidden"}>
-        <div class="hint" style="line-height:1.9">${pasos}</div>
-        ${it.listoEl ? `<div class="hint">Listo: ${esc(it.listoEl)}${it.entregadoEl ? " · Entregado a paquetería: " + esc(it.entregadoEl) : ""}</div>` : ""}
-        ${it.incidencias ? `<div class="box err" style="white-space:pre-line">${esc(it.incidencias)}</div>` : ""}
-        <button type="button" class="btn pfotos" data-f="${esc(it.folio)}" style="margin-top:10px">📷 Ver fotos y datos</button>
-        <div class="pfbox"></div></div></div>`;
-  };
-  const sec = grupos.map(([k, t]) => { const l = r.items.filter(i => i.estado === k); return l.length ? `<div class="col-h"><span>${t} · ${l.length}</span></div>` + l.map(fila).join("") : ""; }).join("");
+  const sec = grupos.map(([k, t]) => { const l = vis.filter(i => i.estado === k); return l.length ? `<div class="col-h"><span>${t} · ${l.length}</span></div>` + l.map(prodCard).join("") : ""; }).join("");
   const av = (r.avisos || []).length ? `<details style="margin-top:18px"><summary class="col-h" style="cursor:pointer"><span>Avisos de Daniela · ${r.avisos.length}</span></summary>`
     + r.avisos.map(a => `<div class="hint" style="padding:8px 0;border-bottom:1px solid var(--line)"><b style="color:var(--sand)">${esc(a.aviso)}</b> · ${esc(a.fecha)}<br>${esc([a.negocio, a.folio].filter(Boolean).join(" · "))}${a.nota ? "<br>" + esc(a.nota) : ""}</div>`).join("") + `</details>` : "";
   const lam = r.laminas && r.laminas.ultimo ? `<div class="hint" style="margin-top:14px">🧱 Último conteo de láminas: ${esc(r.laminas.ultimo)}</div>` : "";
-  box.innerHTML = `<div class="col-h"><span>${r.items.length} pedidos en producción</span><button type="button" class="link" id="prodRefrescar">Actualizar</button></div>`
-    + (sec || `<div class="hint">No hay pedidos en producción.</div>`) + av + lam;
+  box.innerHTML = `<div class="pk-chips" role="group" aria-label="Filtrar pedidos">${chips}</div>
+    <div class="col-h" style="margin-top:6px"><span>Actualizado ${esc(prodHora)}</span><button type="button" class="link" id="prodRefrescar">Actualizar</button></div>`
+    + (sec || `<div class="hint" style="padding:18px 0">${r.items.length ? "Ningún pedido en este filtro." : "No hay pedidos en producción."}</div>`) + av + lam;
+  if(prodSel){ const it = r.items.find(i => i.folio === prodSel); if(it) pintarProdDet(it); else prodCerrar(true); }
 }
-$("prodVista").addEventListener("click", async (e) => {
-  if(e.target.id === "prodRefrescar"){ cargarProduccion(); return; }
-  const cab = e.target.closest(".pcab");
-  if(cab){ const row = cab.closest(".prow"); row.classList.toggle("open"); row.querySelector(".pdet").hidden = !row.classList.contains("open"); return; }
-  const b = e.target.closest(".pfotos"); if(!b) return;
-  const row = b.closest(".prow"), fb = row.querySelector(".pfbox"); b.disabled = true; b.textContent = "Cargando…";
-  try{
-    const r = await post("fotosProduccion", { codigo: b.dataset.f });
-    if(!r.ok){ fb.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")}</div>`; }
-    else pintarProdDetalle(fb, r);
-  }catch(err){ console.error(err); fb.innerHTML = `<div class="box err">No se pudo conectar.</div>`; }
-  finally{ b.disabled = false; b.textContent = "📷 Ver fotos y datos"; }
+
+// ----- detalle (a la derecha en escritorio; pantalla completa en el celular)
+function pintarProdDet(it){
+  const due = prodDue(it), warn = prodSinLiquidar(it), av = (prodCache.avisos || []).filter(a => a.folio === it.folio);
+  const lab3 = it.estado === "listo" ? "Terminado" : it.estado === "enviado" ? "Estado" : "Entrega";
+  $("prodDetalle").innerHTML = `<button type="button" class="back" id="prodVolver">‹ Producción</button>
+    <div class="hud">
+      <div class="ficha-code">${esc(it.folio)}</div><h2 class="ficha-name">${esc(it.negocio)}</h2>
+      <div class="hint">${esc(it.cantidad)} · ${esc(it.tipo)}${it.fechaTxt ? " · entrega " + esc(it.fechaTxt) : ""}</div>
+      <div class="split"><div>Avance<strong>${it.hechos}/${it.total}</strong></div><div>Pago<strong${warn ? ' style="color:var(--ambar)"' : ""}>${esc(it.pagado || "—")}</strong></div><div>${lab3}<strong${due ? ` style="color:${due.c}"` : ""}>${due ? esc(due.t) : "—"}</strong></div></div>
+      ${it.incidencias ? `<div class="box err" style="white-space:pre-line">${it.alerta ? "⚠ " : ""}${esc(it.incidencias)}</div>` : ""}
+      ${warn ? `<div class="box warn">Ya está listo, pero el pago va en ${esc(it.pagado)}. No se entrega hasta el 100%.</div>` : ""}
+      ${av.map(a => `<div class="box warn"><b>${esc(a.aviso)}</b> · ${esc(a.fecha)}${a.nota ? "<br>" + esc(a.nota) : ""}</div>`).join("")}
+      <div id="prodFotos"></div>
+      <div class="lbl" style="margin-top:16px">Pasos</div>
+      <div class="pk-steps">${it.pasos.map(p => `<div class="pk-s${p.ok ? " ok" : ""}"><i aria-hidden="true">${p.ok ? "✓" : "○"}</i>${esc(p.n)}<span class="sr">${p.ok ? " hecho" : " pendiente"}</span></div>`).join("")}</div>
+      ${it.listoEl ? `<div class="hint" style="margin-top:10px">Listo: ${esc(it.listoEl)}${it.entregadoEl ? " · Entregado a paquetería: " + esc(it.entregadoEl) : ""}</div>` : ""}
+      <div id="prodDatos"></div>
+    </div>`;
+}
+function prodAbrir(folio){
+  const it = prodCache && prodCache.items.find(i => i.folio === folio); if(!it) return;
+  if(!prodSel) prodScroll = window.scrollY;
+  prodSel = folio;
+  vt(() => {
+    document.querySelectorAll("#prodVista .pk").forEach(b => { const on = b.dataset.f === folio; b.classList.toggle("sel", on); if(on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
+    $("pane-produccion").classList.add("det"); $("prodDetalle").hidden = false; pintarProdDet(it); window.scrollTo(0, 0);
+  });
+  prodCargarDet(folio);
+}
+function prodCerrar(sinAnim){
+  if(!prodSel && $("prodDetalle").hidden) return;
+  prodSel = "";
+  const f = () => { $("pane-produccion").classList.remove("det"); $("prodDetalle").hidden = true; document.querySelectorAll("#prodVista .pk.sel").forEach(b => { b.classList.remove("sel"); b.removeAttribute("aria-current"); }); window.scrollTo(0, prodScroll); };
+  if(sinAnim) f(); else vt(f);
+}
+const prodGalSk = (n) => `<div class="lbl" style="margin-top:16px">Pieza terminada</div><div class="pk-hero sk" role="status"><span class="sr">Cargando fotos…</span></div>`
+  + (n > 1 ? `<div class="pk-ths">${"<div class=\"pk-th sk\"></div>".repeat(n - 1)}</div>` : "");
+async function prodCargarDet(folio){
+  const dentro = () => prodSel === folio && $("prodDatos");
+  let d = prodDet.get(folio);
+  if(!d){
+    const it = prodCache.items.find(i => i.folio === folio), b = dentro();
+    if(b && (!it || it.nFotos !== 0)) $("prodFotos").innerHTML = prodGalSk(it && it.nFotos ? it.nFotos : 1);
+    try{
+      const r = await post("fotosProduccion", { codigo: folio, meta: 1 });
+      if(!r.ok){ const b2 = dentro(); if(b2) b2.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")} <button type="button" class="link" data-reintentar="${esc(folio)}">Reintentar</button></div>`; return; }
+      prodDet.set(folio, { r }); d = prodDet.get(folio);
+    }catch(e){ console.error(e); const b2 = dentro(); if(b2) b2.innerHTML = `<div class="box err">No se pudo conectar. <button type="button" class="link" data-reintentar="${esc(folio)}">Reintentar</button></div>`; return; }
+  }
+  const b = dentro(); if(b) prodPintarDatos(b, folio, d.r, $("prodFotos"));
+}
+function prodDatosHtml(r){
+  if(!r.capturado) return `<div class="hint" style="margin-top:16px">Todavía no hay nada capturado en producción para este pedido.</div>`;
+  const d = r.datos || {}, ok = (x) => x === "" || x === null || x === undefined ? "—" : esc(x);
+  const pq = [{ alto: d.alto, ancho: d.ancho, largo: d.largo }].concat(d.extras || []).filter(p => p.alto || p.ancho || p.largo);
+  return `<div class="lbl" style="margin-top:18px">Capturado</div>
+    <div class="hint" style="margin-bottom:10px">Piezas contadas: <b style="color:var(--ink)">${ok(d.contadas)}</b>${d.notaConteo ? " · " + esc(d.notaConteo) : ""}</div>
+    ${pq.map((p, i) => `<div class="pk-pq"><span>${pq.length > 1 ? `<small>Paquete ${i + 1}</small>` : ""}<b>${ok(p.alto)} × ${ok(p.ancho)} × ${ok(p.largo)} cm</b></span><button type="button" class="btn mini" data-copy="${esc([p.alto, p.ancho, p.largo].join("x"))}">Copiar</button></div>`).join("") || `<div class="hint">Sin medidas de paquete.</div>`}`;
+}
+function prodGalHtml(r){
+  const f = r.fotos || [], n = f.length;
+  if(!n) return `<div class="hint" style="margin-top:14px">📷 Aún no hay fotos de la pieza terminada.</div>`;
+  const tile = (cls, i) => `<button type="button" class="${cls} sk" data-i="${i}" data-f="${esc(r.codigo)}" aria-label="Ver foto ${i + 1} de ${n}">${i === 0 && n > 1 ? `<span class="pk-n-f">1/${n}</span>` : ""}</button>`;
+  return `<div class="lbl" style="margin-top:16px">Pieza terminada${n > 1 ? " · " + n + " fotos" : ""}</div>${tile("pk-hero", 0)}` + (n > 1 ? `<div class="pk-ths">${f.slice(1).map((_, k) => tile("pk-th", k + 1)).join("")}</div>` : "");
+}
+function prodImg(folio, idx, tam){
+  const kf = `${folio}|${idx}|full`, k = `${folio}|${idx}|${tam}`;
+  if(tam === "mini" && prodImgs.has(kf)) return prodImgs.get(kf);
+  if(prodImgs.has(k)) return prodImgs.get(k);
+  const p = post("fotoProduccion", { codigo: folio, idx, tam }).then(r => r && r.ok && r.b64 ? "data:" + r.mime + ";base64," + r.b64 : null).catch(() => null).then(v => { if(!v) prodImgs.delete(k); return v; });
+  prodImgs.set(k, p); return p;
+}
+async function prodPonerFoto(el, folio, idx, tam){
+  const f = ((prodDet.get(folio) || {}).r || {}).fotos || [], x = f[idx] || {};
+  el.classList.add("sk"); el.removeAttribute("data-ext");
+  if(x.grande || x.error){ el.classList.remove("sk"); el.dataset.ext = x.url || ""; el.innerHTML = `<span class="pk-ext">${x.grande ? "Foto pesada · abrir en Drive ↗" : "No se pudo leer · abrir en Drive ↗"}</span>`; return; }
+  const src = await prodImg(folio, idx, tam); if(!el.isConnected) return;
+  el.classList.remove("sk");
+  if(!src){ el.dataset.retry = "1"; el.innerHTML = `<span class="pk-ext">No cargó · tocar para reintentar</span>`; return; }
+  el.removeAttribute("data-retry");
+  const cuenta = el.querySelector(".pk-n-f");
+  el.innerHTML = `<img alt="Pieza terminada, foto ${idx + 1}" src="${src}" decoding="async">`; if(cuenta) el.appendChild(cuenta);
+}
+function prodPintarDatos(box, folio, r, fotosBox){
+  prodDet.set(folio, { r });
+  // el Apps Script anterior mandaba las fotos dentro de esta misma respuesta: se aprovechan
+  (r.fotos || []).forEach((x, i) => { if(x.b64) prodImgs.set(`${folio}|${i}|full`, Promise.resolve("data:" + x.mime + ";base64," + x.b64)); });
+  const gb = fotosBox || box;
+  if(fotosBox){ box.innerHTML = prodDatosHtml(r); fotosBox.innerHTML = prodGalHtml(r); } else box.innerHTML = prodDatosHtml(r) + prodGalHtml(r);
+  gb.querySelectorAll(".pk-hero, .pk-th").forEach(el => prodPonerFoto(el, folio, +el.dataset.i, el.classList.contains("pk-hero") ? "full" : "mini"));
+}
+// ----- visor de fotos
+const lb = { f: "", i: 0, foco: null };
+function lbAbrir(folio, i){
+  const r = (prodDet.get(folio) || {}).r; if(!r || !(r.fotos || []).length) return;
+  lb.f = folio; lb.foco = document.activeElement; $("lb").hidden = false; document.body.style.overflow = "hidden"; lbMostrar(i); $("lbX").focus();
+}
+function lbMostrar(i){
+  const f = prodDet.get(lb.f).r.fotos, n = f.length; lb.i = (i + n) % n;
+  const img = $("lbImg"), mi = lb.i, x = f[mi];
+  $("lbCuenta").textContent = n > 1 ? `Foto ${mi + 1} de ${n}` : "Foto 1 de 1";
+  const dr = $("lbDrive"); dr.href = x.url || "#"; dr.hidden = !x.url;
+  $("lbPrev").hidden = $("lbNext").hidden = n < 2; img.removeAttribute("src"); img.alt = `Pieza terminada, foto ${mi + 1}`;
+  const mini = prodImgs.get(`${lb.f}|${mi}|mini`); if(mini) mini.then(s => { if(s && lb.i === mi && !img.getAttribute("src")) img.src = s; });
+  prodImg(lb.f, mi, "full").then(s => { if(s && lb.i === mi) img.src = s; });
+  if(n > 1){ prodImg(lb.f, (mi + 1) % n, "full"); prodImg(lb.f, (mi + n - 1) % n, "full"); }
+}
+function lbCerrar(){ $("lb").hidden = true; document.body.style.overflow = ""; if(lb.foco && lb.foco.isConnected) lb.foco.focus(); }
+$("lbX").addEventListener("click", lbCerrar);
+$("lbPrev").addEventListener("click", () => lbMostrar(lb.i - 1)); $("lbNext").addEventListener("click", () => lbMostrar(lb.i + 1));
+$("lb").addEventListener("click", (e) => { if(e.target.id === "lb" || e.target.classList.contains("lb-stage")) lbCerrar(); });
+(function(){ let x0 = null; const el = $("lb");
+  el.addEventListener("pointerdown", (e) => { x0 = e.clientX; });
+  el.addEventListener("pointerup", (e) => { if(x0 === null) return; const dx = e.clientX - x0; x0 = null; if(Math.abs(dx) > 60 && e.target.tagName === "IMG") lbMostrar(lb.i + (dx < 0 ? 1 : -1)); });
+})();
+document.addEventListener("keydown", (e) => {
+  if(!$("lb").hidden){
+    if(e.key === "Escape"){ e.preventDefault(); e.stopImmediatePropagation(); lbCerrar(); }
+    else if(e.key === "ArrowRight"){ e.preventDefault(); lbMostrar(lb.i + 1); } else if(e.key === "ArrowLeft"){ e.preventDefault(); lbMostrar(lb.i - 1); }
+    else if(e.key === "Tab"){ e.preventDefault(); $("lbX").focus(); }
+    return;
+  }
+  if(e.key === "Escape" && prodSel && $("pane-produccion").classList.contains("on") && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || "")) prodCerrar();
+}, true);
+
+// ----- clics de la pestaña (lista, detalle, fotos, copiar)
+document.addEventListener("click", async (e) => {
+  const t = e.target;
+  const ch = t.closest && t.closest("#prodVista .chip"); if(ch){ prodFiltro = ch.dataset.k; pintarProduccion(); return; }
+  if(t.id === "prodRefrescar"){ cargarProduccion(); return; }
+  if(t.id === "prodVolver"){ prodCerrar(); return; }
+  const pk = t.closest && t.closest("#prodVista .pk"); if(pk){ prodAbrir(pk.dataset.f); return; }
+  const re = t.closest && t.closest("[data-reintentar]"); if(re){ prodDet.delete(re.dataset.reintentar); prodCargarDet(re.dataset.reintentar); return; }
+  const cp = t.closest && t.closest("[data-copy]"); if(cp){
+    const txt = cp.dataset.copy.replace(/x/g, " × ") + " cm";
+    try{ await navigator.clipboard.writeText(cp.dataset.copy.replace(/x/g, "x") + " cm"); toast("Copiado: " + txt); }catch(err){ toast("No se pudo copiar: " + txt); }
+    return;
+  }
+  const ft = t.closest && t.closest(".pk-hero, .pk-th"); if(ft && ft.dataset.f){
+    if(ft.dataset.ext){ window.open(ft.dataset.ext, "_blank", "noopener"); return; }
+    if(ft.dataset.retry){ prodImgs.delete(`${ft.dataset.f}|${ft.dataset.i}|full`); prodImgs.delete(`${ft.dataset.f}|${ft.dataset.i}|mini`); prodPonerFoto(ft, ft.dataset.f, +ft.dataset.i, ft.classList.contains("pk-hero") ? "full" : "mini"); return; }
+    if(ft.classList.contains("sk")) return;
+    lbAbrir(ft.dataset.f, +ft.dataset.i);
+  }
+});
+let prodHoverT = 0;
+document.addEventListener("pointerover", (e) => {   // al pasar el cursor por un pedido, se adelanta la lectura de sus datos
+  const pk = e.target.closest && e.target.closest("#prodVista .pk"); if(!pk || e.pointerType === "touch") return;
+  const f = pk.dataset.f; if(prodDet.has(f)) return; clearTimeout(prodHoverT);
+  prodHoverT = setTimeout(() => { if(prodDet.has(f)) return; post("fotosProduccion", { codigo: f, meta: 1 }).then(r => { if(r && r.ok && !prodDet.has(f)) prodDet.set(f, { r }); }).catch(() => {}); }, 180);
 });
 
 // ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
@@ -1114,7 +1312,7 @@ document.addEventListener("keydown", (e) => {
   if((e.ctrlKey || e.metaKey) && e.key === "Enter" && $("pane-nuevo").classList.contains("on") && !$("formNuevo").hidden){ e.preventDefault(); if(!$("regBtn").disabled) registrar(); return; }
   if(escribiendo) return;
   if(e.key === "/" && $("pane-proyectos").classList.contains("on") && !$("listaVista").hidden){ e.preventDefault(); $("busca").focus(); }
-  if(e.key === "Escape" && !$("fichaVista").hidden){ const v = $("volver"); if(v) v.click(); }
+  if(e.key === "Escape" && !$("fichaVista").hidden && $("pane-proyectos").classList.contains("on")){ const v = $("volver"); if(v) v.click(); }
 });
 async function iniciarApp(){
   recuperarBorrador();
