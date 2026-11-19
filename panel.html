@@ -967,13 +967,16 @@ const prodGalSk = (n) => `<div class="lbl" style="margin-top:16px">Pieza termina
 async function prodCargarDet(folio){
   const dentro = () => prodSel === folio && $("prodDatos");
   let d = prodDet.get(folio);
+  const itc = prodCache && prodCache.items.find(i => i.folio === folio);
+  if(d && (Date.now() - (d.t || 0) > 45000 || (itc && itc.nFotos !== undefined && (d.r.fotos || []).length !== itc.nFotos))){ prodDet.delete(folio); d = null; }
   if(!d){
     const it = prodCache.items.find(i => i.folio === folio), b = dentro();
     if(b && (!it || it.nFotos !== 0)) $("prodFotos").innerHTML = prodGalSk(it && it.nFotos ? it.nFotos : 1);
     try{
       const r = await post("fotosProduccion", { codigo: folio, meta: 1 });
       if(!r.ok){ const b2 = dentro(); if(b2) b2.innerHTML = `<div class="box err">${esc(r.error || "No se pudo leer.")} <button type="button" class="link" data-reintentar="${esc(folio)}">Reintentar</button></div>`; return; }
-      prodDet.set(folio, { r }); d = prodDet.get(folio);
+      const antes = prodDet.get(folio); prodDet.set(folio, { r, t: Date.now() }); d = prodDet.get(folio);
+      if(!antes || (antes.r.fotos || []).map(x => x.url).join() !== (r.fotos || []).map(x => x.url).join()) [...prodImgs.keys()].filter(k => k.startsWith(folio + "|")).forEach(k => prodImgs.delete(k));
     }catch(e){ console.error(e); const b2 = dentro(); if(b2) b2.innerHTML = `<div class="box err">No se pudo conectar. <button type="button" class="link" data-reintentar="${esc(folio)}">Reintentar</button></div>`; return; }
   }
   const b = dentro(); if(b) prodPintarDatos(b, folio, d.r, $("prodFotos"));
@@ -1012,7 +1015,7 @@ async function prodPonerFoto(el, folio, idx, tam){
   const im = el.querySelector("img"); if(im) im.addEventListener("error", () => { prodImgs.delete(`${folio}|${idx}|${tam}`); el.dataset.retry = "1"; el.innerHTML = `<span class="pk-ext">La foto llegó dañada · tocar para reintentar</span>`; }, { once: true });
 }
 function prodPintarDatos(box, folio, r, fotosBox){
-  prodDet.set(folio, { r });
+  const prev = prodDet.get(folio); prodDet.set(folio, { r, t: prev && prev.r === r ? prev.t : Date.now() });
   // el Apps Script anterior mandaba las fotos dentro de esta misma respuesta: se aprovechan
   (r.fotos || []).forEach((x, i) => { if(x.b64) prodImgs.set(`${folio}|${i}|full`, Promise.resolve("data:" + x.mime + ";base64," + x.b64)); });
   const gb = fotosBox || box;
@@ -1057,7 +1060,7 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("click", async (e) => {
   const t = e.target;
   const ch = t.closest && t.closest("#prodVista .chip"); if(ch){ prodFiltro = ch.dataset.k; pintarProduccion(); return; }
-  if(t.id === "prodRefrescar"){ cargarProduccion(); return; }
+  if(t.id === "prodRefrescar"){ prodDet.clear(); prodImgs.clear(); cargarProduccion(); return; }
   if(t.id === "prodVolver"){ prodCerrar(); return; }
   const pk = t.closest && t.closest("#prodVista .pk"); if(pk){ prodAbrir(pk.dataset.f); return; }
   const re = t.closest && t.closest("[data-reintentar]"); if(re){ prodDet.delete(re.dataset.reintentar); prodCargarDet(re.dataset.reintentar); return; }
@@ -1077,7 +1080,7 @@ let prodHoverT = 0;
 document.addEventListener("pointerover", (e) => {   // al pasar el cursor por un pedido, se adelanta la lectura de sus datos
   const pk = e.target.closest && e.target.closest("#prodVista .pk"); if(!pk || e.pointerType === "touch") return;
   const f = pk.dataset.f; if(prodDet.has(f)) return; clearTimeout(prodHoverT);
-  prodHoverT = setTimeout(() => { if(prodDet.has(f)) return; post("fotosProduccion", { codigo: f, meta: 1 }).then(r => { if(r && r.ok && !prodDet.has(f)) prodDet.set(f, { r }); }).catch(() => {}); }, 180);
+  prodHoverT = setTimeout(() => { if(prodDet.has(f)) return; post("fotosProduccion", { codigo: f, meta: 1 }).then(r => { if(r && r.ok && !prodDet.has(f)) prodDet.set(f, { r, t: Date.now() }); }).catch(() => {}); }, 180);
 });
 
 // ===================== COTIZACIÓN (se arma con lo registrado y se puede cambiar todo) =====================
@@ -1306,7 +1309,7 @@ let ultimaCarga = Date.now();
 document.addEventListener("visibilitychange", () => {
   if(document.hidden || !passwordActual || Date.now() - ultimaCarga < 60000) return;
   if($("pane-proyectos").classList.contains("on") && !$("listaVista").hidden){ ultimaCarga = Date.now(); cargarLista(); }
-  else if($("pane-produccion").classList.contains("on")){ ultimaCarga = Date.now(); cargarProduccion(); }
+  else if($("pane-produccion").classList.contains("on")){ ultimaCarga = Date.now(); prodDet.clear(); cargarProduccion(); }
 });
 // --- Atajos de teclado: Ctrl/⌘+Enter registra · / busca · Esc regresa de una ficha
 document.addEventListener("keydown", (e) => {
