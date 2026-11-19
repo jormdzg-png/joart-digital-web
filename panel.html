@@ -877,6 +877,7 @@ async function verProduccion(btn){
 
 // ===================== PRODUCCIÓN (todo lo que Daniela va capturando) =====================
 let prodCache = null, prodSel = "", prodFiltro = "todo", prodHora = "", prodScroll = 0;
+let prodErr = "";
 const prodDet = new Map();    // folio -> { r }  (datos + lista de fotos ya leídos)
 const prodImgs = new Map();   // folio|idx|mini|full -> Promise<dataURL|null>
 const ESTADO_COL = { listo: "var(--sage)", proceso: "var(--sand)", nuevo: "var(--mute)", enviado: "var(--sage)" };
@@ -923,7 +924,7 @@ function pintarProduccion(){
   box.innerHTML = `<div class="pk-chips" role="group" aria-label="Filtrar pedidos">${chips}</div>
     <div class="col-h" style="margin-top:6px"><span>Actualizado ${esc(prodHora)}</span><button type="button" class="link" id="prodRefrescar">Actualizar</button></div>`
     + (sec || `<div class="hint" style="padding:18px 0">${r.items.length ? "Ningún pedido en este filtro." : "No hay pedidos en producción."}</div>`) + av + lam;
-  if(prodSel){ const it = r.items.find(i => i.folio === prodSel); if(it) pintarProdDet(it); else prodCerrar(true); }
+  if(prodSel){ const it = r.items.find(i => i.folio === prodSel); if(it){ pintarProdDet(it); prodCargarDet(prodSel); } else prodCerrar(true); }
 }
 
 // ----- detalle (a la derecha en escritorio; pantalla completa en el celular)
@@ -952,8 +953,8 @@ function prodAbrir(folio){
   vt(() => {
     document.querySelectorAll("#prodVista .pk").forEach(b => { const on = b.dataset.f === folio; b.classList.toggle("sel", on); if(on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
     $("pane-produccion").classList.add("det"); $("prodDetalle").hidden = false; pintarProdDet(it); window.scrollTo(0, 0);
+    prodCargarDet(folio);
   });
-  prodCargarDet(folio);
 }
 function prodCerrar(sinAnim){
   if(!prodSel && $("prodDetalle").hidden) return;
@@ -995,7 +996,7 @@ function prodImg(folio, idx, tam){
   const kf = `${folio}|${idx}|full`, k = `${folio}|${idx}|${tam}`;
   if(tam === "mini" && prodImgs.has(kf)) return prodImgs.get(kf);
   if(prodImgs.has(k)) return prodImgs.get(k);
-  const p = post("fotoProduccion", { codigo: folio, idx, tam }).then(r => r && r.ok && r.b64 ? "data:" + r.mime + ";base64," + r.b64 : null).catch(() => null).then(v => { if(!v) prodImgs.delete(k); return v; });
+  const p = post("fotoProduccion", { codigo: folio, idx, tam }).then(r => { if(r && r.ok && r.b64) return "data:" + (r.mime || "image/jpeg") + ";base64," + r.b64; prodErr = (r && r.error) || "respuesta vacía"; console.error("fotoProduccion:", r); return null; }).catch(e => { prodErr = String(e && e.message || e); console.error("fotoProduccion:", e); return null; }).then(v => { if(!v) prodImgs.delete(k); return v; });
   prodImgs.set(k, p); return p;
 }
 async function prodPonerFoto(el, folio, idx, tam){
@@ -1004,10 +1005,11 @@ async function prodPonerFoto(el, folio, idx, tam){
   if(x.grande || x.error){ el.classList.remove("sk"); el.dataset.ext = x.url || ""; el.innerHTML = `<span class="pk-ext">${x.grande ? "Foto pesada · abrir en Drive ↗" : "No se pudo leer · abrir en Drive ↗"}</span>`; return; }
   const src = await prodImg(folio, idx, tam); if(!el.isConnected) return;
   el.classList.remove("sk");
-  if(!src){ el.dataset.retry = "1"; el.innerHTML = `<span class="pk-ext">No cargó · tocar para reintentar</span>`; return; }
+  if(!src){ el.dataset.retry = "1"; el.innerHTML = `<span class="pk-ext">No cargó${prodErr ? " (" + esc(prodErr) + ")" : ""} · tocar para reintentar</span>`; return; }
   el.removeAttribute("data-retry");
   const cuenta = el.querySelector(".pk-n-f");
   el.innerHTML = `<img alt="Pieza terminada, foto ${idx + 1}" src="${src}" decoding="async">`; if(cuenta) el.appendChild(cuenta);
+  const im = el.querySelector("img"); if(im) im.addEventListener("error", () => { prodImgs.delete(`${folio}|${idx}|${tam}`); el.dataset.retry = "1"; el.innerHTML = `<span class="pk-ext">La foto llegó dañada · tocar para reintentar</span>`; }, { once: true });
 }
 function prodPintarDatos(box, folio, r, fotosBox){
   prodDet.set(folio, { r });
