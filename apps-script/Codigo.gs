@@ -1725,6 +1725,9 @@ function prodGuardar_(d) {
 /* ───── Renders aprobados: Jorge sube la imagen a la carpeta de Drive y se llama con el folio (ej. JD-ZXKVT.png) ───── */
 function prodRendersCarpeta_(crear) {
   const props = PropertiesService.getScriptProperties();
+  // Carpeta fija "Joart - Renders aprobados" (si la propiedad guardada apuntaba a otra, se corrige sola)
+  const ID_FIJO = '149xayj3QVOP-_bFdwNkZjtAPnjxhCuZf';
+  try { const fija = DriveApp.getFolderById(ID_FIJO); props.setProperty('PROD_RENDERS_ID', ID_FIJO); return fija; } catch (_) {}
   const id = props.getProperty('PROD_RENDERS_ID');
   if (id) { try { return DriveApp.getFolderById(id); } catch (_) {} }
   const it = DriveApp.getFoldersByName(PROD.CARPETA_RENDERS);
@@ -2027,4 +2030,29 @@ function prodDiagnostico() {
   const cr = prodRendersCarpeta_(true);
   Logger.log('✓ Carpeta de renders aprobados (sube aquí las imágenes con el folio en el nombre, ej. JD-ZXKVT.png): ' + cr.getUrl());
   Logger.log('Fecha de prueba "26 de octubre" → ' + prodFecha_('26 de octubre', new Date()));
+}
+
+/** DIAGNÓSTICO DE RENDERS: elige "testRenders" en el menú de arriba, dale ▶ Ejecutar y copia lo que salga en "Registro de ejecución". */
+function testRenders() {
+  const L = [];
+  try { L.push('Cuenta que ejecuta el script: ' + Session.getEffectiveUser().getEmail()); } catch (e) { L.push('Cuenta: no se pudo leer (' + e + ')'); }
+  try {
+    L.push('Propiedad PROD_RENDERS_ID: ' + (PropertiesService.getScriptProperties().getProperty('PROD_RENDERS_ID') || '(vacía)'));
+    const c = prodRendersCarpeta_(false);
+    L.push('Carpeta que usa: ' + (c ? c.getName() + ' → ' + c.getUrl() : 'NO ENCONTRADA'));
+    if (c) {
+      const it = c.getFiles(); let n = 0;
+      while (it.hasNext()) { const f = it.next(); n++; if (n <= 40) L.push('  archivo: ' + f.getName() + ' [' + f.getMimeType() + ']'); }
+      L.push('Archivos en la carpeta: ' + n);
+    }
+    CacheService.getScriptCache().remove('PROD_RENDERS_IDX');
+    const idx = prodRendersIndice_();
+    L.push('Folios con render encontrados: ' + Object.keys(idx).length + ' → ' + Object.keys(idx).join(', '));
+    const imp = prodPedidos_().filter(p => p.estatus.toLowerCase() === PROD.EST_PRODUCIR);
+    L.push('Pedidos en Imprimir: ' + imp.length);
+    imp.forEach(p => L.push('  ' + (p.folio || '(sin folio)') + ' · ' + p.negocio + ' · render: ' + (idx[p.folio] ? 'SÍ' : 'no')));
+    const lista = prodLista_();
+    L.push('prodLista_ → pedidos: ' + lista.items.length + ' · con tieneRender: ' + lista.items.filter(i => i.tieneRender).length);
+  } catch (err) { L.push('ERROR: ' + err + (err && err.stack ? '\n' + err.stack : '')); }
+  Logger.log(L.join('\n'));
 }
