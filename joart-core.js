@@ -181,7 +181,7 @@ function cotizarPersonalizado(alto, ancho, prof, niveles, cantidad, grosor, tipo
 // Redondeo hacia arriba al siguiente múltiplo de $5 (con protección contra errores de decimales)
 const up5 = (n) => Math.ceil(Math.round(n * 100) / 100 / 5) * 5;
 
-// ===================== PROMOCIÓN: DÍAS DE DESCUENTO (buen fin 2026) =====================
+// ===================== PROMOCIÓN: DÍAS DE DESCUENTO (TERMINÓ; solo se conserva para pedidos que ya la traían guardada) =====================
 // Regla (decisión final 11 nov 2026): cotizaciones pedidas del 13 al 17 nov, total ≥ $1,500. El cliente elige UNA opción
 // (no se acumulan): 15% sobre el total, o 3 meses sin intereses (paga el 100%, sin descuento). Tiene hasta el vie 20 nov
 // para aprobar su render y pagar el anticipo. Incluye modelos de Navidad. Para cambiar fechas, mínimo o porcentaje: SOLO aquí.
@@ -197,7 +197,6 @@ function hoyMX(ahora){
   const g = (t) => p.find(x => x.type === t).value;
   return g("year") + "-" + g("month") + "-" + g("day");
 }
-function promoVigente(fechaISO, cfg){ cfg = cfg || DIAS_DESCUENTO; return fechaISO >= cfg.desde && fechaISO <= cfg.hasta; }
 // base = total de productos con recargo de entrega (antes de envío y de la promo). opcion: "" | "15" | "msi".
 // Devuelve { opcion, elegible, descuento, total, totalConDescuento, texto }.
 //   Sin mínimo ($1,500) no aplica nada.
@@ -436,4 +435,4 @@ function parsearPedidoTexto(texto){
 }
 
 
-if(typeof module !== "undefined") module.exports = { SEP_FACTOR, PARAMS_PERS, TARIFA_A, TARIFA_B, EXTRA_GROSOR, calcPersonalizado, grosorMinimoPers, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, DIAS_DESCUENTO, hoyMX, promoVigente, aplicarPromo, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };
+if(typeof module !== "undefined") module.exports = { SEP_FACTOR, PARAMS_PERS, TARIFA_A, TARIFA_B, EXTRA_GROSOR, calcPersonalizado, grosorMinimoPers, TIPOS_PERS, areaExhibidor, hpExhibidor, geomPers, QUIEBRES, PRECIOS, TABLA_POR_MODELO, MODELOS, PERSONALIZADO, precioCatalogo, escalonIdx, cotizarPersonalizado, up5, DIAS_DESCUENTO, hoyMX, aplicarPromo, grosoresDeModelo, HOJA, CARGA_POR_NIVEL, ESCALAS_WEB, GEOM, geomDe, piezasDe, acomodar, planDeHojas, parsearPedidoTexto, numerosAPalabras };

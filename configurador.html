@@ -219,13 +219,13 @@ const grosorDefault = () => esPiso() ? "5 mm" : "4 mm";
 function geomActual(){ return geomDe(state.modelo, esPers() ? { alto: state.pers.alto, ancho: state.pers.ancho, prof: state.pers.prof, niveles: state.pers.niv } : null); }
 function pintarPrecios(){
   const t = $("tiers"), nota = $("precioNota"), q = state.cant;
-  if(esPers()){ t.innerHTML = `<div class="tier" style="grid-column:1/-1"><small>A tu medida</small><b>Te cotizamos en minutos</b></div>`; nota.textContent = q > 100 ? "Nuestro máximo es de 100 piezas por pedido. Escríbenos y el responsable evalúa tu proyecto." : "Dinos cuántas piezas necesitas y te damos el precio exacto por WhatsApp. Tu render 3D es gratis."; return; }
+  if(esPers()){ t.innerHTML = `<div class="tier" style="grid-column:1/-1"><small>A tu medida</small><b>Te cotizamos en minutos</b></div>`; nota.textContent = q > 100 ? "Nuestro máximo es de 100 piezas por modelo. Escríbenos y el responsable evalúa tu proyecto." : "Dinos cuántas piezas necesitas y te damos el precio exacto por WhatsApp. Tu render 3D es gratis."; return; }
   const gr = grosoresDeModelo(state.modelo).includes(grosorDefault()) ? grosorDefault() : grosoresDeModelo(state.modelo)[0];
   const pr = ESCALAS_WEB.map(e => ({ e, p: precioCatalogo(state.modelo, gr, e) }));
   let on = 0; pr.forEach((x, i) => { if(q >= x.e) on = i; });
   t.innerHTML = pr.map((x, i) => `<div class="tier${(q === x.e) ? " on" : ""}"><small>${x.e} pz${x.e === 1 ? "" : "s"}</small><b>$${x.p.toLocaleString("es-MX")}</b></div>`).join("");
   const exacto = ESCALAS_WEB.includes(q);
-  if(q > 100) nota.textContent = "Nuestro máximo es de 100 piezas por pedido. Escríbenos y el responsable evalúa tu proyecto.";
+  if(q > 100) nota.textContent = "Nuestro máximo es de 100 piezas por modelo. Escríbenos y el responsable evalúa tu proyecto.";
   else if(exacto) nota.textContent = `Con ${q} pieza${q === 1 ? "" : "s"}: $${pr.find(x => x.e === q).p.toLocaleString("es-MX")} por pieza (IVA incluido).`;
   else { const lo = pr[on + 1] ? pr[on + 1].p : pr[on].p, hi = pr[on].p; nota.textContent = `Con ${q} piezas pagas entre $${lo.toLocaleString("es-MX")} y $${hi.toLocaleString("es-MX")} por pieza; por WhatsApp te confirmamos el precio exacto.`; }
   const g = geomActual(); if(g && g.n >= 2) nota.textContent += ` Cada nivel soporta hasta ${CARGA_POR_NIVEL[gr]} kg.`;

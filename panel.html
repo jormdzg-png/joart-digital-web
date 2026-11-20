@@ -459,7 +459,7 @@ const CONFIG = {
   web: "joartdigital.com.mx",
   reviewURL: "",   // enlace de reseñas de Google (opcional)
   terminosURL: "https://www.joartdigital.com.mx/pages/condiciones-de-servicio",
-  maxPiezas: 100, maxPiezasExpres: 30,
+  maxPiezas: 100, // máximo por modelo (no por pedido)
   pctCaras: 0.15, pctExpres: 0.08, pctUrgente: 0.15,   // recargos (20-nov-2026): frente y vuelta, entrega exprés y urgente
 };
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyjQjgrf6uc9YZ6ggQf55qJ8H29BI-tbNYx2FZMZcbzM2p9kQMC8UYlK_K4e-9Az-B8mA/exec";
@@ -668,8 +668,8 @@ document.addEventListener("paste", (e) => { if(!$("pane-nuevo").classList.contai
 // --- Registrar
 async function registrar(){
   if(registrando) return; const f = faltantes(); if(f.length){ toast("Falta " + f.join(" y ")); return; }
-  const piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
-  if(piezas > CONFIG.maxPiezas && !confirm(`El pedido suma ${piezas} piezas y el máximo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Registrarlo de todos modos?`)) return;
+  const grande = items.find(it => (parseInt(it.cantidad, 10) || 0) > CONFIG.maxPiezas);
+  if(grande && !confirm(`Un mismo modelo suma ${parseInt(grande.cantidad, 10)} piezas y el máximo por modelo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Registrarlo de todos modos?`)) return;
   const nom = normNom($("fCliente").value);
   const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
   if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o un detalle, NO crees otro: ve a Proyectos, ábrelo y actualiza la cotización.\n\n¿Crear uno nuevo de todos modos?`)) return;
@@ -1124,7 +1124,6 @@ function pintarCot(){
       <div class="field"><label>Entrega</label><select id="cEntrega"><option value="estandar">Estándar</option><option value="expres">Exprés +${Math.round(CONFIG.pctExpres * 100)}%</option><option value="urgente">Urgente +${Math.round(CONFIG.pctUrgente * 100)}%</option></select></div>
       <div class="field"><label>Impresión</label><select id="cCaras"><option value="una">Una cara</option><option value="dos">Frente y vuelta</option></select></div>
     </div>
-    <div class="field" id="cPromoBox" hidden><label for="cPromo">🏷️ Días de Descuento · la opción que eligió el cliente</label><select id="cPromo"><option value="" disabled>Elige una…</option><option value="15">15% de descuento</option><option value="msi">3 meses sin intereses</option><option value="ninguna">Sin promoción</option></select><div class="hint" id="cPromoInfo"></div></div>
     <div class="row">
       <div class="field"><label>¿Factura?</label><select id="cFactura"><option value="no">No</option><option value="si">Sí</option></select></div>
       <div class="field"><label>Envío (si es menor a $1,000)</label><input id="cEnvio" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
@@ -1132,34 +1131,24 @@ function pintarCot(){
     <div class="field"><label for="cNotas">Notas del pedido · no salen en el PDF</label><textarea id="cNotas" rows="2" placeholder="Se agregan al registro en Sheets y ClickUp"></textarea></div>
     <div id="cotRes"></div>
   </div>`;
-  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cPromo").value = cot.promo || ""; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio; $("cNotas").value = cot.notas;
+  $("cEntrega").value = cot.entrega; $("cCaras").value = cot.caras; $("cFactura").value = cot.factura; $("cEnvio").value = cot.envio; $("cNotas").value = cot.notas;
   const cambio = () => calcCot(); cambio.ctx = () => ({ caras: cot.caras });
   repintarCot = enlazarItems($("cotItems"), () => cot.items, (a) => { cot.items = a; }, true, cambio);
   $("cotAdd").addEventListener("click", () => { cot.items.push(nuevoItem()); repintarCot(); calcCot(); });
-  ["cEntrega","cCaras","cPromo","cFactura","cEnvio","cNotas"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.promo = $("cPromo").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; cot.notas = $("cNotas").value; if(id === "cCaras") repintarCot(); calcCot(); }));
+  ["cEntrega","cCaras","cFactura","cEnvio","cNotas"].forEach(id => $(id).addEventListener("input", () => { cot.entrega = $("cEntrega").value; cot.caras = $("cCaras").value; cot.factura = $("cFactura").value; cot.envio = $("cEnvio").value; cot.notas = $("cNotas").value; if(id === "cCaras") repintarCot(); calcCot(); }));
   repintarCot(); calcCot();
 }
 function calcCot(){
   const lineas = calcularLineas(cot.items, { caras: cot.caras }), piezas = lineas.reduce((s, l) => s + l.q, 0);
   const pctEntrega = cot.entrega === "expres" ? CONFIG.pctExpres : cot.entrega === "urgente" ? CONFIG.pctUrgente : 0;
   const subtotal = lineas.reduce((s, l) => s + l.importe, 0), recargo = Math.round(subtotal * pctEntrega);
-  // Días de Descuento: se calcula sobre productos + recargo de entrega. Como el mínimo es $1,500, el envío siempre es gratis y no entra.
+  // Solo pedidos que ya traían Días de Descuento guardada (la promoción terminó): conservan su precio. Nuevas cotizaciones no la llevan.
   const base = subtotal + recargo, promo = aplicarPromo(base, cot.promo), descuento = promo.descuento;
   const envioAplica = base < 1000, envio = envioAplica ? (parseFloat(cot.envio) || 0) : 0, total = base - descuento + envio;
   const pctA = cot.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
   let err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
   const avisos = [];
-  if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
-  if(cot.entrega !== "estandar" && piezas > CONFIG.maxPiezasExpres) avisos.push(`Exprés y urgente aplican hasta ${CONFIG.maxPiezasExpres} piezas.`);
-  if(cot.entrega !== "estandar" && cot.items.some(esPers)) avisos.push("Exprés y urgente no aplican a personalizados complejos.");
-  // El selector solo aparece cuando la promo aplica (del 13 al 17 nov, o si el pedido ya la traía guardada) y el pedido llega al mínimo.
-  const hoy = hoyMX(), enFechas = promoVigente(hoy), visible = (enFechas || !!ped.promo) && promo.elegible;
-  const errPromo = visible && !cot.promo ? "Elige la opción de Días de Descuento que escogió el cliente: 15%, 3 meses sin intereses o sin promoción." : "";
-  const infoPromo = (enFechas || ped.promo) && base > 0 && !promo.elegible ? `Días de Descuento aplica desde ${fmt(DIAS_DESCUENTO.minimo)}: faltan ${fmt(promo.falta)}.`
-    : visible && cot.promo && cot.promo !== "ninguna" && !enFechas ? `Ojo: hoy está fuera del ${DIAS_DESCUENTO.desde.slice(8)} al ${DIAS_DESCUENTO.hasta.slice(8)} de nov. Déjalo solo si el cliente pidió su cotización en esas fechas.` : "";
-  const pb = $("cPromoBox"); if(pb) pb.hidden = !visible;
-  const pi = $("cPromoInfo"); if(pi){ pi.textContent = infoPromo; pi.hidden = !infoPromo; }
-  if(!err) err = errPromo;
+  lineas.filter(l => l.q > CONFIG.maxPiezas).forEach(l => avisos.push(`${l.q} piezas de un mismo modelo: el máximo por modelo es ${CONFIG.maxPiezas}; se evalúa manualmente.`));
   cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, promo, descuento, totalLista: base + envio };
   $("cotRes").innerHTML = `<div class="sum">
     ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}

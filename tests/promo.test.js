@@ -25,11 +25,6 @@ igual("MSI no suma descuento", C.aplicarPromo(3000, "msi").descuento, 0);
 igual("Opción inválida se ignora", C.aplicarPromo(3000, "30").opcion, "");
 // Con recargo exprés (+8%) el total que se compara es el de productos con recargo
 igual("Base con recargo exprés ≥ mínimo", C.aplicarPromo(1400 + Math.round(1400 * 0.08), "15").elegible, true);
-// Fechas (inclusive) y zona horaria de México
-igual("12 nov: fuera", C.promoVigente("2026-11-12"), false);
-igual("13 nov: dentro", C.promoVigente("2026-11-13"), true);
-igual("17 nov: dentro", C.promoVigente("2026-11-17"), true);
-igual("18 nov: fuera", C.promoVigente("2026-11-18"), false);
 igual("hoyMX a las 23:30 del 17 nov en CDMX (05:30Z del 18) sigue siendo 17", C.hoyMX(new Date("2026-11-18T05:30:00Z")), "2026-11-17");
 igual("hoyMX a las 00:30 del 13 nov en CDMX (06:30Z)", C.hoyMX(new Date("2026-11-13T06:30:00Z")), "2026-11-13");
 if(fallos){ console.log(fallos + " fallas"); process.exit(1); } console.log("Todo bien ✓");
