@@ -23,8 +23,8 @@ igual("Redondeo al peso (1,505 × 15% = 225.75 → 226)", C.aplicarPromo(1505, "
 igual("MSI no suma descuento", C.aplicarPromo(3000, "msi").descuento, 0);
 // Opción inválida
 igual("Opción inválida se ignora", C.aplicarPromo(3000, "30").opcion, "");
-// Con recargo exprés (+15%) el total que se compara es el de productos con recargo
-igual("Base con recargo exprés ≥ mínimo", C.aplicarPromo(1400 + Math.round(1400 * 0.15), "15").elegible, true);
+// Con recargo exprés (+8%) el total que se compara es el de productos con recargo
+igual("Base con recargo exprés ≥ mínimo", C.aplicarPromo(1400 + Math.round(1400 * 0.08), "15").elegible, true);
 // Fechas (inclusive) y zona horaria de México
 igual("12 nov: fuera", C.promoVigente("2026-11-12"), false);
 igual("13 nov: dentro", C.promoVigente("2026-11-13"), true);
