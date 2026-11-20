@@ -459,7 +459,7 @@ const CONFIG = {
   web: "joartdigital.com.mx",
   reviewURL: "",   // enlace de reseñas de Google (opcional)
   terminosURL: "https://www.joartdigital.com.mx/pages/condiciones-de-servicio",
-  maxPiezas: 100, // máximo por modelo (no por pedido)
+  maxPiezas: 100, // máximo por pedido (suma de todas las líneas)
   pctCaras: 0.15, pctExpres: 0.08, pctUrgente: 0.15,   // recargos (20-nov-2026): frente y vuelta, entrega exprés y urgente
 };
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyjQjgrf6uc9YZ6ggQf55qJ8H29BI-tbNYx2FZMZcbzM2p9kQMC8UYlK_K4e-9Az-B8mA/exec";
@@ -668,8 +668,8 @@ document.addEventListener("paste", (e) => { if(!$("pane-nuevo").classList.contai
 // --- Registrar
 async function registrar(){
   if(registrando) return; const f = faltantes(); if(f.length){ toast("Falta " + f.join(" y ")); return; }
-  const grande = items.find(it => (parseInt(it.cantidad, 10) || 0) > CONFIG.maxPiezas);
-  if(grande && !confirm(`Un mismo modelo suma ${parseInt(grande.cantidad, 10)} piezas y el máximo por modelo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Registrarlo de todos modos?`)) return;
+  const piezas = items.reduce((s, it) => s + (parseInt(it.cantidad, 10) || 0), 0);
+  if(piezas > CONFIG.maxPiezas && !confirm(`El pedido suma ${piezas} piezas y el máximo es ${CONFIG.maxPiezas}: se evalúa manualmente.\n\n¿Registrarlo de todos modos?`)) return;
   const nom = normNom($("fCliente").value);
   const ya = (listaCache || []).filter(t => nom && normNom(t.nombre) === nom && (t.estatus || "").trim().toLowerCase() !== "entregado");
   if(ya.length && !confirm(`«${$("fCliente").value.trim()}» ya tiene un pedido en curso (${ya.map(t => t.codigo || "sin código").join(", ")}).\n\nSi solo cambió la cantidad o un detalle, NO crees otro: ve a Proyectos, ábrelo y actualiza la cotización.\n\n¿Crear uno nuevo de todos modos?`)) return;
@@ -1148,7 +1148,7 @@ function calcCot(){
   const pctA = cot.entrega === "urgente" ? 1 : 0.5, anticipo = Math.round(total * pctA);
   let err = lineas.some(l => l.unit == null || !(l.unit > 0)) ? "Falta cantidad, medidas o precio en algún producto." : "";
   const avisos = [];
-  lineas.filter(l => l.q > CONFIG.maxPiezas).forEach(l => avisos.push(`${l.q} piezas de un mismo modelo: el máximo por modelo es ${CONFIG.maxPiezas}; se evalúa manualmente.`));
+  if(piezas > CONFIG.maxPiezas) avisos.push(`Suma ${piezas} piezas: el máximo es ${CONFIG.maxPiezas}; se evalúa manualmente.`);
   cot.calc = { lineas, piezas, pctEntrega, subtotal, recargo, envio, total, pctA, anticipo, saldo: total - anticipo, err, promo, descuento, totalLista: base + envio };
   $("cotRes").innerHTML = `<div class="sum">
     ${err ? `<div class="box err">${esc(err)}</div>` : ""}${avisos.map(a => `<div class="box warn">${esc(a)}</div>`).join("")}
